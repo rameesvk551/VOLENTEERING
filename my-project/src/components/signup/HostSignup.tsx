@@ -1,53 +1,59 @@
-import React, { useState } from 'react'
+import  { useState } from 'react'
 import Button from "../Button"
 import Divider from "../Divider"
 import Logo from "../Logo"
 import Inputbox from "../Inputbox"
-import { useGoogleLogin } from "@react-oauth/google";
 import { FcGoogle } from "react-icons/fc";
 import { Toaster, toast } from "sonner";
 import { Link } from "react-router-dom";
 import { BiImages } from "react-icons/bi";
 import { IoArrowBackCircleSharp } from "react-icons/io5";
-const HostSignup = () => {
+import { useForm } from "react-hook-form";
+import axios from 'axios'
+import server from '../../server/app'
 
+
+
+const UserSignup = () => {
+
+
+  type formValues={
+    firstName:string,
+    lastName:string,
+    email:string,
+    password:string,
+
+  
+  }
+ const form=useForm<formValues>()
+ const {register,handleSubmit,formState}=form
+ const {errors}=formState
   const [showForm, setShowForm] = useState(false);
-  const [data, setData] = useState({
-    firstName: "",
-    lastName: "",
-    email: "",
-    password: "",
-  });
-  const [file, setFile] = useState<File | null>(null);
 
-  const [fileURL, setFileURL] = useState("");
 
-  const handleChange = (e:any) => {
-    // const [name, value] = e.target;
-    const { name, value } = e.target;
-    setData({
-      ...data,
-      [name]: value,
-    });
-  };
+
 
   const googleLogin = async () => {};
+  const onSubmit=async(formData:formValues)=>{
+    console.log("fffform values",formData);
+    
+    const data=await axios.post(`${server}/host/signup`,formData).then((res)=>{
+      console.log("host created Success fully ",res.data);
+      
+    }).catch((error)=>{
+      console.log("an error ococred",error);
+      
+    })
+    
+  }
 
-  const handleSubmit = async () => {};
 
  
   return (
     <div className='flex w-full h-[100vh]'>
       {/* LEFT */}
       <div className='hidden md:flex flex-col gap-y-4 w-1/3 h-full bg-black items-center justify-center'>
-        {fileURL && (
-     <img
-     src={fileURL ?? undefined} // Convert null to undefined
-     alt="Preview"
-     className="w-16 h-16 rounded-full"
-   />
-   
-        )}
+        
         <Logo  />
         <span className='text-xl font-semibold text-white'>Welcome!</span>
       </div>
@@ -77,48 +83,72 @@ const HostSignup = () => {
             {showForm ? (
               <form
                 className='max-w-md w-full mt-8 space-y-6 '
-                onSubmit={handleSubmit}
+              onSubmit={handleSubmit(onSubmit)}
               >
                 <div className='flex flex-col rounded-md shadow-sm -space-y-px gap-6 mb-8'>
-                  <div className='w-full flex gap-4'>
-                    <Inputbox
-                      label='First Name'
-                      name='firstName'
-                      type='text'
-                      isRequired={true}
-                      placeholder='First Name'
-                      value={data.firstName}
-                      onChange={handleChange}
-                    />
-                    <Inputbox
-                      label=' Last Name'
-                      name='lastName'
-                      type='text'
-                      isRequired={true}
-                      placeholder='First Name'
-                      value={data.lastName}
-                      onChange={handleChange}
-                    />
-                  </div>
+                <div className="w-full flex gap-4">
+  {/* First Name Field */}
+  <div className="flex flex-col w-full">
+    <Inputbox
+      label="First Name"
+      type="text"
+      isRequired={true}
+      placeholder="First Name"
+      {...register("firstName", { required: "First Name is required" })}
+      className={`${
+        errors.firstName ? "border-red-500" : ""
+      } dark:bg-transparent appearance-none block w-full px-3 py-2.5 2xl:py-3 border border-gray-300 dark:border-gray-600 placeholder-gray-300 dark:placeholder-gray-700 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 text-base`}
+    />
+    {errors.firstName && (
+      <p className="text-red-500 text-sm mt-1">{errors.firstName.message}</p>
+    )}
+  </div>
+
+  {/* Last Name Field */}
+  <div className="flex flex-col w-full">
+    <Inputbox
+      label="Last Name"
+      type="text"
+      isRequired={true}
+      placeholder="Last Name"
+      {...register("lastName", { required: "Last Name is required" })}
+      className={`${
+        errors.lastName ? "border-red-500" : ""
+      } dark:bg-transparent appearance-none block w-full px-3 py-2.5 2xl:py-3 border border-gray-300 dark:border-gray-600 placeholder-gray-300 dark:placeholder-gray-700 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 text-base`}
+    />
+    {errors.lastName && (
+      <p className="text-red-500 text-sm mt-1">{errors.lastName.message}</p>
+    )}
+  </div>
+</div>
 
                   <Inputbox
                     label='Email Address'
-                    name='email'
                     type='email'
                     isRequired={true}
                     placeholder='email@example.com'
-                    value={data.email}
-                    onChange={handleChange}
-                  />
+                    {...register("email",{required:"email is requeired"})}
+                    className={`${errors.email? "border-red-500 ":"" }dark:bg-transparent appearance-none block w-full px-3 py-2.5 2xl:py-3 border border-gray-300 dark:border-gray-600 placeholder-gray-300 dark:placeholder-gray-700 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 text-base`}          
+                              />
+                    {errors.email && <p className='text-red-500 text-sm mt-1'>{errors.email.message}</p>}
+                  
                   <Inputbox
                     label='Password'
-                    name='password'
                     type='password'
                     isRequired={true}
                     placeholder='Password'
-                    value={data.password}
-                    onChange={handleChange}
-                  />
+                    {...register("password", { 
+                      required: "Password is required",
+                      minLength: { value: 8, message: "Password must be at least 8 characters long" },
+                      pattern: {
+                        value: /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/,
+                        message: "Password must contain at least one letter and one number"
+                      }
+                    })}
+                    className={`${errors.password? "border-red-500 ":""} "dark:bg-transparent appearance-none block w-full px-3 py-2.5 2xl:py-3 border border-gray-300 dark:border-gray-600 placeholder-gray-300 dark:placeholder-gray-700 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 text-base`}          
+                              />
+                    {errors.password && <p className='text-red-500 text-sm mt-1'>{errors.password.message}</p>}
+                  
 
                   <div className='flex items-center justify-between py-4'>
                     <label
@@ -127,11 +157,7 @@ const HostSignup = () => {
                     >
                       <input
                         type='file'
-                        onChange={(e) => {
-                          if (e.target.files && e.target.files.length > 0) {
-                            setFile(e.target.files[0]);
-                          }
-                        }}
+                        
                         
                         className='hidden'
                         id='imgUpload'
@@ -185,4 +211,4 @@ const HostSignup = () => {
   )
 }
 
-export default HostSignup
+export default UserSignup

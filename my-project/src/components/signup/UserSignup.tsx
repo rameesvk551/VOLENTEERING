@@ -9,7 +9,14 @@ import { Link } from "react-router-dom";
 import { BiImages } from "react-icons/bi";
 import { IoArrowBackCircleSharp } from "react-icons/io5";
 import { useForm } from "react-hook-form";
+import axios from 'axios'
+import server from '../../server/app'
+
+
+
 const UserSignup = () => {
+
+
   type formValues={
     firstName:string,
     lastName:string,
@@ -22,29 +29,21 @@ const UserSignup = () => {
  const {register,handleSubmit,formState}=form
  const {errors}=formState
   const [showForm, setShowForm] = useState(false);
-  const [data, setData] = useState({
-    firstName: "",
-    lastName: "",
-    email: "",
-    password: "",
-  });
 
 
-
-
-  const handleChange = (e:any) => {
-    // const [name, value] = e.target;
-    const { name, value } = e.target;
-    setData({
-      ...data,
-      [name]: value,
-    });
-  };
 
 
   const googleLogin = async () => {};
-  const onSumit=(data:formValues)=>{
-    console.log("form ubmitted");
+  const onSubmit=async(formData:formValues)=>{
+    console.log("fffform values",formData);
+    
+    const data=await axios.post(`${server}/user/signup`,formData).then((res)=>{
+      console.log("user created Success fully ",res.data);
+      
+    }).catch((error)=>{
+      console.log("an error ococred",error);
+      
+    })
     
   }
 
@@ -84,7 +83,7 @@ const UserSignup = () => {
             {showForm ? (
               <form
                 className='max-w-md w-full mt-8 space-y-6 '
-              onSubmit={handleSubmit(onSumit)}
+              onSubmit={handleSubmit(onSubmit)}
               >
                 <div className='flex flex-col rounded-md shadow-sm -space-y-px gap-6 mb-8'>
                 <div className="w-full flex gap-4">
