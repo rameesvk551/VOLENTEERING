@@ -5,6 +5,7 @@ const cors=require("cors")
 const cookieParser = require("cookie-parser");
 const userRoutes=require("./routes/user")
 const hostRoutes=require("./routes/host");
+const blogRoutes=require("./routes/blog");
 const adminRoutes=require("./routes/admin")
 const errorHandler = require("./middleware/errorHandler");
 const dbConnect = require("./config/db");
@@ -22,6 +23,9 @@ app.use(cookieParser());
 app.use("/api/v1/user",userRoutes)
 app.use("/api/v1/host",hostRoutes)
 app.use("/api/v1/admin",adminRoutes)
+app.use("/api/v1/user",userRoutes)
+app.use("/api/v1/host",hostRoutes)
+app.use("/api/v1/blog",blogRoutes)
 
 app.use(errorHandler);
 dbConnect()

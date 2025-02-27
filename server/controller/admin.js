@@ -28,11 +28,26 @@ exports.adminLogin = async(req,res,next)=>{
                 firsrName:admin.firstName,
                 lastName:admin.lastName,
                 email:admin.email,
+               
             }})
      
     } catch (error) {
         next(error); 
     }
+}
+
+exports.loadAdmin=async(req,res,next)=>{
+    try {
+        console.log("admin idd",req.admin._id);
+
+    const admin=await User.findById(req.admin.id)
+    console.log("admin finded",admin);
+    
+    res.json({success:true, admin})
+    } catch (error) {
+       (next) 
+    }
+
 }
 
 exports.getAllVolenteers=async(req,res,next)=>{

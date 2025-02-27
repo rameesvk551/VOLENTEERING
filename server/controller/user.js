@@ -48,16 +48,6 @@ const hashedPassword=await bcrypt.hash(password,10)
 }
 
 
-
-
-
-
-
-
-
-
-
-
 exports.userLogin = async(req,res,next)=>{
     try {
         const {email,password}=req.body

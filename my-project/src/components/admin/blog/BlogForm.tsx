@@ -5,11 +5,12 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import RichTextEditor from "../../../pages/admin/blog/RichTextEditor";
 import { BlogFormData } from "../../../pages/admin/blog/types";
+import axios from "axios";
+import server from "../../../server/app";
 
 // Define validation schema
 const schema = yup.object().shape({
   title: yup.string().required("Title is required").min(5, "Title must be at least 5 characters"),
-  author: yup.string().required("Author name is required"),
   content: yup.string().required("Content cannot be empty"),
 });
 
@@ -20,7 +21,9 @@ const BlogForm: React.FC = () => {
 
   const onSubmit = async (data: BlogFormData) => {
     try {
-     
+      console.log("crrreating blog",data);
+      
+     await axios.post(`${server}/blog/create-blog`,data,{withCredentials:true})
       alert("Blog created successfully!");
       reset();
     } catch (error) {
@@ -42,14 +45,7 @@ const BlogForm: React.FC = () => {
         )}
       />
 
-      {/* Author Input */}
-      <Controller
-        name="author"
-        control={control}
-        render={({ field }) => (
-          <TextField {...field} label="Author" fullWidth margin="normal" error={!!errors.author} helperText={errors.author?.message} />
-        )}
-      />
+    
 
       {/* Rich Text Editor */}
       <Controller

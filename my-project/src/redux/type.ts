@@ -1,4 +1,3 @@
-// src/redux/type.ts
 
 // User type definition
 export interface User {
@@ -16,11 +15,17 @@ export interface User {
 export interface AdminState {
     volunteers: User[];
     loading: boolean;
+    admin:admiAuth | null
     error: string | null;
 }
 
 // Authentication state type for Redux
 export interface AuthState {
+    user: User | null;
+    loading: boolean;
+}
+
+export interface admiAuth {
     user: User | null;
     loading: boolean;
 }

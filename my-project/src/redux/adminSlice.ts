@@ -1,6 +1,7 @@
+
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import axios from "axios";
-import { User, AdminState } from "../redux/type"; // Ensure correct path
+import { User, AdminState, admiAuth } from "../redux/type"; // Ensure correct path
 import server from "../server/app";
 
 // Initial State
@@ -8,7 +9,23 @@ const initialState: AdminState = {
     volunteers: [],
     loading: false,
     error: null,
+    admin: null
 };
+// Fetch all users (Admin Access Only)
+export const loadAdmin = createAsyncThunk<admiAuth, void>(
+    "admin/loadAdmin",
+    async (_, { rejectWithValue }) => {
+        try {
+            console.log("loading admin...");
+            const { data } = await axios.get(`${server}/admin/load-admin`,{withCredentials:true});
+            console.log("admin loaded:", data);
+            return data.admin;
+        } catch (error: any) {
+            console.error("Error fetching users:", error.response?.data || error.message);
+            return rejectWithValue(error.response?.data || "Failed to fetch users");
+        }
+    }
+);
 
 // Fetch all users (Admin Access Only)
 export const getAllUsers = createAsyncThunk<User[], void>(
@@ -58,6 +75,21 @@ const adminSlice = createSlice({
     reducers: {},
     extraReducers: (builder) => {
         builder
+         // load admin
+         .addCase(loadAdmin.pending, (state) => {
+            state.loading = true;
+        })
+        .addCase(loadAdmin.fulfilled, (state, action: PayloadAction<admiAuth>) => {
+            state.admin = action.payload;
+            state.loading = false;
+            state.error = null;
+            console.log("in redddducer",state.admin);
+            
+        })
+        .addCase(loadAdmin.rejected, (state, action) => {
+            state.loading = false;
+            state.error = action.payload as string;
+        })
             // Fetch Users
             .addCase(getAllUsers.pending, (state) => {
                 state.loading = true;

@@ -36,20 +36,22 @@ exports.isHost=async(req,res,next)=>{
 exports. isAdmin = async (req, res, next) => {
     try {
         const { adminToken } = req.cookies;
-        console.log("Admin Token in cookies:", adminToken);
-
         if (!adminToken) {
             return next(new CustomError("No JWT token provided", 401));
         }
 
-        const decoded = jwt.verify(adminToken, process.env.JWT_SECRET);
-
       
-        req.user = await User.findById(decoded.id); 
-
-        if (!req.user || req.user.role !== "admin") {
+       
+        const decoded = jwt.verify(adminToken, process.env.JWT_SECRET);
+        console.log("admin tolen",decoded);
+      
+        req.admin = await User.findById(decoded._id); 
+        console.log("aaaaaaadmin",req.admin);
+        
+        if (!req.admin || req.admin.role !== "admin") {
             return next(new CustomError("Access denied. Admin only.", 403));
         }
+console.log("nnnnnext");
 
         next();
     } catch (error) {
