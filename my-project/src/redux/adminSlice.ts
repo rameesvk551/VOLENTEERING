@@ -1,0 +1,98 @@
+import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
+import axios from "axios";
+import { User, AdminState } from "../redux/type"; // Ensure correct path
+import server from "../server/app";
+
+// Initial State
+const initialState: AdminState = {
+    volunteers: [],
+    loading: false,
+    error: null,
+};
+
+// Fetch all users (Admin Access Only)
+export const getAllUsers = createAsyncThunk<User[], void>(
+    "admin/getAllUsers",
+    async (_, { rejectWithValue }) => {
+        try {
+            console.log("Fetching all users...");
+            const { data } = await axios.get(`${server}/admin/get-all-volenteers`,{withCredentials:true});
+            console.log("Users fetched:", data);
+            return data.volunteers;
+        } catch (error: any) {
+            console.error("Error fetching users:", error.response?.data || error.message);
+            return rejectWithValue(error.response?.data || "Failed to fetch users");
+        }
+    }
+);
+
+// Delete a user
+export const deleteUser = createAsyncThunk<string, string>(
+    "admin/deleteUser",
+    async (userId, { rejectWithValue }) => {
+        try {
+            await axios.delete(`${server}/admin/block-volunteer/${userId}`);
+            return userId;
+        } catch (error: any) {
+            return rejectWithValue(error.response?.data || "Failed to delete user");
+        }
+    }
+);
+
+// Update a user
+export const updateUser = createAsyncThunk<User, { userId: string; userData: Partial<User> }>(
+    "admin/updateUser",
+    async ({ userId, userData }, { rejectWithValue }) => {
+        try {
+            const { data } = await axios.put(`${server}/admin/edit-volunteer/${userId}`, userData);
+            return data.updatedUser;
+        } catch (error: any) {
+            return rejectWithValue(error.response?.data || "Failed to update user");
+        }
+    }
+);
+
+const adminSlice = createSlice({
+    name: "admin",
+    initialState,
+    reducers: {},
+    extraReducers: (builder) => {
+        builder
+            // Fetch Users
+            .addCase(getAllUsers.pending, (state) => {
+                state.loading = true;
+            })
+            .addCase(getAllUsers.fulfilled, (state, action: PayloadAction<User[]>) => {
+                state.volunteers = action.payload;
+                state.loading = false;
+                state.error = null;
+                console.log("in redddducer",state.volunteers);
+                
+            })
+            .addCase(getAllUsers.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload as string;
+            })
+
+            // Delete User
+            .addCase(deleteUser.fulfilled, (state, action: PayloadAction<string>) => {
+                state.volunteers = state.volunteers.filter((user) => user._id !== action.payload);
+            })
+            .addCase(deleteUser.rejected, (state, action) => {
+                state.error = action.payload as string;
+            })
+
+            // Update User
+            .addCase(updateUser.fulfilled, (state, action: PayloadAction<User>) => {
+                const index = state.volunteers.findIndex((user) => user._id === action.payload._id);
+                if (index !== -1) {
+                    state.volunteers[index] = action.payload;
+                }
+            })
+            .addCase(updateUser.rejected, (state, action) => {
+                state.error = action.payload as string;
+            });
+    },
+});
+
+export default adminSlice.reducer;

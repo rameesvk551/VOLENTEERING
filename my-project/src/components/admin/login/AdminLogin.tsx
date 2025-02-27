@@ -2,15 +2,15 @@
 import React, { useState } from "react";
 import { FcGoogle } from "react-icons/fc";
 import { Toaster, toast } from "sonner";
-import { Link } from "react-router-dom";
-import Button from "../Button"
-import Divider from "../Divider"
-import Logo from "../Logo"
-import Inputbox from "../Inputbox"
+import { Link, Navigate } from "react-router-dom";
+import Button from "../../Button"
+import Divider from "../../Divider"
+import Logo from "../../Logo"
+import Inputbox from "../../Inputbox"
 import {useForm} from "react-hook-form"
-import server from "../../server/app";
+import server from "../../../server/app";
 import axios from "axios";
-const HostLogin = () => {
+const AdminLogin = () => {
  type formData = {
     email:string,
     password:string
@@ -22,11 +22,9 @@ const {errors}=formState
 
   const googleLogin = async () => {};
   const onSubmit=(loginData:formData)=>{
-    console.log("server");
-    
-console.log("login form submitted",loginData);
-axios.post(`${server}/user/login`,loginData,{withCredentials:true}).then((res)=>{
-    console.log("user Loged in succesfully",res);
+axios.post(`${server}/admin/login`,loginData,{withCredentials:true}).then((res)=>{
+    console.log("admin Loged in succesfully",res);
+   
     
 }).catch((error)=>{
     console.log("an error occured",error);
@@ -40,7 +38,7 @@ axios.post(`${server}/user/login`,loginData,{withCredentials:true}).then((res)=>
     <div className='flex w-full  h-[100vh]'>
       <div className='hidden md:flex flex-col gap-y-4 w-1/3 min-h-screen bg-black items-center justify-center'>
         <Logo  />
-        <span className='text-xl font-semibold text-white'>Welcome, back!</span>
+        <span className='text-xl font-semibold text-white'>Welcome , back  Admin!</span>
       </div>
 
       <div className='flex w-full md:w-2/3 h-full bg-white dark:bg-gradient-to-b md:dark:bg-gradient-to-r from-black via-[#071b3e] to-black items-center px-10 md:px-20 lg:px-40'>
@@ -105,14 +103,7 @@ axios.post(`${server}/user/login`,loginData,{withCredentials:true}).then((res)=>
               />
             </form>
 
-            <div className='flex items-center justify-center text-gray-600 dark:text-gray-300'>
-              <p>
-                Dont't have an account?{" "}
-                <Link to='/sign-up' className='text-rose-800 font-medium'>
-                  Sign up
-                </Link>
-              </p>
-            </div>
+           
           </div>
         </div>
       </div>
@@ -122,4 +113,4 @@ axios.post(`${server}/user/login`,loginData,{withCredentials:true}).then((res)=>
   );
 };
 
-export default HostLogin;
+export default AdminLogin;

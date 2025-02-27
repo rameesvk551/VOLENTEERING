@@ -9,6 +9,7 @@ const userSchema = new mongoose.Schema({
   role: { type: String, enum: ["volunteer", "host", "admin"], default: "volunteer" },
   avatar: { type: String, default: "" },
   skills: [{ type: String }], 
+  status:{type:String,default:"active"},
   availability: { type: String, enum: ["full-time", "part-time", "flexible"], default: "flexible" },
 
   verified: { type: Boolean, default: false }, 

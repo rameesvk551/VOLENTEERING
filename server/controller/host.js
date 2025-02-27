@@ -47,13 +47,6 @@ const hashedPassword=await bcrypt.hash(password,10)
    
 }
 
-
-
-
-
-
-
-
 exports.hostLogin=async(req,res,next)=>{
     try {
         console.log("eeethiiiii");

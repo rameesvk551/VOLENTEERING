@@ -37,7 +37,7 @@ const UserSignup = () => {
   const onSubmit=async(formData:formValues)=>{
     console.log("fffform values",formData);
     
-    const data=await axios.post(`${server}/host/signup`,formData).then((res)=>{
+    const data=await axios.post(`${server}/host/signup`,formData,{withCredentials:true}).then((res)=>{
       console.log("host created Success fully ",res.data);
       
     }).catch((error)=>{
