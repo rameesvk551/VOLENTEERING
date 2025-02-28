@@ -4,6 +4,7 @@ const User = require("../model/user")
 const jwt=require("jsonwebtoken")
 const bcrypt=require("bcrypt")
 const CustomError = require("../utils/customError"); 
+const Host = require("../model/host");
 exports.adminLogin = async(req,res,next)=>{
     try {
         const {email,password}=req.body
@@ -62,7 +63,18 @@ try {
 }
 }
 
-
+exports.getAllHosts=async(req,res,next)=>{
+    try {
+        
+        const hosts = await Host.find()
+    
+        
+        return res.json({success:true,hosts})
+    } catch (error) {
+        next(error)
+    }
+    }
+    
 exports.blockUser = async (req,res,next) => {
     try {
         const volunteer = await User.findById(req.params.id);

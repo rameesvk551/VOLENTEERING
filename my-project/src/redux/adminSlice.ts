@@ -1,12 +1,13 @@
 
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import axios from "axios";
-import { User, AdminState, admiAuth } from "../redux/type"; // Ensure correct path
+import { User, AdminState, admiAuth, Host } from "../redux/type"; // Ensure correct path
 import server from "../server/app";
 
 // Initial State
 const initialState: AdminState = {
     volunteers: [],
+    hosts:[],
     loading: false,
     error: null,
     admin: null
@@ -69,6 +70,21 @@ export const updateUser = createAsyncThunk<User, { userId: string; userData: Par
     }
 );
 
+// Fetch all users (Admin Access Only)
+export const getAllHosts = createAsyncThunk<Host[], void>(
+    "admin/getAllHosts",
+    async (_, { rejectWithValue }) => {
+        try {
+            console.log("Fetching all host...");
+            const { data } = await axios.get(`${server}/admin/get-all-hosts`,{withCredentials:true});
+            console.log("host fetched:", data);
+            return data.hosts;
+        } catch (error: any) {
+            console.error("Error fetching hosts:", error.response?.data || error.message);
+            return rejectWithValue(error.response?.data || "Failed to fetch host");
+        }
+    }
+);
 const adminSlice = createSlice({
     name: "admin",
     initialState,
@@ -122,6 +138,21 @@ const adminSlice = createSlice({
                 }
             })
             .addCase(updateUser.rejected, (state, action) => {
+                state.error = action.payload as string;
+            })
+             // Fetch Users
+             .addCase(getAllHosts.pending, (state) => {
+                state.loading = true;
+            })
+            .addCase(getAllHosts.fulfilled, (state, action: PayloadAction<Host[]>) => {
+                state.hosts = action.payload;
+                state.loading = false;
+                state.error = null;
+                console.log("in redddducer",state.volunteers);
+                
+            })
+            .addCase(getAllHosts.rejected, (state, action) => {
+                state.loading = false;
                 state.error = action.payload as string;
             });
     },

@@ -3,7 +3,10 @@ import { DataGrid, GridColDef } from "@mui/x-data-grid";
 import React, { useEffect, useState } from "react";
 import { AiOutlineDelete, AiOutlineEye } from "react-icons/ai";
 import { RxCross1 } from 'react-icons/rx';
+import { useDispatch } from 'react-redux';
 import { Link } from "react-router-dom";
+import { AppDispatch } from '../../redux/store';
+import { getAllHosts } from '../../redux/adminSlice';
 
 
 
@@ -12,6 +15,11 @@ import { Link } from "react-router-dom";
 
 
 const AllHosts = () => {
+  const dispatch=useDispatch<AppDispatch>()
+  useEffect(()=>{
+
+    dispatch(getAllHosts())
+  }[dispatch])
   type rowType = {
     _id: string;
     name: string;
