@@ -67,25 +67,15 @@ const UserSignup = () => {
 
           <div className='w-full space-y-6 flex flex-col justify-start'>
             <div className='max-w-md w-full flex gap-3 md:gap-4 items-center justify-center mb-12'>
-              {showForm && (
-               <IoArrowBackCircleSharp 
-               className="text-2xl lg:text-3xl cursor-pointer text-gray-800 dark:text-gray-400"
-               onClick={() => setShowForm(false)}
-               {...(IoArrowBackCircleSharp as any)}
-             />
-             
-             
-              )}
-              <h2 className='text-2xl lg:text-3xl font-extrabold text-gray-900 dark:text-white'>
-                Sign up for an account
-              </h2>
+        
+              
             </div>
             {showForm ? (
               <form
-                className='max-w-md w-full mt-8 space-y-6 '
+                className='max-w-md w-full  space-y-5 '
               onSubmit={handleSubmit(onSubmit)}
               >
-                <div className='flex flex-col rounded-md shadow-sm -space-y-px gap-6 mb-8'>
+                <div className='flex flex-col rounded-md shadow-sm -space-y-px gap-4 mb-5'>
                 <div className="w-full flex gap-4">
   {/* First Name Field */}
   <div className="flex flex-col w-full">
@@ -131,7 +121,41 @@ const UserSignup = () => {
                     className={`${errors.email? "border-red-500 ":"" }dark:bg-transparent appearance-none block w-full px-3 py-2.5 2xl:py-3 border border-gray-300 dark:border-gray-600 placeholder-gray-300 dark:placeholder-gray-700 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 text-base`}          
                               />
                     {errors.email && <p className='text-red-500 text-sm mt-1'>{errors.email.message}</p>}
-                  
+                    <div className="w-full flex gap-4">
+  {/* First Name Field */}
+  <div className="flex flex-col w-full">
+    <Inputbox
+      label="First Name"
+      type="text"
+      isRequired={true}
+      placeholder="First Name"
+      {...register("firstName", { required: "First Name is required" })}
+      className={`${
+        errors.firstName ? "border-red-500" : ""
+      } dark:bg-transparent appearance-none block w-full px-3 py-2.5 2xl:py-3 border border-gray-300 dark:border-gray-600 placeholder-gray-300 dark:placeholder-gray-700 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 text-base`}
+    />
+    {errors.firstName && (
+      <p className="text-red-500 text-sm mt-1">{errors.firstName.message}</p>
+    )}
+  </div>
+
+  {/* Last Name Field */}
+  <div className="flex flex-col w-full">
+    <Inputbox
+      label="Last Name"
+      type="text"
+      isRequired={true}
+      placeholder="Last Name"
+      {...register("lastName", { required: "Last Name is required" })}
+      className={`${
+        errors.lastName ? "border-red-500" : ""
+      } dark:bg-transparent appearance-none block w-full px-3 py-2.5 2xl:py-3 border border-gray-300 dark:border-gray-600 placeholder-gray-300 dark:placeholder-gray-700 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 text-base`}
+    />
+    {errors.lastName && (
+      <p className="text-red-500 text-sm mt-1">{errors.lastName.message}</p>
+    )}
+  </div>
+</div>               
                   <Inputbox
                     label='Password'
                     type='password'
@@ -150,28 +174,11 @@ const UserSignup = () => {
                     {errors.password && <p className='text-red-500 text-sm mt-1'>{errors.password.message}</p>}
                   
 
-                  <div className='flex items-center justify-between py-4'>
-                    <label
-                      className='flex items-center gap-1 text-base text-black dark:text-gray-500 cursor-pointer'
-                      htmlFor='imgUpload'
-                    >
-                      <input
-                        type='file'
-                        
-                        
-                        className='hidden'
-                        id='imgUpload'
-                        data-max-size='5120'
-                        accept='.jpg, .png, .jpeg'
-                      />
-                      <BiImages />
-                      <span>Picture</span>
-                    </label>
-                  </div>
+            
                 </div>
 
                 <Button
-                  label='Create Account'
+                  label='Continue'
                   type='submit'
                   styles='group relative w-full flex justify-center py-2.5 2xl:py-3 px-4 border border-transparent text-sm font-medium rounded-full text-white bg-black dark:bg-rose-800 hover:bg-rose-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-rose-500 '
                 />

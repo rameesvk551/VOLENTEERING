@@ -51,22 +51,7 @@ const Banner: React.FC<BannerProps> = ({ post }) => {
             Read more...
           </Link>
 
-          <Link
-            to={`/writer/${post.user._id}`}
-            className='flex gap-3 mt-4 items-center'
-          >
-            <img
-              src={post.user.image}
-              alt='User profile'
-              className='object-cover w-10 h-10 rounded-full'
-            />
-            <span className='font-medium text-gray-700 dark:text-slate-500'>
-              {post.user.name}
-            </span>
-            <span className='text-gray-500 dark:text-gray-600'>
-              {new Date(post.createdAt).toDateString()}
-            </span>
-          </Link>
+  
         </div>
       </div>
     </div>

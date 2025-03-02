@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import Banner from "../../components/Banner";
-import Card from "../../components/Card";
+import Card from "../../components/BlogCard";
 
 import { CATEGORIES, posts } from "../../utils/dummyData";
 

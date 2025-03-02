@@ -1,7 +1,7 @@
 import React from 'react'
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import {UserLoginPage, UserSignupPage} from './routes/userRoutes';
-import { HostLoginPage, HostSignupPage } from './routes/hostRoutes';
+import { HostAddDetailsPage, HostLoginPage, HostSignupPage } from './routes/hostRoutes';
 import { BlogDetails, BlogListPage, HomePage, HostDetailsPage, HostListPage } from './routes/publicRoutes';
 import { AdminAllHostPage, AdminAllVolenteersPage, AdminDashbordPage, CreateBlog } from './routes/adminRoutes';
 import AdminLoginPage from './pages/admin/AdminLoginPage';
@@ -12,11 +12,13 @@ const App = () => {
  <BrowserRouter>
       <Routes>
  
-        <Route path="/user/signup" element={<UserSignupPage />} />
+     
         <Route path="/host/signup" element={<HostSignupPage/>} />
-        <Route path="/user/login" element={<UserLoginPage />} />
-        <Route path="/host/login" element={<HostLoginPage/>} />
+         <Route path="/host/login" element={<HostLoginPage/>} />
+         <Route path="/host/add-details" element={<HostAddDetailsPage/>} />
      {/**public routes */}
+     <Route path="/user/signup" element={<UserSignupPage />} />
+     <Route path="/user/login" element={<UserLoginPage />} />
         <Route path="/" element={<HomePage/>} />
         <Route path="/blogs" element={<BlogListPage/>} />
         <Route path="/blog/:id" element={<BlogDetails/>} />

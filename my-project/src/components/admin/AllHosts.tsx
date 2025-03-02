@@ -19,7 +19,7 @@ const AllHosts = () => {
   useEffect(()=>{
 
     dispatch(getAllHosts())
-  }[dispatch])
+  },[dispatch])
   type rowType = {
     _id: string;
     name: string;

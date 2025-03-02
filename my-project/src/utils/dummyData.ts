@@ -1,6 +1,9 @@
-import { MdCastForEducation, MdOutlineSportsHandball } from "react-icons/md";
-import { BsCodeSlash, BsNewspaper } from "react-icons/bs";
-import { GiClothes } from "react-icons/gi";
+
+import { IoHome } from "react-icons/io5";
+import { CiSquareMore } from "react-icons/ci";
+import { MdHotel } from "react-icons/md";
+import { IconType } from "react-icons/lib";
+import { FaRegCalendarCheck } from "react-icons/fa"; // Checked calendar
 
 interface User {
   _id: string;
@@ -23,32 +26,35 @@ interface Post {
   updatedAt: string;
   __v: number;
 }
-export const CATEGORIES = [
+interface Category {
+  label:string,
+  color:string
+  icon?:IconType
+}
+export const CATEGORIES :Category[] = [
   {
-    label: "NEWS",
+    label: "Host Type",
     color: "bg-[#e11d48]",
-    text: "text-[#fff]",
+   icon:IoHome
 
   },
   {
-    label: "SPORTS",
+    label: "Accomadation",
     color: "bg-[#2563eb]",
+  icon:MdHotel 
   
   },
   {
-    label: "CODING",
+    label: "Availability",
     color: "bg-[#000000]",
+    icon:FaRegCalendarCheck
    
   },
+
   {
-    label: "EDUCATION",
-    color: "bg-[#ca8a04]",
-  
-  },
-  {
-    label: "FASHION",
+    label: "More",
     color: "bg-[#9333ea]",
- 
+   icon: CiSquareMore
   },
 ];
 
