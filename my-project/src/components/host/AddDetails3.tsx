@@ -16,8 +16,13 @@ import {
 } from "react-icons/md";
 import { FaLaptopFile, FaWifi } from "react-icons/fa6";
 import { TbCamper } from "react-icons/tb";
+import { useDispatch } from "react-redux";
+import { AppDispatch } from "../../redux/store";
+import { nextStep, prevStep } from "../../redux/hostFormSlice";
 
 const AddDetails3 = () => {
+  const dispatch=useDispatch<AppDispatch>()
+
   type formValues = {
     address: string[];
   };
@@ -106,8 +111,8 @@ const AddDetails3 = () => {
                   />
                 </div>
                 <div className="flex w-full justify-between py-3 px-4 ">
-    <button className='px-4  rounded bg-slate-400' >Back</button>
-    <button className='px-4  rounded bg-slate-400'>Contine</button>
+    <button className='px-4  rounded bg-slate-400'onClick={() => dispatch(prevStep())} >Back</button>
+    <button className='px-4  rounded bg-slate-400' onClick={() => dispatch(nextStep())}>Contine</button>
 </div>
               </div>
             </form>

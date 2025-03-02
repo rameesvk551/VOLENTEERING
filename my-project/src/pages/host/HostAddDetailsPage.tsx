@@ -1,13 +1,12 @@
 import React from 'react'
-import AddDetais from '../../components/host/AddDetais'
-import AddDetails2 from '../../components/host/AddDetails2'
-import AddDetails3 from '../../components/host/AddDetails3'
-import AddDetails4 from '../../components/host/AddDetails4'
+
+import AddImage from '../../components/host/AddImage'
+import MultiStepForm from '../../components/host/MultiStepForm'
 
 const HostAddDetailsPage = () => {
   return (
     <div>
-      <AddDetails4/>
+   <MultiStepForm/>
     </div>
   )
 }

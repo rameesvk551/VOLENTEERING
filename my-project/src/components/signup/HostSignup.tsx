@@ -6,46 +6,55 @@ import Inputbox from "../Inputbox"
 import { FcGoogle } from "react-icons/fc";
 import { Toaster, toast } from "sonner";
 import { Link } from "react-router-dom";
-import { BiImages } from "react-icons/bi";
-import { IoArrowBackCircleSharp } from "react-icons/io5";
 import { useForm } from "react-hook-form";
 import axios from 'axios'
 import server from '../../server/app'
+import { useDispatch } from 'react-redux'
+import { AppDispatch } from '../../redux/store'
+import { nextStep } from '../../redux/hostFormSlice'
 
 
-
-const UserSignup = () => {
-
+const HostSignup = () => {
+const dispatch=useDispatch<AppDispatch>()
 
   type formValues={
     firstName:string,
     lastName:string,
     email:string,
     password:string,
+    confirmPassword:string,
+    phone:number
 
   
   }
  const form=useForm<formValues>()
- const {register,handleSubmit,formState}=form
+ const {register,handleSubmit,watch,formState}=form
  const {errors}=formState
   const [showForm, setShowForm] = useState(false);
-
+  const passwordValue = watch("password");
 
 
 
   const googleLogin = async () => {};
-  const onSubmit=async(formData:formValues)=>{
-    console.log("fffform values",formData);
-    
-    const data=await axios.post(`${server}/host/signup`,formData,{withCredentials:true}).then((res)=>{
-      console.log("host created Success fully ",res.data);
+  const onSubmit = async (formData: formValues) => {
+    if (!formData.firstName || !formData.lastName || !formData.email ||
+       !formData.password  || !formData.confirmPassword || !formData.phone) {
+      toast.error("Please fill in all required fields.");
+      return;
+    }
+  
+    try {
+      const { data } = await axios.post(`${server}/host/signup`, formData, { withCredentials: true });
+      console.log("Host created successfully", data);
+      dispatch(nextStep());
+      console.log("dispatch");
       
-    }).catch((error)=>{
-      console.log("an error ococred",error);
-      
-    })
-    
-  }
+    } catch (error) {
+      console.log("An error occurred", error);
+      toast.error("Signup failed. Please try again.");
+    }
+  };
+  
 
 
  
@@ -122,56 +131,67 @@ const UserSignup = () => {
                               />
                     {errors.email && <p className='text-red-500 text-sm mt-1'>{errors.email.message}</p>}
                     <div className="w-full flex gap-4">
-  {/* First Name Field */}
-  <div className="flex flex-col w-full">
-    <Inputbox
-      label="First Name"
-      type="text"
-      isRequired={true}
-      placeholder="First Name"
-      {...register("firstName", { required: "First Name is required" })}
-      className={`${
-        errors.firstName ? "border-red-500" : ""
-      } dark:bg-transparent appearance-none block w-full px-3 py-2.5 2xl:py-3 border border-gray-300 dark:border-gray-600 placeholder-gray-300 dark:placeholder-gray-700 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 text-base`}
-    />
-    {errors.firstName && (
-      <p className="text-red-500 text-sm mt-1">{errors.firstName.message}</p>
-    )}
-  </div>
+    {/* Password */}
+    <div className="flex flex-col w-full">
+      <Inputbox
+        label="Password"
+        type="password"
+        isRequired={true}
+        placeholder="Password"
+        {...register("password", {
+          required: "Password is required",
+          minLength: {
+            value: 6,
+            message: "Password must be at least 6 characters",
+          },
+        })}
+        className={`${
+          errors.password ? "border-red-500" : ""
+        } dark:bg-transparent appearance-none block w-full px-3 py-2.5 2xl:py-3 border border-gray-300 dark:border-gray-600 placeholder-gray-300 dark:placeholder-gray-700 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 text-base`}
+      />
+      {errors.password && (
+        <p className="text-red-500 text-sm mt-1">{errors.password.message}</p>
+      )}
+    </div>
 
-  {/* Last Name Field */}
-  <div className="flex flex-col w-full">
-    <Inputbox
-      label="Last Name"
-      type="text"
-      isRequired={true}
-      placeholder="Last Name"
-      {...register("lastName", { required: "Last Name is required" })}
-      className={`${
-        errors.lastName ? "border-red-500" : ""
-      } dark:bg-transparent appearance-none block w-full px-3 py-2.5 2xl:py-3 border border-gray-300 dark:border-gray-600 placeholder-gray-300 dark:placeholder-gray-700 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 text-base`}
-    />
-    {errors.lastName && (
-      <p className="text-red-500 text-sm mt-1">{errors.lastName.message}</p>
-    )}
-  </div>
-</div>               
+    {/* Confirm Password */}
+    <div className="flex flex-col w-full">
+      <Inputbox
+        label="Confirm Password"
+        type="password"
+        isRequired={true}
+        placeholder="Confirm Password"
+        {...register("confirmPassword", {
+          required: "Confirm Password is required",
+          validate: (value) =>
+            value === passwordValue || "Passwords do not match",
+        })}
+        className={`${
+          errors.confirmPassword ? "border-red-500" : ""
+        } dark:bg-transparent appearance-none block w-full px-3 py-2.5 2xl:py-3 border border-gray-300 dark:border-gray-600 placeholder-gray-300 dark:placeholder-gray-700 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 text-base`}
+      />
+      {errors.confirmPassword && (
+        <p className="text-red-500 text-sm mt-1">
+          {errors.confirmPassword.message}
+        </p>
+      )}
+    </div>
+    </div>              
                   <Inputbox
-                    label='Password'
-                    type='password'
+                    label='Phone'
+                    type='phone'
                     isRequired={true}
-                    placeholder='Password'
-                    {...register("password", { 
-                      required: "Password is required",
-                      minLength: { value: 8, message: "Password must be at least 8 characters long" },
+                    placeholder='Enter your phone number'
+                    {...register("phone", {
+                      required: "Phone number is required",
                       pattern: {
-                        value: /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/,
-                        message: "Password must contain at least one letter and one number"
+                        value: /^[0-9]{10}$/,
+                        message: "Invalid phone number, must be 10 digits"
                       }
                     })}
-                    className={`${errors.password? "border-red-500 ":""} "dark:bg-transparent appearance-none block w-full px-3 py-2.5 2xl:py-3 border border-gray-300 dark:border-gray-600 placeholder-gray-300 dark:placeholder-gray-700 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 text-base`}          
+                    className={`${errors.phone? "border-red-500 ":""} "dark:bg-transparent appearance-none block w-full px-3 py-2.5 2xl:py-3 border border-gray-300 dark:border-gray-600 placeholder-gray-300 dark:placeholder-gray-700 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 text-base`}          
                               />
-                    {errors.password && <p className='text-red-500 text-sm mt-1'>{errors.password.message}</p>}
+                    {errors.phone&& <p className='text-red-500 text-sm mt-1'>{errors.phone.message}</p>}
                   
 
             
@@ -180,6 +200,7 @@ const UserSignup = () => {
                 <Button
                   label='Continue'
                   type='submit'
+                 
                   styles='group relative w-full flex justify-center py-2.5 2xl:py-3 px-4 border border-transparent text-sm font-medium rounded-full text-white bg-black dark:bg-rose-800 hover:bg-rose-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-rose-500 '
                 />
               </form>
@@ -218,4 +239,4 @@ const UserSignup = () => {
   )
 }
 
-export default UserSignup
+export default HostSignup

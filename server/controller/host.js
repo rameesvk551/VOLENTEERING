@@ -2,7 +2,7 @@ const Host = require("../model/host")
 const jwt=require("jsonwebtoken")
 const bcrypt=require("bcrypt")
 const CustomError = require("../utils/customError")
-
+const axios=require("axios")
 exports.hostSignup= async(req,res,next)=>{
     console.log("host hitting");
     
@@ -80,6 +80,32 @@ exports.hostLogin=async(req,res,next)=>{
 }
 
 
+// Route to fetch places
+ exports.fetchAddressPlaces=async (req, res) => {
+    const { input } = req.query;
+
+    if (!input) {
+        return res.status(400).json({ error: "Input query is required" });
+    }
+
+    try {
+        const response = await axios.get("https://nominatim.openstreetmap.org/search", {
+            params: {
+              q:input,
+              format: "json",
+              countrycodes: "IN",
+            },
+          });
+          console.log(response.data);
+          
+          ;
+
+        res.json(response.data);
+    } catch (error) {
+        console.error("Error fetching places:", error);
+        res.status(500).json({ error: "Failed to fetch places" });
+    }
+}
 
 
 

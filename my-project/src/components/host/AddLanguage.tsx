@@ -8,8 +8,13 @@ import TextArea from '../TextArea';
 import { boolean } from 'yup';
 import Inputbox from '../Inputbox';
 import { useForm } from 'react-hook-form';
+import { useDispatch } from 'react-redux';
+import { AppDispatch } from '../../redux/store';
+import { nextStep, prevStep } from '../../redux/hostFormSlice';
 
-const AddDetails2 = () => {
+const AddLanguage = () => {
+  const dispatch=useDispatch<AppDispatch>()
+
     type formValues={
         language:"string"
         languageLevel:"string"
@@ -112,7 +117,7 @@ const [openLanugaeAndLevel,setOpenLanguageAndLevel]=useState <boolean>(false)
 </div>
 
 <h1 className='pt-4 pl-4 pb-2 font-thin'>
-    More to Say About language exchange
+    More to Say About language exchange (optional)
 
 </h1>
 <textarea 
@@ -121,9 +126,9 @@ const [openLanugaeAndLevel,setOpenLanguageAndLevel]=useState <boolean>(false)
   focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 text-base "
 />
 
-<div className="flex w-full justify-between py-3 px-4 ">
-    <button className='px-4  rounded bg-slate-400' >Back</button>
-    <button className='px-4  rounded bg-slate-400'>Contine</button>
+<div className="flex w-full justify-between py-3 px-4 " >
+    <button className='px-4  rounded bg-slate-400' onClick={() => dispatch(prevStep())} >Back</button>
+    <button className='px-4  rounded bg-slate-400' onClick={() => dispatch(nextStep())}>Contine</button>
 </div>
               </div>
   
@@ -140,4 +145,4 @@ const [openLanugaeAndLevel,setOpenLanguageAndLevel]=useState <boolean>(false)
   );
 }
 
-export default AddDetails2
+export default AddLanguage
