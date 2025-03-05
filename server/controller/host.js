@@ -47,6 +47,52 @@ const hashedPassword=await bcrypt.hash(password,10)
    
 }
 
+
+ exports.addDetails = async (req, res, next) => {
+  try {
+    console.log("hhhhcccccccccchhost details");
+    
+    const {
+      email,
+      address,
+      description,
+      selectedHelpTypes,
+      allowed,
+      accepted,
+      languageDescription,
+      languageAndLevel,
+      showIntreastInLanguageExchange,
+      privateComment,
+      organisation,
+    } = req.body;
+ console.log(req.body);
+ 
+    let host = await Host.findOne({ email });
+
+    if (host) {
+      host.address = address;
+      host.description = description;
+      host.selectedHelpTypes = selectedHelpTypes;
+      host.allowed = allowed;
+      host.accepted = accepted;
+      host.languageDescription = languageDescription;
+      host.languageAndLevel = languageAndLevel;
+      host.showIntreastInLanguageExchange = showIntreastInLanguageExchange;
+      host.privateComment = privateComment;
+      host.organisation = organisation;
+console.log("hhhhhhhhhost ",host);
+
+      await host.save(); 
+      return res.status(200).json({ message: "Host details updated successfully", host });
+    } else {
+    }
+  } catch (error) {
+    console.log(error);
+    
+    next(error)
+      }
+};
+
 exports.hostLogin=async(req,res,next)=>{
     try {
         console.log("eeethiiiii");

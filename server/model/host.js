@@ -19,6 +19,19 @@ const hostSchema = new mongoose.Schema(
       lowercase: true,
       trim: true,
     },
+    address: { type: String, },
+    description: { type: String,  },
+    selectedHelpTypes: { type: [String], default: [] },
+    allowed: { type: [String], default: [] },
+    accepted: { type: [String], default: [] },
+    languageDescription: { type: String,  },
+    languageAndLevel: [{
+      language: { type: String, required: true },
+      level: { type: String, required: true }
+    }],
+    showIntreastInLanguageExchange: { type: Boolean,  },
+    privateComment: { type: String },
+    organisation: { type: String },
     password: {
       type: String,
       required: [true, "Password is required"],
@@ -29,35 +42,6 @@ const hostSchema = new mongoose.Schema(
       type: String,
       default: "https://example.com/default-avatar.png", // ✅ Change this to a real image URL
     },
-    description: {
-      type: String,
-      maxlength: [500, "Description cannot exceed 500 characters"],
-    },
-    helpType: [
-      {
-        type: String,
-        enum: [
-          "Gardening",
-          "Help with Computers",
-          "Teaching",
-          "Animal Care",
-          "Cooking",
-          "Construction",
-          "CharityWork",
-          "AnimalCare",
-          "LanguageExchange",
-          "ArtProject",
-          "Gardening",
-          "Help with Computers",
-          "Teaching",
-          "Animal Care",
-          "Hospitality/Tourim",
-          "GeneralMaintanance",
-          "cooking",
-          "FamilyHelp"
-        ],
-      },
-    ],
     minimumStay: {
       type: String,
       enum: ["No Minimum", "One Week", "One Month"],
@@ -75,32 +59,13 @@ const hostSchema = new mongoose.Schema(
     culturalExchange: {
       type: String,
     },
-    languages: [
-      {
-        language: { type: String },
-        level: {
-          type: String,
-          enum: ["Beginner", "Intermediate", "Advanced", "Fluent"],
-        },
-      },
-    ],
-    accommodationDescription: {
-      type: String,
-    },
+ 
     role: {
       type: String,
       enum: ["host", "admin"],
       default: "host",
     },
-    acceptingTravellers: [
-      {
-        type: String,
-        enum: ["Digital Nomad", "Family", "Handicapped"],
-      },
-    ],
-    address: {
-      type: String,
-    },
+  
     isVerified: {
       type: Boolean,
       default: false,
@@ -109,5 +74,7 @@ const hostSchema = new mongoose.Schema(
   { timestamps: true } // Adds createdAt & updatedAt automatically
 );
 
-// Export the model
-module.exports = mongoose.model("Host", hostSchema);
+
+
+
+module.exports =  mongoose.model("Host", hostSchema);

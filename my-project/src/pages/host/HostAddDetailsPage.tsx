@@ -1,6 +1,6 @@
 import React from 'react'
 
-import AddImage from '../../components/host/AddImage'
+import AddImage from '../../components/host/AddImages'
 import MultiStepForm from '../../components/host/MultiStepForm'
 
 const HostAddDetailsPage = () => {

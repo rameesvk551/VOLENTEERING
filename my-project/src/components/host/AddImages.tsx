@@ -4,6 +4,9 @@ import Divider from "../Divider";
 import Logo from "../Logo";
 import { IoIosAddCircleOutline } from "react-icons/io";
 import { IoMdClose } from "react-icons/io";
+import { useDispatch } from "react-redux";
+import { AppDispatch } from "../../redux/store";
+import { addDetails } from "../../redux/hostFormSlice";
 
 type UploadedImage = {
   file: File;
@@ -12,6 +15,22 @@ type UploadedImage = {
 };
 
 const AddImage = () => {
+  const dispatch = useDispatch<AppDispatch>();
+
+
+  const submitDetails =()=>{
+    console.log("aaadi g");
+    
+    dispatch(addDetails())
+      .unwrap()
+      .then((data) => {
+        console.log("Details submitted:", data);
+      })
+      .catch((error) => {
+        console.error("Submission error:", error);
+      });
+
+  }
   const [images, setImages] = useState<UploadedImage[]>([]);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -129,9 +148,10 @@ const AddImage = () => {
                     className={`px-4 py-2 rounded ${
                       images.length >= 3
                         ? "bg-green-500 hover:bg-green-600"
-                        : "bg-gray-300 cursor-not-allowed"
+                        : "bg-gray-300 "
                     } transition`}
-                    disabled={images.length < 3}
+                   // disabled={images.length < 3}cursor-not-allowed
+                   onClick={submitDetails}
                   >
                     Continue
                   </button>

@@ -1,85 +1,67 @@
-import React, { useState, useEffect } from "react";
-import axios from "axios";
-import MapComponent from "./MapComponent"; // Import the map component
-import server from "../../server/app";
+import React, { useState } from "react";
+import Logo from "../Logo";
+import { Toaster } from "sonner";
+import Divider from "../Divider";
+import { useForm } from "react-hook-form";
+import PlacesAutocomplete from "../placeAutoCompleteAndMap/PlaceAutoComplete";
+import { AppDispatch } from "../../redux/store";
+import { useDispatch } from "react-redux";
+import { nextStep, prevStep } from "../../redux/hostFormSlice";
 
-type AddressValues = {
-  place_id: string;
-  display_name: string;
-  lat: string;
-  lon: string;
-};
+const Address= () => {
+  const dispatch=useDispatch<AppDispatch>()
 
-const PlacesAutocomplete: React.FC = () => {
-  const [input, setInput] = useState("");
-  const [suggestions, setSuggestions] = useState<AddressValues[]>([]);
-  const [selectedPlace, setSelectedPlace] = useState<AddressValues | null>(null);
-  const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    if (input.length < 3) {
-      setSuggestions([]); 
-      return;
-    }
-
-    const fetchSuggestions = async () => {
-      setLoading(true);
-      try {
-        const response = await axios.get(`${server}/host/places?input=${input}`);
-        setSuggestions(response.data || []);
-      } catch (error) {
-        console.error("Error fetching places:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    const timeoutId = setTimeout(fetchSuggestions, 300);
-    return () => clearTimeout(timeoutId);
-  }, [input]);
-
-  const handleSelect = (place: AddressValues) => {
-    setInput(place.display_name);
-    setSelectedPlace(place);
-    setSuggestions([]);
+  type formValues = {
+    address: "[]";
+    email: string;
   };
+  const form = useForm<formValues>();
+  const { register, handleSubmit, formState } = form;
+  const { errors } = formState;
 
   return (
-    <div className="relative w-full max-w-lg mx-auto mt-10">
-      <input
-        type="text"
-        value={input}
-        onChange={(e) => setInput(e.target.value)}
-        placeholder="Search location..."
-        className="mr-10 block mb-3 px-3 py-2.5 border w-full border-gray-300 rounded-md focus:outline-none"
-      />
+    <div className="flex w-full h-[100vh]">
+      {/* LEFT */}
+      <div className="hidden md:flex flex-col gap-y-4 w-1/3 h-full bg-black items-center justify-center">
+        <Logo />
+        <span className="text-xl font-semibold text-white">Welcome!</span>
+      </div>
 
-      {loading && <p className="text-gray-500 text-sm">Loading...</p>}
+      {/* RIGHT */}
+      <div className="flex w-full md:w-2/3 h-full bg-white   md:px-20 ">
+        <div className="w-full h-full flex flex-col items-center    sm:px-0 lg:px-8">
+          <div className="block mb-10 md:hidden -ml-8">
+            <Logo />
+          </div>
 
-      {suggestions.length > 0 && (
-        <ul className="absolute left-0 right-0 bg-white border mt-2 p-2 shadow-md z-10">
-          {suggestions.map((place) => (
-            <li
-              key={place.place_id}
-              onClick={() => handleSelect(place)}
-              className="cursor-pointer p-2 hover:bg-gray-200"
-            >
-              {place.display_name}
-            </li>
-          ))}
-        </ul>
-      )}
+          <div className=" w-full md:w-[80%] lg:w-[90%] xl:w-[95%]  flex flex-col">
+            <form className=" w-full  space-y-6">
+              <div className="flex flex-col rounded-md shadow-sm -space-y-px border border-black  mt-5">
+                <h1 className="ml-5 pb-4">
+                  {" "}
+                  Enter your addre where you will ne hoting
+                </h1>
+                <span className="ml-5 mb-2" >
+                  your addres (including streeet/house/building number)
+                </span>{" "}
+                <PlacesAutocomplete/>
+                <Divider />
 
-      {selectedPlace && (
-        <>
-          <p className="mt-4 text-green-600 font-bold">Selected: {selectedPlace.display_name}</p>
+                <div className="flex w-full justify-between py-3 px-4 ">
+                  <button className="px-4  rounded bg-slate-400" onClick={() => dispatch(prevStep())}>Back</button>
+                  <button className="px-4  rounded bg-slate-400" onClick={() => dispatch(nextStep())}>
+                    Contine
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
 
-          <h1 className="pt-4">Your exact location on OpenStreetMap</h1>
-          <MapComponent lat={parseFloat(selectedPlace.lat)} lon={parseFloat(selectedPlace.lon)} />
-        </>
-      )}
+      <Toaster richColors />
     </div>
   );
 };
 
-export default PlacesAutocomplete;
+export default Address;

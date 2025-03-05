@@ -11,7 +11,7 @@ import axios from 'axios'
 import server from '../../server/app'
 import { useDispatch } from 'react-redux'
 import { AppDispatch } from '../../redux/store'
-import { nextStep } from '../../redux/hostFormSlice'
+import { nextStep, updateEmail } from '../../redux/hostFormSlice'
 
 
 const HostSignup = () => {
@@ -44,8 +44,10 @@ const dispatch=useDispatch<AppDispatch>()
     }
   
     try {
-      const { data } = await axios.post(`${server}/host/signup`, formData, { withCredentials: true });
-      console.log("Host created successfully", data);
+      const  data  = await axios.post(`${server}/host/signup`, formData, { withCredentials: true });
+      dispatch(updateEmail(data))
+
+      console.log("Host created successfully ", data);
       dispatch(nextStep());
       console.log("dispatch");
       
@@ -128,8 +130,10 @@ const dispatch=useDispatch<AppDispatch>()
                     placeholder='email@example.com'
                     {...register("email",{required:"email is requeired"})}
                     className={`${errors.email? "border-red-500 ":"" }dark:bg-transparent appearance-none block w-full px-3 py-2.5 2xl:py-3 border border-gray-300 dark:border-gray-600 placeholder-gray-300 dark:placeholder-gray-700 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 text-base`}          
-                              />
+                     
+                       />
                     {errors.email && <p className='text-red-500 text-sm mt-1'>{errors.email.message}</p>}
+                    
                     <div className="w-full flex gap-4">
     {/* Password */}
     <div className="flex flex-col w-full">
