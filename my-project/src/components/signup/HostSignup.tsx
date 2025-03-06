@@ -44,10 +44,10 @@ const dispatch=useDispatch<AppDispatch>()
     }
   
     try {
-      const  data  = await axios.post(`${server}/host/signup`, formData, { withCredentials: true });
-      dispatch(updateEmail(data))
-
-      console.log("Host created successfully ", data);
+      const response = await axios.post(`${server}/host/signup`, formData, { withCredentials: true });
+      const data = response.data; 
+      dispatch(updateEmail(data.host.email));
+      console.log("Host created successfully ", data.host.email);
       dispatch(nextStep());
       console.log("dispatch");
       

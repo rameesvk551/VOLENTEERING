@@ -4,9 +4,11 @@ import Divider from "../Divider";
 import Logo from "../Logo";
 import { IoIosAddCircleOutline } from "react-icons/io";
 import { IoMdClose } from "react-icons/io";
-import { useDispatch } from "react-redux";
-import { AppDispatch } from "../../redux/store";
-import { addDetails } from "../../redux/hostFormSlice";
+import { useDispatch, useSelector } from "react-redux";
+import { AppDispatch, RootState } from "../../redux/store";
+import { addImages, removeImage, resetForm, updateImageDescription } from "../../redux/hostFormSlice";
+import axios from "axios";
+import server from "../../server/app";
 
 type UploadedImage = {
   file: File;
@@ -16,62 +18,93 @@ type UploadedImage = {
 
 const AddImage = () => {
   const dispatch = useDispatch<AppDispatch>();
+  const images = useSelector((state: RootState) => state.hostForm.data.images);
+  const allData = useSelector((state: RootState) => state.hostForm.data);
 
-
-  const submitDetails =()=>{
-    console.log("aaadi g");
-    
-    dispatch(addDetails())
-      .unwrap()
-      .then((data) => {
-        console.log("Details submitted:", data);
-      })
-      .catch((error) => {
-        console.error("Submission error:", error);
+  const uploadToCloudinary = async (file: File) => {
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("upload_preset", "unsigned_upload"); 
+  
+      const cloudinaryResponse = await fetch("https://api.cloudinary.com/v1_1/djruimp0d/image/upload", {
+        method: "POST",
+        body: formData,
       });
+  
+      const data = await cloudinaryResponse.json();
+      return data.secure_url || null;
+    } catch (error) {
+      console.error("Error uploading to Cloudinary:", error);
+      return null;
+    }
+  };
+  
 
-  }
-  const [images, setImages] = useState<UploadedImage[]>([]);
+  const handleSubmit = async () => {
+    try {
+      const uploadedImageUrls = await Promise.all(
+        images.map(image => uploadToCloudinary(image.file)) // ✅ Pass `image.file`
+      );
+  
+      console.log("Uploaded Image URLs:", uploadedImageUrls);
+      
+      const requestBody = {
+        ...allData, 
+        images: uploadedImageUrls
+          .filter(url => url !== null) // ✅ Filter out failed uploads
+          .map((url, index) => ({
+            url,
+            description: images[index].description || "",
+          })),
+      };
+  
+      const response = await axios.post(`${server}/host/add-details`, requestBody);
+
+      console.log("Success:", response.data);
+      dispatch(resetForm());
+      toast.success("Images uploaded successfully!");
+    } catch (error) {
+      console.error("Error sending images to backend:", error);
+      toast.error("Failed to upload images.");
+    }
+  };
+  
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files) {
       const selectedFiles = Array.from(event.target.files);
-
-      if (selectedFiles.length < 1 && images.length + selectedFiles.length < 1) {
-        toast.error("Please add at least three photos.");
-        return;
-      }
-
-      const newImages = selectedFiles.map((file) => ({
-        file,
-        preview: URL.createObjectURL(file),
-        description: "",
-      }));
-
-      setImages((prev) => [...prev, ...newImages]);
-      toast.success("Files uploaded successfully!");
+      const newImages = selectedFiles.map((file) => {
+        const previewUrl = URL.createObjectURL(file);
+        return { file, preview: previewUrl, description: "" };
+      });
+  
+      dispatch(addImages(newImages));
+  
+      // Cleanup object URLs when the component unmounts
+      newImages.forEach(image => {
+        setTimeout(() => URL.revokeObjectURL(image.preview), 5000);
+      });
     }
   };
-
+  
   const handleDescriptionChange = (index: number, description: string) => {
-    setImages((prev) =>
-      prev.map((img, i) => (i === index ? { ...img, description } : img))
-    );
+    dispatch(updateImageDescription({ index, description }));
   };
 
-  const removeImage = (index: number) => {
-    setImages((prev) => prev.filter((_, i) => i !== index));
+  const handleRemoveImage = (index: number, event: React.MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault(); // ✅ Prevent button from triggering form submission
+    dispatch(removeImage(index));
   };
+  
 
   return (
     <div className="flex w-full h-[100vh]">
-      {/* LEFT */}
       <div className="hidden md:flex flex-col gap-y-4 w-1/3 h-full bg-black items-center justify-center">
         <Logo />
         <span className="text-xl font-semibold text-white">Welcome!</span>
       </div>
 
-      {/* RIGHT */}
       <div className="flex w-full md:w-2/3 h-full bg-white md:px-20">
         <div className="w-full h-full flex flex-col items-center sm:px-0 lg:px-8">
           <div className="block mb-10 md:hidden -ml-8">
@@ -81,11 +114,7 @@ const AddImage = () => {
           <div className="w-full md:w-[80%] lg:w-[90%] xl:w-[95%] flex flex-col">
             <form className="w-full space-y-6">
               <div className="flex flex-col rounded-md shadow-sm border border-black mt-5 p-5">
-                <h1 className="ml-5 pb-4 text-lg font-semibold">
-                  Add a minimum of three photos
-                </h1>
-
-                {/* File Upload */}
+                <h1 className="ml-5 pb-4 text-lg font-semibold">Add a minimum of three photos</h1>
                 <div className="flex flex-col w-full items-center justify-center h-[200px] bg-blue-300 rounded-lg">
                   <label
                     htmlFor="file-upload"
@@ -104,57 +133,44 @@ const AddImage = () => {
                   />
                 </div>
 
-                {/* Display Uploaded Images */}
                 {images.length > 0 && (
                   <div className="mt-4 grid grid-cols-2 md:grid-cols-3 gap-4">
                     {images.map((image, index) => (
                       <div key={index} className="relative flex flex-col items-center">
-                        {/* Image Preview */}
                         <img
                           src={image.preview}
                           alt="Uploaded Preview"
                           className="w-32 h-32 object-cover rounded-lg border border-gray-300"
                         />
-                        {/* Remove Image Button */}
-                        <button
-                          className="absolute top-0 right-0 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
-                          onClick={() => removeImage(index)}
-                        >
+                      <button
+  type="button" 
+  className="absolute top-0 right-0 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+  onClick={(e) => handleRemoveImage(index, e)}
+>
                           <IoMdClose size={18} />
                         </button>
-                        {/* Description Input */}
                         <input
                           type="text"
                           placeholder="Add description..."
                           value={image.description}
-                          onChange={(e) =>
-                            handleDescriptionChange(index, e.target.value)
-                          }
+                          onChange={(e) => handleDescriptionChange(index, e.target.value)}
                           className="mt-2 p-1 w-full border border-gray-300 rounded-md text-sm"
                         />
                       </div>
                     ))}
                   </div>
                 )}
-
                 <Divider />
-
-                {/* Buttons */}
                 <div className="flex w-full justify-between py-3 px-4">
-                  <button className="px-4 py-2 rounded bg-gray-400 hover:bg-gray-500 transition">
-                    Back
-                  </button>
+                  <button className="px-4 py-2 rounded bg-gray-400 hover:bg-gray-500 transition">Back</button>
                   <button
-                    className={`px-4 py-2 rounded ${
-                      images.length >= 3
-                        ? "bg-green-500 hover:bg-green-600"
-                        : "bg-gray-300 "
-                    } transition`}
-                   // disabled={images.length < 3}cursor-not-allowed
-                   onClick={submitDetails}
-                  >
-                    Continue
-                  </button>
+  type="button" // ✅ Prevent default form submission
+  className={`px-4 py-2 rounded ${images.length >= 3 ? "bg-green-500 hover:bg-green-600" : "bg-gray-300 cursor-not-allowed"} transition`}
+  disabled={images.length < 3}
+  onClick={handleSubmit}
+>
+  Continue
+</button>
                 </div>
               </div>
             </form>

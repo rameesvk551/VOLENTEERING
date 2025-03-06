@@ -19,15 +19,23 @@ const hostSchema = new mongoose.Schema(
       lowercase: true,
       trim: true,
     },
-    address: { type: String, },
+    address: {
+      street: { type: String,  },
+      city: { type: String,  },
+      state: { type: String,  },
+      country: { type: String,  },
+      zipCode: { type: String, },
+      latitude: { type: Number,},
+      longitude: { type: Number,},
+    },
     description: { type: String,  },
     selectedHelpTypes: { type: [String], default: [] },
     allowed: { type: [String], default: [] },
     accepted: { type: [String], default: [] },
     languageDescription: { type: String,  },
     languageAndLevel: [{
-      language: { type: String, required: true },
-      level: { type: String, required: true }
+      language: { type: String },
+      level: { type: String }
     }],
     showIntreastInLanguageExchange: { type: Boolean,  },
     privateComment: { type: String },
@@ -38,10 +46,12 @@ const hostSchema = new mongoose.Schema(
       minlength: [6, "Password must be at least 6 characters"],
       select: false, // 🔒 Hide password in queries
     },
-    images: {
-      type: String,
-      default: "https://example.com/default-avatar.png", // ✅ Change this to a real image URL
-    },
+    images: [
+      {
+        url: String, // Cloudinary image URL
+        description: String, // Image-specific description
+      },
+    ],
     minimumStay: {
       type: String,
       enum: ["No Minimum", "One Week", "One Month"],

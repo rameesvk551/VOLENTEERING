@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { FcGoogle } from "react-icons/fc";
 import { Toaster, toast } from "sonner";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import Button from "../Button"
 import Divider from "../Divider"
 import Logo from "../Logo"
@@ -11,6 +11,7 @@ import {useForm} from "react-hook-form"
 import server from "../../server/app";
 import axios from "axios";
 const HostLogin = () => {
+  const navigate = useNavigate();
  type formData = {
     email:string,
     password:string
@@ -25,9 +26,10 @@ const {errors}=formState
     console.log("server");
     
 console.log("login form submitted",loginData);
-axios.post(`${server}/user/login`,loginData,{withCredentials:true}).then((res)=>{
-    console.log("user Loged in succesfully",res);
-    
+axios.post(`${server}/host/login`,loginData,{withCredentials:true}).then((res)=>{
+    console.log("host Loged in succesfully",res);
+
+     navigate("/host/add-details")
 }).catch((error)=>{
     console.log("an error occured",error);
     

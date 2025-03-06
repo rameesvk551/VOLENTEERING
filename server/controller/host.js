@@ -48,12 +48,11 @@ const hashedPassword=await bcrypt.hash(password,10)
 }
 
 
- exports.addDetails = async (req, res, next) => {
+exports.addDetails = async (req, res, next) => {
   try {
-    console.log("hhhhcccccccccchhost details");
-    
+    console.log("Received host details");
+
     const {
-      email,
       address,
       description,
       selectedHelpTypes,
@@ -61,37 +60,60 @@ const hashedPassword=await bcrypt.hash(password,10)
       accepted,
       languageDescription,
       languageAndLevel,
+      imageDescriptions,
       showIntreastInLanguageExchange,
       privateComment,
       organisation,
     } = req.body;
- console.log(req.body);
- 
+    const email = req.body.email?.data?.host?.email || req.body.email;
+
+    console.log("Email:", email);
+    console.log("Request Body:", req.body);
+
     let host = await Host.findOne({ email });
 
-    if (host) {
-      host.address = address;
-      host.description = description;
-      host.selectedHelpTypes = selectedHelpTypes;
-      host.allowed = allowed;
-      host.accepted = accepted;
-      host.languageDescription = languageDescription;
-      host.languageAndLevel = languageAndLevel;
-      host.showIntreastInLanguageExchange = showIntreastInLanguageExchange;
-      host.privateComment = privateComment;
-      host.organisation = organisation;
-console.log("hhhhhhhhhost ",host);
-
-      await host.save(); 
-      return res.status(200).json({ message: "Host details updated successfully", host });
-    } else {
+    if (!host) {
+      return res.status(404).json({ message: "Host not found" });
     }
-  } catch (error) {
-    console.log(error);
+
+    let uploadedImages = [];
+    if (req.files && req.files.length > 0) {
+      uploadedImages = await Promise.all(
+        req.files.map(async (file, index) => {
+          const result = await cloudinary.uploader.upload(file.path);
+          return {
+            url: result.secure_url,
+            description: imageDescriptions[index] || "",
+          };
+        })
+      );
+      
+
+      host.images = [...host.images, ...uploadedImages];
+    }
+    console.log(host.images);
     
-    next(error)
-      }
-};
+
+    host.address = address;
+    host.description = description;
+    host.selectedHelpTypes = selectedHelpTypes;
+    host.allowed = allowed;
+    host.accepted = accepted;
+    host.languageDescription = languageDescription;
+    host.languageAndLevel = languageAndLevel;
+    host.showIntreastInLanguageExchange = showIntreastInLanguageExchange;
+    host.privateComment = privateComment;
+    host.organisation = organisation;
+
+    await host.save();
+    console.log("Host details updated successfully");
+
+    return res.status(200).json({ message: "Host details updated successfully", host });
+  } catch (error) {
+    console.error("Error:", error);
+    next(error);
+  }
+}
 
 exports.hostLogin=async(req,res,next)=>{
     try {
@@ -103,22 +125,53 @@ exports.hostLogin=async(req,res,next)=>{
   const isPasswordMatch=await bcrypt.compare(password,host.password)
             if(!isPasswordMatch)  return next(new CustomError("Password not matching", 401));
 
+       
                 //generating jwt token 
           const token=  jwt.sign({_id:host._id,email:host.email},process.env.JWT_SECRET,{expiresIn:"7d"})
 
-            res.cookie("hostToken",token,{
-                httpOnly:true,
-                secure:process.env.NODE_ENV === "production",
-                sameSite:"strict"
-            }).status(200)
-            .json({success:true,    
-                  host: {
-                _id: host._id,
-                name: host.name,
-                email: host.email,
-                role: host.role, // Do not send password
-            },
-            token,})
+         
+          // Check if the profile is incomplete based on existing host data
+    const isProfileIncomplete = !(
+        host.address &&
+        host.description &&
+        host.selectedHelpTypes?.length &&
+        host.allowed?.length &&
+        host.accepted?.length &&
+        host.languageDescription &&
+        host.languageAndLevel?.length &&
+        host.showIntreastInLanguageExchange &&
+        host.privateComment &&
+        host.organisation
+      );
+  
+      if (isProfileIncomplete) {
+        return res
+          .cookie("hostToken", token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "strict",
+          })
+          .status(200)
+          .json({
+            success: true,
+            profileNotCompleted: true,
+            host,
+            token,
+          });
+      }
+else{
+    res.cookie("hostToken",token,{
+        httpOnly:true,
+        secure:process.env.NODE_ENV === "production",
+        sameSite:"strict"
+    }).status(200)
+    .json({success:true,    
+          host: host,
+    token,})
+}  
+
+
+            
      
     } catch (error) {
         next(error); 

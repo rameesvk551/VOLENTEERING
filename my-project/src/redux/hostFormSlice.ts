@@ -7,23 +7,38 @@ interface LanguageAndLevel {
   level: string;
 }
 
+type UploadedImage = {
+  file: File;
+  preview: string;
+  description: string;
+};
+
 interface FormState {
   step: number;
   data: {
     email: string;
-    address: string;
+    address: Address
     description: string;
     selectedHelpTypes: string[];
     allowed: string[];
     accepted: string[];
     languageDescription: string;
     languageAndLevel: LanguageAndLevel[];
-    showIntreastInLanguageExchange: string;
+    showIntreastInLanguageExchange: boolean;
     privateComment: string;
     organisation: string;
+    images: UploadedImage[];
   };
 }
-
+interface Address {
+  street: string;
+  city: string;
+  state: string;
+  country: string;
+  zipCode: string;
+  latitude: number; 
+  longitude: number; 
+}
 // ** Async Thunk to Submit Form Data to Backend **
 export const addDetails = createAsyncThunk(
   "hostForm/addDetails",
@@ -51,18 +66,28 @@ const initialState: FormState = {
   step: 1,
   data: {
     email: "",
-    address: "",
+    address: {
+      street: "",
+      city: "",
+      state: "",
+      country: "",
+      zipCode: "",
+      latitude: 0,
+      longitude: 0,
+    },
     description: "",
     selectedHelpTypes: [],
     allowed: [],
     accepted: [],
     languageDescription: "",
     languageAndLevel: [],
-    showIntreastInLanguageExchange: "",
+    showIntreastInLanguageExchange: false,
     privateComment: "",
     organisation: "",
+    images: [],  // ✅ Change this to an empty array
   },
 };
+
 
 // ** Redux Slice **
 const hostFormSlice = createSlice({
@@ -122,30 +147,46 @@ const hostFormSlice = createSlice({
         state.data.languageAndLevel.splice(action.payload, 1);
       }
     },
-    updateIntrestInLanguageExchange: (state, action: PayloadAction<string>) => {
+    updateIntrestInLanguageExchange: (state, action: PayloadAction<boolean>) => {
       state.data.showIntreastInLanguageExchange = action.payload;
     },
     updateEmail: (state, action: PayloadAction<string>) => {
       state.data.email = action.payload;
     },
-    updateAddress: (state, action: PayloadAction<string>) => {
+    updateAddress: (state, action: PayloadAction<Address>) => {
       state.data.address = action.payload;
     },
+    addImages: (state, action: PayloadAction<UploadedImage[]>) => {
+      state.data.images = [...state.data.images, ...action.payload];  // ✅ Fix reference
+    },
+    removeImage: (state, action: PayloadAction<number>) => {
+      state.data.images = state.data.images.filter((_, index) => index !== action.payload); // ✅ Fix reference
+    },
+    updateImageDescription: (state, action: PayloadAction<{ index: number; description: string }>) => {
+      const { index, description } = action.payload;
+      if (state.data.images[index]) {  // ✅ Fix reference
+        state.data.images[index].description = description;
+      }
+    },
+    
     resetForm: () => initialState,
   },
   extraReducers: (builder) => {
     builder
       .addCase(addDetails.pending, (state) => {
         console.log("Submitting details...");
+        // You can add a `loading` field in state and update it here if needed
       })
       .addCase(addDetails.fulfilled, (state) => {
-        state.step += 1; // Move to the next step on success
+        state.step += 1;
         console.log("Details added successfully!");
       })
       .addCase(addDetails.rejected, (state, action) => {
         console.error("Error adding details:", action.payload);
+        // Optionally, set an error message in the state
       });
   },
+  
 });
 
 export const {
@@ -163,6 +204,10 @@ export const {
   deleteLanguageAndLevel,
   resetForm,
   updateEmail,
+  updateAddress,
+  addImages,
+  removeImage,
+  updateImageDescription,
 } = hostFormSlice.actions;
 
 export default hostFormSlice.reducer;
