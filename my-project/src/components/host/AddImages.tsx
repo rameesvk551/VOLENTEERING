@@ -9,6 +9,7 @@ import { AppDispatch, RootState } from "../../redux/store";
 import { addImages, removeImage, resetForm, updateImageDescription } from "../../redux/hostFormSlice";
 import axios from "axios";
 import server from "../../server/app";
+import { useNavigate } from "react-router-dom";
 
 type UploadedImage = {
   file: File;
@@ -17,6 +18,8 @@ type UploadedImage = {
 };
 
 const AddImage = () => {
+  const navigate=useNavigate()
+  const [isSubmitingDetails,setIsSubmitingDetails]=useState<boolean>(false)
   const dispatch = useDispatch<AppDispatch>();
   const images = useSelector((state: RootState) => state.hostForm.data.images);
   const allData = useSelector((state: RootState) => state.hostForm.data);
@@ -42,6 +45,8 @@ const AddImage = () => {
   
 
   const handleSubmit = async () => {
+
+    setIsSubmitingDetails(true)
     try {
       const uploadedImageUrls = await Promise.all(
         images.map(image => uploadToCloudinary(image.file)) // ✅ Pass `image.file`
@@ -64,6 +69,8 @@ const AddImage = () => {
       console.log("Success:", response.data);
       dispatch(resetForm());
       toast.success("Images uploaded successfully!");
+      navigate("/")
+     
     } catch (error) {
       console.error("Error sending images to backend:", error);
       toast.error("Failed to upload images.");
@@ -105,7 +112,21 @@ const AddImage = () => {
         <span className="text-xl font-semibold text-white">Welcome!</span>
       </div>
 
-      <div className="flex w-full md:w-2/3 h-full bg-white md:px-20">
+      {
+        isSubmitingDetails ?
+        (
+          <div className="w-full h-full flex flex-col items-center justify-center gap-4">
+  <div className="relative w-12 h-12">
+    <div className="absolute inset-0 animate-spin rounded-full border-4 border-gray-300 border-t-blue-500"></div>
+  </div>
+  <h1 className="text-lg font-semibold text-gray-700 text-center">
+    Submitting... <br />
+    Uploading photos takes some time
+  </h1>
+</div>
+
+        ):(
+          <div className="flex w-full md:w-2/3 h-full bg-white md:px-20">
         <div className="w-full h-full flex flex-col items-center sm:px-0 lg:px-8">
           <div className="block mb-10 md:hidden -ml-8">
             <Logo />
@@ -177,6 +198,8 @@ const AddImage = () => {
           </div>
         </div>
       </div>
+        )
+      }
 
       <Toaster richColors />
     </div>

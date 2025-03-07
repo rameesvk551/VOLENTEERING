@@ -53,6 +53,7 @@ exports.addDetails = async (req, res, next) => {
     console.log("Received host details");
 
     const {
+      email,
       address,
       description,
       selectedHelpTypes,
@@ -60,12 +61,11 @@ exports.addDetails = async (req, res, next) => {
       accepted,
       languageDescription,
       languageAndLevel,
-      imageDescriptions,
       showIntreastInLanguageExchange,
       privateComment,
       organisation,
+      images, // ✅ Directly use images from request body
     } = req.body;
-    const email = req.body.email?.data?.host?.email || req.body.email;
 
     console.log("Email:", email);
     console.log("Request Body:", req.body);
@@ -76,24 +76,25 @@ exports.addDetails = async (req, res, next) => {
       return res.status(404).json({ message: "Host not found" });
     }
 
-    let uploadedImages = [];
+    // ✅ Use images from req.body instead of req.files
+    let uploadedImages = images || []; 
+
     if (req.files && req.files.length > 0) {
       uploadedImages = await Promise.all(
         req.files.map(async (file, index) => {
           const result = await cloudinary.uploader.upload(file.path);
           return {
             url: result.secure_url,
-            description: imageDescriptions[index] || "",
+            description: req.body.imageDescriptions?.[index] || "",
           };
         })
       );
-      
-
-      host.images = [...host.images, ...uploadedImages];
     }
-    console.log(host.images);
-    
 
+    // ✅ Append images properly
+    host.images = [...host.images, ...uploadedImages];
+
+    // ✅ Update other fields
     host.address = address;
     host.description = description;
     host.selectedHelpTypes = selectedHelpTypes;
@@ -105,15 +106,16 @@ exports.addDetails = async (req, res, next) => {
     host.privateComment = privateComment;
     host.organisation = organisation;
 
-    await host.save();
-    console.log("Host details updated successfully");
+   
+    host = await host.save();
+    console.log("Updated host images:", host.images);
 
     return res.status(200).json({ message: "Host details updated successfully", host });
   } catch (error) {
     console.error("Error:", error);
     next(error);
   }
-}
+};
 
 exports.hostLogin=async(req,res,next)=>{
     try {
