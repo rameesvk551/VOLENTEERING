@@ -1,6 +1,6 @@
 import React from 'react'
 import { BrowserRouter, Route, Routes } from "react-router-dom";
-import {UserLoginPage, UserSignupPage} from './routes/userRoutes';
+import {UserLoginPage, UserProfilePage, UserSignupPage} from './routes/userRoutes';
 import { HostAddDetailsPage, HostLoginPage, HostPreviewPage, HostProfileEditPage, HostSignupPage } from './routes/hostRoutes';
 import { BlogDetails, BlogListPage, HomePage, HostDetailsPage, HostListPage } from './routes/publicRoutes';
 import { AdminAllHostPage, AdminAllVolenteersPage, AdminDashbordPage, CreateBlog } from './routes/adminRoutes';
@@ -38,6 +38,9 @@ const App = () => {
         {/**blog routes */}
         <Route path="/admin/dashboard/create-blog" element={<CreateBlog/>} />
         <Route path="/admin/dashboard" element={<AdminDashbordPage/>} />
+
+        {/** volenteer routes */}
+        <Route path="/volenteer/profile" element={<UserProfilePage/>} />
 
       </Routes>
     </BrowserRouter>

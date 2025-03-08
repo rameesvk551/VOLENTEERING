@@ -21,15 +21,27 @@ exports.isAuthenticated=async(req,res,next)=>{
          return next()
 }
 
-exports.isHost=async(req,res,next)=>{
-    const {hostToken}=req.cookies
-    console.log("userToken in cookies",hostToken);
-    
-    if(!hostToken) return next(new CustomError("no jwt token provided",400))
+exports.isHost = async (req, res, next) => {
+    try {
+        const { hostToken } = req.cookies;
+        console.log("userToken in cookies", hostToken);
 
-        const decoded=jwt.verify(userToken,process.env.JWT_SECRET)
-        req.host=await Host.findById(decoded._id)
-}
+        if (!hostToken) return next(new CustomError("No JWT token provided", 400));
+
+        const decoded = jwt.verify(hostToken, process.env.JWT_SECRET);
+        console.log("Decoded JWT:", decoded); 
+
+       
+        req.hostUser = await Host.findById(decoded._id);
+        console.log("Host from DB:", req.hostUser);
+
+        if (!req.hostUser) return next(new CustomError("Host not found", 404));
+
+        next();
+    } catch (error) {
+        next(new CustomError("Invalid or expired token", 401));
+    }
+};
 
 
 

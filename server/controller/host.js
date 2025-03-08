@@ -3,6 +3,7 @@ const jwt=require("jsonwebtoken")
 const bcrypt=require("bcrypt")
 const CustomError = require("../utils/customError")
 const axios=require("axios")
+const { default: mongoose } = require("mongoose")
 exports.hostSignup= async(req,res,next)=>{
     console.log("host hitting");
     
@@ -208,5 +209,19 @@ else{
     }
 }
 
+
+// loadhost 
+
+exports.loadHost=async(req,res,next)=>{
+  console.log("iiiiiiiiiid",req.hostUser._id);
+  const hostId = new mongoose.Types.ObjectId(req.hostUser._id);
+
+
+  
+  const host =await Host.findById(hostId)
+  console.log("hhhhhost",host);
+  
+  res.status(200).json({success:true, host})
+}
 
 
