@@ -1,13 +1,16 @@
 import { configureStore } from "@reduxjs/toolkit";
-import adminReducer from "./adminSlice";
-import hostFormReducer from "./hostFormSlice";
-import hostReducer from "./hostSlile";
+import adminReducer from "./Slices/adminSlice";
+import hostFormReducer from "./Slices/hostFormSlice";
+import hostReducer from "./Slices/hostSlice";
+import volenteerReducer from "./Slices/userSlice";
+
 
 export const store = configureStore({
     reducer: {
         admin: adminReducer,
         hostForm: hostFormReducer, 
         host:hostReducer,
+        volenteer:volenteerReducer
     },
 });
 

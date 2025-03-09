@@ -17,7 +17,7 @@ import {
   updateIntrestInLanguageExchange,
   updateLanguageAndLevel,
   updateLanguageDescription,
-} from "../../redux/hostFormSlice";
+} from "../../redux/Slices/hostFormSlice";
 import { data } from "react-router-dom";
 
 const AddLanguage = () => {

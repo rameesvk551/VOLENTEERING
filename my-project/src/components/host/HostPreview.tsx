@@ -172,44 +172,13 @@ if(loading){
                 <CiCalendar /> Min stay requested : atleast a week
               </span>
               <div className="flex flex-col gap-1 pt-7">
-                <div className="flex flex-nowrap w-full gap-1">
-                  <div className="w-[8.25%] bg-fuchsia-500 text-white  h-8 text-center">
-                    Jan
+              <div className="flex flex-nowrap w-full gap-1 pt-7">
+                {["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"].map((month) => (
+                  <div key={month} className="w-[8.25%] bg-fuchsia-500 text-white h-8 text-center">
+                    {month}
                   </div>
-                  <div className="w-[8.25%] bg-fuchsia-500 text-white h-8 text-center">
-                    Feb
-                  </div>
-                  <div className="w-[8.25%] bg-fuchsia-500 text-white h-8 text-center">
-                    Mar
-                  </div>
-                  <div className="w-[8.25%] bg-fuchsia-500 text-white h-8 text-center">
-                    Apr
-                  </div>
-                  <div className="w-[8.25%] bg-fuchsia-500 text-white h-8 text-center">
-                    May
-                  </div>
-                  <div className="w-[8.25%] bg-fuchsia-500 text-white h-8 text-center">
-                    Jun
-                  </div>
-                  <div className="w-[8.25%] bg-fuchsia-500 text-white h-8 text-center">
-                    Jul
-                  </div>
-                  <div className="w-[8.25%] bg-fuchsia-500 text-white h-8 text-center">
-                    Aug
-                  </div>
-                  <div className="w-[8.25%] bg-fuchsia-500 text-white h-8 text-center">
-                    Sep
-                  </div>
-                  <div className="w-[8.25%] bg-fuchsia-500 text-white h-8 text-center">
-                    Oct
-                  </div>
-                  <div className="w-[8.25%] bg-fuchsia-500 text-white h-8 text-center">
-                    Nov
-                  </div>
-                  <div className="w-[8.25%] bg-fuchsia-500 text-white h-8 text-center">
-                    Dec
-                  </div>
-                </div>
+                ))}
+              </div>
                 <div className="flex flex-nowrap w-full gap-1">
                   <div className="w-[8.25%] bg-fuchsia-500 text-white  h-8 text-center"></div>
                   <div className="w-[8.25%] bg-fuchsia-500 text-white h-8 text-center"></div>

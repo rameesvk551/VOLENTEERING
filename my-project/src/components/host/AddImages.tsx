@@ -6,7 +6,7 @@ import { IoIosAddCircleOutline } from "react-icons/io";
 import { IoMdClose } from "react-icons/io";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "../../redux/store";
-import { addImages, removeImage, resetForm, updateImageDescription } from "../../redux/hostFormSlice";
+import { addImages, removeImage, resetForm, updateImageDescription } from "../../redux/Slices/hostFormSlice";
 import axios from "axios";
 import server from "../../server/app";
 import { useNavigate } from "react-router-dom";

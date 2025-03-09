@@ -6,7 +6,7 @@ import { useForm } from "react-hook-form";
 import PlacesAutocomplete from "../placeAutoCompleteAndMap/PlaceAutoComplete";
 import { AppDispatch } from "../../redux/store";
 import { useDispatch } from "react-redux";
-import { nextStep, prevStep } from "../../redux/hostFormSlice";
+import { nextStep, prevStep } from "../../redux/Slices/hostFormSlice";
 
 const Address= () => {
   const dispatch=useDispatch<AppDispatch>()

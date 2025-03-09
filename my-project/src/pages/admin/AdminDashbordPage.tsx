@@ -3,7 +3,7 @@ import DashboardHeader from '../../components/admin/Layout/DashbordHeader'
 import DashboardSideBar from '../../components/admin/Layout/DashbordSideBar'
 import DashboardHero from '../../components/admin/DashboardHero'
 import { useDispatch } from 'react-redux'
-import { loadAdmin } from '../../redux/adminSlice'
+import { loadAdmin } from '../../redux/Slices/adminSlice'
 import { AppDispatch } from '../../redux/store'
 
 const AdminDashbordPage = () => {

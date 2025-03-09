@@ -6,7 +6,7 @@ import { RxCross1 } from 'react-icons/rx';
 import { useDispatch } from 'react-redux';
 import { Link } from "react-router-dom";
 import { AppDispatch } from '../../redux/store';
-import { getAllHosts } from '../../redux/adminSlice';
+import { getAllHosts } from '../../redux/Slices/adminSlice';
 
 
 

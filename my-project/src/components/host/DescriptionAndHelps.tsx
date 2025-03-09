@@ -15,7 +15,7 @@ import {
   nextStep,
   toggleHelpType,
   updateDescription,
-} from "../../redux/hostFormSlice";
+} from "../../redux/Slices/hostFormSlice";
 import { BiLeaf } from "react-icons/bi";
 const DescriptionAndHelps = () => {
   const dispatch = useDispatch<AppDispatch>();

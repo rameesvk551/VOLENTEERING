@@ -1,8 +1,9 @@
 
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import axios from "axios";
-import { User, AdminState, admiAuth, Host } from "../redux/type"; // Ensure correct path
-import server from "../server/app";
+import { User, AdminState, admiAuth, Host } from "../../redux/type"; // Ensure correct path
+import server from "../../server/app";
+
 
 // Initial State
 const initialState: AdminState = {

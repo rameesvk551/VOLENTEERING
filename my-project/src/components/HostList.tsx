@@ -39,8 +39,6 @@ interface PopularData {
 
 const HostList: React.FC = () => {
   const numOfPages = 4;
-  const [page, setPage] = useState<number>(0);
-
   const randomIndex = Math.floor(Math.random() * posts.length);
 
   const handlePageChange = (val: number) => {
@@ -93,7 +91,7 @@ const HostList: React.FC = () => {
           {/* RIGHT */}
           <div className='w-full md:w-1/4 flex flex-col  gap-y-12 pl-[30px]'>
         {posts && posts.map((post)=>(
-               <div className="  md:1/4 flex flex-row md:flex-col" >
+               <div className="  md:1/4 flex flex-row md:flex-col border border-black" >
                <Link to={`/${post?.slug}/${post._id}`} className=' h-auto '>
             <img src={post?.img} alt={post?.title}  className=' w-[300px]  rounded' />
           </Link>

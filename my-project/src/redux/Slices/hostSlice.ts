@@ -1,16 +1,18 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { loadHost } from "./thunks/hostTunk";
+import { loadHost } from "../thunks/hostTunk";
 
 interface HostState {
   hostData: any | null; // Replace 'any' with a proper type
   loading: boolean;
   error: string | null;
+  isAuthenticated:boolean
 }
 
 const initialState: HostState = {
   hostData: null,
   loading: false,
   error: null,
+  isAuthenticated:false
 };
 
 const hostSlice = createSlice({

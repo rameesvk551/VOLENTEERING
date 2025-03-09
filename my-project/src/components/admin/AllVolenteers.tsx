@@ -7,7 +7,7 @@ import { MdBlock, MdEdit } from "react-icons/md";
 import { Link } from "react-router-dom";
 import { RootState, AppDispatch } from "../../redux/store";
 import { useSelector, useDispatch } from "react-redux";
-import { getAllUsers } from '../../redux/adminSlice';
+import { getAllUsers } from '../../redux/Slices/adminSlice';
 
 type RowType = {
   id:string,

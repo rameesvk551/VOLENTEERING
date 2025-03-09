@@ -25,7 +25,7 @@ import {
   prevStep,
   updateOrganisation,
   updatePrivateComment,
-} from "../../redux/hostFormSlice";
+} from "../../redux/Slices/hostFormSlice";
 
 const AllowedAccepted = () => {
   const dispatch = useDispatch<AppDispatch>();

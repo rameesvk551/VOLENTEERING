@@ -24,7 +24,7 @@ const HostCard: React.FC<CardProps> = ({ post, index }) => {
   return (
     <div
       key={post?._id}
-      className={`w-full flex flex-col gap-8 items-center rounded md:flex-row`}
+      className={`w-full flex flex-col gap-8 items-center rounded md:flex-row border border-black`}
     >
       <Link to={`/${post?.slug}/${post._id}`} className='w-full h-auto md:h-64 md:w-2/4 '>
         <img src={post?.img} alt={post?.title} className='object-cover w-full h-full rounded' />

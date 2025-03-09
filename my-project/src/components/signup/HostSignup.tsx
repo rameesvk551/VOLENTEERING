@@ -11,7 +11,7 @@ import axios from 'axios'
 import server from '../../server/app'
 import { useDispatch } from 'react-redux'
 import { AppDispatch } from '../../redux/store'
-import { nextStep, updateEmail } from '../../redux/hostFormSlice'
+import { nextStep, updateEmail } from '../../redux/Slices/hostFormSlice'
 
 
 const HostSignup = () => {

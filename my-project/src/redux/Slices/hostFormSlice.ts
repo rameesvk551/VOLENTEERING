@@ -1,6 +1,6 @@
 import { createSlice, PayloadAction, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
-import server from "../server/app";
+import server from "../../server/app";
 
 interface LanguageAndLevel {
   language: string;
@@ -28,6 +28,18 @@ interface FormState {
     privateComment: string;
     organisation: string;
     images: UploadedImage[];
+    accomadationDescription:string,
+   about:string
+   helpDescription:string
+   accomadationType:string,
+   culturalExchane:string,
+   whatElse:string,
+   wifiDescription:string
+   parkingDescription:string
+   title: string;
+  phone: string;
+  volenteerCapacity:number
+  [key: string]: any; // To handle dynamic updates
   };
 }
 interface Address {
@@ -84,11 +96,21 @@ const initialState: FormState = {
     showIntreastInLanguageExchange: false,
     privateComment: "",
     organisation: "",
-    images: [],  // ✅ Change this to an empty array
-  },
-};
+    images: [], 
+    accomadationDescription:"",
+   title:"",
+   about:"",
+   helpDescription:"",
+   accomadationType:"",
+   culturalExchange:"",
+   whatElse:"",
+   wifiDescription:"",
+   parkingDescription:"",
+   phone:"",
+   volenteerCapacity:"",
+}
 
-
+}
 // ** Redux Slice **
 const hostFormSlice = createSlice({
   name: "hostForm",
@@ -168,6 +190,15 @@ const hostFormSlice = createSlice({
         state.data.images[index].description = description;
       }
     },
+    setHostFormData: (state, action: PayloadAction<FormState["data"]>) => {
+      state.data = action.payload;
+      console.log("sssssssssssssstates",state.data);
+      
+    },
+    updateField: (state, action: PayloadAction<{ field: string; value: any }>) => {
+      state.data[action.payload.field] = action.payload.value;
+    },
+    
     
     resetForm: () => initialState,
   },
@@ -208,6 +239,8 @@ export const {
   addImages,
   removeImage,
   updateImageDescription,
+  setHostFormData,
+  updateField
 } = hostFormSlice.actions;
 
 export default hostFormSlice.reducer;
