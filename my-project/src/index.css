@@ -1,3 +1,25 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+.scrollbar-container {
+    overflow-y: auto; /* Enable scrolling */
+    scrollbar-width: thin; /* Firefox: Show thin scrollbar */
+    scrollbar-color: transparent transparent; /* Default hidden */
+  }
+  
+  .scrollbar-container:hover {
+    scrollbar-color: auto; /* Show scrollbar on hover */
+  }
+  
+  .scrollbar-container::-webkit-scrollbar {
+    width: 6px; /* Width of scrollbar */
+  }
+  
+  .scrollbar-container::-webkit-scrollbar-thumb {
+    background: transparent; /* Hide by default */
+  }
+  
+  .scrollbar-container:hover::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.3); /* Show on hover */
+  }
+  

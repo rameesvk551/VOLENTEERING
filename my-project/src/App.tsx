@@ -5,6 +5,7 @@ import { HostAddDetailsPage, HostLoginPage, HostPreviewPage, HostProfileEditPage
 import { BlogDetails, BlogListPage, HomePage, HostDetailsPage, HostListPage } from './routes/publicRoutes';
 import { AdminAllHostPage, AdminAllVolenteersPage, AdminDashbordPage, CreateBlog } from './routes/adminRoutes';
 import AdminLoginPage from './pages/admin/AdminLoginPage';
+import Messages from './pages/messagesPage/Messages';
 
 const App = () => {
   return (
@@ -41,6 +42,10 @@ const App = () => {
 
         {/** volenteer routes */}
         <Route path="/volenteer/profile" element={<UserProfilePage/>} />
+
+
+   {/**message */}
+   <Route path="/message" element={<Messages/>} />
 
       </Routes>
     </BrowserRouter>
