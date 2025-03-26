@@ -1,5 +1,6 @@
 import React from 'react'
 import {ChatList,Inbox,Profile} from '../../messageSection/chat/index'
+import VoiceRecorder from '../../components/VoiceRecorder'
 
 const Messages = () => {
   return (
@@ -10,6 +11,8 @@ const Messages = () => {
                 {/**Inbox */}
                 <Inbox/>
                 {/**profile */}
+
+                {/**<VoiceRecorder/> */}
 
     
     </div>

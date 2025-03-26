@@ -1,14 +1,32 @@
-import React from 'react'
+import React, { useState } from 'react'
 import User01 from "../../images/user/user-01.png";
-import { CiLink, CiMenuKebab } from 'react-icons/ci';
+import { CiLink, CiMenuKebab, CiMicrophoneOn } from 'react-icons/ci';
 import { IoIosSend } from 'react-icons/io';
 import { MdEmojiEmotions } from 'react-icons/md';
-const Inbox = () => {
+import UserInfo from './UserInfo';
+import { useDispatch } from 'react-redux';
+import Attachment from '../../components/Attachment';
+
+const Inbox:React.FC = () => {
+  const dispatch=useDispatch()
+   const[userInfoOpen,setUserInfoOpen]=useState<boolean>(false)
+  const handleTogleInfo=()=>{
+    setUserInfoOpen((prev)=>!prev)
+
+  }
+
+
+  const handleMicClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+  
+  };
   return (
-    <div className='w-2/4 bg-blue-400 h-screen flex flex-col border border-gray-300'>
+   <>
+    <div className={ ` w-full bg-blue-400 h-screen flex flex-col border border-gray-300`}>
+    
         {/**chat header */}
     <div className="sticky top-0 flex items-center flex-row justify-between border-b border-gray-300 p-4">
-      <div className="flex items-center">
+      <div className="flex items-center" onClick={handleTogleInfo}>
         <div className="mr-4.5 h-[70px] w-[70px] overflow-hidden rounded-full">
           <img src={User01} alt="User profile" className="h-full w-full object-cover object-center" />
         </div>
@@ -107,7 +125,7 @@ const Inbox = () => {
   
     {/* footer*/}
 
-    <div className="sticky bottom-0 border-t border-gray-300 bg-white px-6 py-5">
+    <div className=" w-full sticky bottom-0 border-t border-gray-300 bg-white px-6 py-5">
   <form action="" className="flex items-center justify-between space-x-4">
     {/* Input Field */}
     <div className="relative w-full">
@@ -117,7 +135,13 @@ const Inbox = () => {
         className="h-[52px] w-full rounded-md border border-gray-300 bg-gray-100 pl-5 pr-16 text-black placeholder-gray-500 outline-none"
       />
     <div className="absolute right-5 top-1/2 -translate-y-1/2 items-center justify-end space-x-4">
-    <button className="hover:text-blue-500"><CiLink size={24} />
+    
+    <button className="hover:text-blue-500" onClick={handleMicClick}>
+      <CiMicrophoneOn size={24} />
+    </button>
+    <button className="hover:text-blue-500" onClick={(e)=>{
+e.preventDefault()
+    }}><Attachment/>
     </button>
    
     <button className="hover:text-blue-500"><MdEmojiEmotions size={24}  /></button>
@@ -131,9 +155,18 @@ const Inbox = () => {
      <IoIosSend />
     </button>
   </form>
+
 </div>
 
-  </div> 
+  </div>
+  
+  {
+    userInfoOpen && (
+      <div className="w-1/4">
+        <UserInfo handleTogleInfo={handleTogleInfo}/>
+      </div>
+    )
+  } </>
   
   )
 }

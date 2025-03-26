@@ -10,6 +10,7 @@ import User05 from "../../images/user/user-05.png";
 import User06 from "../../images/user/user-06.png";
 import User07 from "../../images/user/user-07.png";
 import User08 from "../../images/user/user-08.png";
+import DropDown from '../../components/DropDown';
 
 const List = [
   {
@@ -61,7 +62,7 @@ const ChatList = () => {
     <div className='w-1/4 bg-red-400 h-[100vh]'>
      <div className="flex justify-between px-3 py-3">
       <h1> My Messages</h1>
-      <CiMenuKebab  />
+    <DropDown/>
      </div>
 
      <div className="flex flex-row px-5 gap-2">
