@@ -1,8 +1,8 @@
 import React, { useState } from 'react'
 import User01 from "../../images/user/user-01.png";
-import { CiLink, CiMenuKebab, CiMicrophoneOn } from 'react-icons/ci';
+import { CiLink, CiMenuKebab, CiMicrophoneOn, CiVideoOn } from 'react-icons/ci';
 import { IoIosSend } from 'react-icons/io';
-import { MdEmojiEmotions } from 'react-icons/md';
+import { MdCall, MdEmojiEmotions } from 'react-icons/md';
 import UserInfo from './UserInfo';
 import { useDispatch } from 'react-redux';
 import Attachment from '../../components/Attachment';
@@ -35,7 +35,10 @@ const Inbox:React.FC = () => {
           <p className="text-sm">Reply to message</p>
         </div>
       </div>
-      <div>
+      
+      <div className='flex flex-row gap-3'>
+      <MdCall size={24}  />
+      <CiVideoOn size={24}  />
         <CiMenuKebab size={24}  />
       </div>
     </div>

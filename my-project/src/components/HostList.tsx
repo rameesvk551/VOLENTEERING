@@ -9,6 +9,7 @@ import Markdown from "markdown-to-jsx";
 import { AiOutlineArrowRight } from "react-icons/ai";
 import HostCard from "./HostCard";
 import { IconType } from "react-icons/lib";
+import HeroSection from "./HomeComponents/HeroSection";
 
 // Importing missing components (if they exist)
 
@@ -54,7 +55,11 @@ const HostList: React.FC = () => {
     );
 
   return (
+
+
+    
     <div className='py-10 2xl:py-5'>
+     
     
       <div className='px-0 lg:pl-10 pr-5 2xl:px-20'>
         <div className="bg-[#fafafa]">

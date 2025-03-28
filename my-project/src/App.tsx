@@ -20,6 +20,7 @@ const App = () => {
          <Route path="/host/preview" element={<HostPreviewPage/>} />
          <Route path="/host/edit-profile" element={<HostProfileEditPage/>} />
      {/**public routes */}
+     <Route path="/" element={<HomePage/>} />
      <Route path="/user/signup" element={<UserSignupPage />} />
      <Route path="/user/login" element={<UserLoginPage />} />
         <Route path="/" element={<HomePage/>} />
