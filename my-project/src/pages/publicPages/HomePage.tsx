@@ -4,6 +4,7 @@ import HeroSection from '../../components/HomeComponents/HeroSection'
 import CallToActionSection from '../../components/HomeComponents/CallToActionSection'
 import FooterSection from '../../components/HomeComponents/FooterSection'
 import DiscoverSection from '../../components/HomeComponents/DiscoverSection'
+import BlogSection from '../../components/HomeComponents/BlogSection'
 
 const HomePage = () => {
   return (
@@ -11,6 +12,7 @@ const HomePage = () => {
         <HeroSection />
             <FeaturesSection />
             <DiscoverSection />
+            <BlogSection/>
             <CallToActionSection />
             <FooterSection />
     </div>

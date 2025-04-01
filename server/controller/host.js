@@ -4,6 +4,8 @@ const bcrypt=require("bcrypt")
 const CustomError = require("../utils/customError")
 const axios=require("axios")
 const { default: mongoose } = require("mongoose")
+const ApiFeatures = require("../utils/ApiFeatures"); 
+
 exports.hostSignup= async(req,res,next)=>{
     console.log("host hitting");
     
@@ -224,4 +226,45 @@ exports.loadHost=async(req,res,next)=>{
   res.status(200).json({success:true, host})
 }
 
+exports.getHosts = async (req, res) => {
+  try {
+    const { page = 1, limit = 10 } = req.query; // default to page 1, limit 10
+    const skip = (page - 1) * limit;
 
+    const apiFeatures = new ApiFeatures(Host.find(), req.query)
+      .filter()
+      .paginate(limit)
+      .sort();
+
+    const hosts = await apiFeatures.query;
+    const totalHosts = await Host.countDocuments();
+    const totalPages = Math.ceil(totalHosts / limit);
+
+    res.status(200).json({
+      hosts,
+      currentPage: page,
+      totalPages: totalPages,
+      totalHosts: totalHosts,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+exports.getHostById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const host = await Host.findById(id);
+console.log("hhhhhhhhot foundd",host);
+
+    if (!host) {
+      return res.status(404).json({ success: false, message: "Host not found" });
+    }
+
+    res.status(200).json({ success: true, host });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: "Server Error" });
+  }
+};

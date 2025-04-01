@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { IoLocationSharp, IoShareSocial } from "react-icons/io5";
 import { MdEmail, MdOutlineElderlyWoman, MdRestore } from "react-icons/md";
 import Divider from "../Divider";
@@ -15,7 +15,30 @@ import { SiAmazonsimpleemailservice } from "react-icons/si";
 import { TbFileDescription } from "react-icons/tb";
 import { GiDrowning, GiTeacher } from "react-icons/gi";
 import { PiCookingPot } from "react-icons/pi";
+import { useParams } from "react-router-dom";
+import { fetchHostById } from "../../api";
 const HostDetails = () => {
+
+  const { id } = useParams<{ id: string }>(); // Get host ID from URL
+  const [host, setHost] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+
+
+  useEffect(() => {
+    if (id) {
+      fetchHostById(id)
+        .then((data) => {
+          setHost(data.host);
+          setLoading(false);
+        })
+        .catch((err) => {
+          setError("Failed to fetch host details");
+          setLoading(false);
+        });
+    }
+  }, [id]);
   const languageSpoken = [
     {
       language: "germen",
@@ -45,6 +68,8 @@ const HostDetails = () => {
       icon: <LuTrees size={30} className="bg-green-500" />,
     },
   ];
+  console.log("hhhhhhhhhost ",host);
+  
   return (
     <div className="flex flex-col bg-[#f5f5f5] ">
       <div className="bg-[#fff] ">
@@ -94,7 +119,7 @@ const HostDetails = () => {
 
         <Divider />
 
-        <div className="flex justify-between pl-[100px] pr-[249px] text-[#0a3f5f] text-[20px] pt-4">
+        <div className="flex justify-between pl-[100px] pr-[249px] text-[#0a3f5f] text-[20px] p">
           <div className="flex flex-row space-x-6 ">
             <h1>Overview</h1>
             <h1>PHOTOS</h1>
@@ -102,13 +127,13 @@ const HostDetails = () => {
             <h1>FEEDBACK(29)</h1>
           </div>
           <div className="flex flex-row space-x-6 ">
-            <button className="bg-slate-400 rounded-full p-2">
+            <button className="bg-slate-400 rounded-full ">
               <CiMenuKebab />
             </button>
-            <button className="bg-slate-400 rounded-full p-2">
+            <button className="bg-slate-400 rounded-full ">
               <IoShareSocial />
             </button>
-            <button className="flex flex-row bg-slate-400 rounded-full p-2">
+            <button className="flex flex-row bg-slate-400 rounded-full ">
               <FaHeartCircleCheck /> ADD TO MY HOSTLIST
             </button>
             <button className="flex flex-row  bg-slate-400 rounded-full p-2">
@@ -205,60 +230,7 @@ const HostDetails = () => {
                 <h2 className=" text-[#b4cb3c] text-[1.1rem]">Description</h2>
               </div>
               <p>
-                elf, who seeks after it and wants to have it, simply because it
-                is pain..." What is Lorem Ipsum? Lorem Ipsum is simply dummy
-                text of the printing and typesetting industry. Lorem Ipsum has
-                been the industry's standard dummy text ever since the 1500s,
-                when an unknown printer took a galley of type and scrambled it
-                to make a type specimen book. It has survived not only five
-                centuries, but also the leap into electronic typesetting,
-                remaining essentially unchanged. It was popularised in the 1960s
-                with the release of Letraset sheets containing Lorem Ipsum
-                passages, and more recently with desktop publishing software
-                like Aldus PageMaker including versions of Lorem Ipsum. Why do
-                we use it? It is a long established fact that a reader will be
-                distracted by the readable content of a page when looking at its
-                layout. The point of using Lorem Ipsum is that it has a
-                more-or-less normal distribution of letters, as opposed to using
-                'Content here, content here', making it look like readable
-                English. Many desktop publishing packages and web page editors
-                now use Lorem Ipsum as their default model text, and a search
-                for 'lorem ipsum' will uncover many web sites still in their
-                infancy. Various versions have evolved over the years, sometimes
-                by accident, sometimes on purpose (injected humour and the
-                like). Where does it come from? Contrary to popular belief,
-                Lorem Ipsum is not simply random text. It has roots in a piece
-                of classical Latin literature from 45 BC, making it over 2000
-                years old. Richard McClintock, a Latin professor at
-                Hampden-Sydney College in Virginia, looked up one of the more
-                obscure Latin words, consectetur, from a Lorem Ipsum passage,
-                and going through the cites of the word in classical literature,
-                discovered the undoubtable source. Lorem Ipsum comes from
-                sections 1.10.32 and 1.10.33 of "de Finibus Bonorum et Malorum"
-                (The Extremes of Good and Evil) by Cicero, written in 45 BC.
-                This book is a treatise on the theory of ethics, very popular
-                during the Renaissance. The first line of Lorem Ipsum, "Lorem
-                ipsum dolor sit amet..", comes from a line in section 1.10.32.
-                The standard chunk of Lorem Ipsum used since the 1500s is
-                reproduced below for those interested. Sections 1.10.32 and
-                1.10.33 from "de Finibus Bonorum et Malorum" by Cicero are also
-                reproduced in their exact original form, accompanied by English
-                versions from the 1914 translation by H. Rackham. Where can I
-                get some? There are many variations of passages of Lorem Ipsum
-                available, but the majority have suffered alteration in some
-                form, by injected humour, or randomised words which don't look
-                even slightly believable. If you are going to use a passage of
-                Lorem Ipsum, you need to be sure there isn't anything
-                embarrassing hidden in the middle of text. All the Lorem Ipsum
-                generators on the Internet tend to repeat predefined chunks as
-                necessary, making this the first true generator on the Internet.
-                It uses a dictionary of over 200 Latin words, combined with a
-                handful of model sentence structures, to generate Lorem Ipsum
-                which looks reasonable. The generated Lorem Ipsum is therefore
-                always free from repetition, injected humour, or
-                non-characteristic words etc. 5 paragraphs words bytes lists
-                Start with 'Lorem ipsum dolor sit amet...'
-              </p>
+               {host?.description}         </p>
 
               <Divider />
 
@@ -267,12 +239,13 @@ const HostDetails = () => {
                 Types of helps and learning oppertunities
               </h2>
               <div>
-                {helpOptions &&
-                  helpOptions.map((help) => (
-                    <span className="flex items-center gap-4 pl-4">
-                      {help.icon} {help.label}
-                    </span>
-                  ))}
+              {host?.selectedHelpTypes &&
+  host?.selectedHelpTypes?.map((help: string, index: number) => (
+    <span key={index} className="flex items-center gap-4 pl-4">
+      {help}
+    </span>
+  ))}
+
               </div>
 
               <h1 className=" text-[#b4cb3c] text-[1.1rem]">
@@ -314,12 +287,13 @@ const HostDetails = () => {
               <h1 className=" text-[#b4cb3c] text-[1.1rem]">
                 Languages spoken
               </h1>
-              {languageSpoken &&
-                languageSpoken.map((language) => (
-                  <h1>
-                    {language.language} : {language.level}
-                  </h1>
-                ))}
+              {host?.languageAndLevel &&
+  host?.languageAndLevel.map((language: { language: string; level: string; _id: string }) => (
+    <h1 key={language._id}>
+      {language.language} : {language.level}
+    </h1>
+  ))}
+
               <Divider />
               <h1 className=" text-[#b4cb3c] text-[1.1rem]">Accomadation</h1>
               <p>

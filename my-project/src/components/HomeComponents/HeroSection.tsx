@@ -17,8 +17,9 @@ const HeroSection = () => {
   return (
     <div className="relative h-screen">
       <img
+      src="../../../public/banner.png.jpg"
        
-        className="object-cover object-center"
+        className="object-cover object-center h-screen w-full"
        
       />
       <div className="absolute inset-0 bg-black bg-opacity-60"></div>
@@ -33,25 +34,26 @@ const HeroSection = () => {
             Start your journey to finding the perfect place to call home
           </h1>
           <p className="text-xl text-white mb-8">
-            Explore our wide range of rental properties tailored to fit your
-            lifestyle and needs!
+          Discover and book accommodations, cultural experiences, and travel gear rentals—all in one place
           </p>
 
           <div className="flex justify-center">
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search by city, neighborhood or address"
-              className="w-full max-w-lg rounded-none rounded-l-xl border-none bg-white h-12"
-            />
-            <button
-           
-              className="bg-secondary-500 text-white rounded-none rounded-r-xl border-none hover:bg-secondary-600 h-12"
-            >
-              Search
-            </button>
-          </div>
+  <div className="relative w-full max-w-lg flex">
+    <input
+      type="text"
+      value={searchQuery}
+      onChange={(e) => setSearchQuery(e.target.value)}
+      placeholder="Search by city, neighborhood, or address"
+      className="w-full h-12 pl-5 pr-16 rounded-l-full border-none bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all"
+    />
+    <button
+      className="flex items-center justify-center h-12 w-16 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-r-full hover:opacity-90 transition-all"
+    >
+      🔎
+    </button>
+  </div>
+</div>
+
         </div>
       </motion.div>
     </div>

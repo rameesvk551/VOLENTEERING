@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { FcGoogle } from "react-icons/fc";
 import { Toaster, toast } from "sonner";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import Button from "../Button"
 import Divider from "../Divider"
 import Logo from "../Logo"
@@ -11,6 +11,7 @@ import {useForm} from "react-hook-form"
 import server from "../../server/app.js"
 import axios from "axios";
 const UserLogin = () => {
+  const navigate=useNavigate()
  type formData = {
     email:string,
     password:string
@@ -25,8 +26,10 @@ const onSubmit=(loginData:formData)=>{
     console.log("server");
     
 console.log("login form submitted",loginData);
-axios.post(`${server}/user/login`,loginData).then((res)=>{
+axios.post(`${server}/user/login`,loginData,{withCredentials:true}).then((res)=>{
     console.log("user Loged in succesfully",res);
+    navigate(`/volenteer/profile/${res.data.user._id}`)
+
     
 }).catch((error)=>{
     console.log("an error occured",error);

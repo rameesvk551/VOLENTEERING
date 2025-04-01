@@ -2,7 +2,7 @@ const User = require("../model/user")
 const jwt=require("jsonwebtoken")
 const bcrypt=require("bcrypt")
 const CustomError = require("../utils/customError"); // Adjust path based on your project
-
+const mongoose =require("mongoose")
 
 exports.userSignup= async(req,res,next)=>{
    
@@ -48,6 +48,8 @@ const hashedPassword=await bcrypt.hash(password,10)
 }
 
 
+
+           
 exports.userLogin = async(req,res,next)=>{
     try {
         const {email,password}=req.body
@@ -61,11 +63,11 @@ exports.userLogin = async(req,res,next)=>{
                
           const token=  jwt.sign({_id:user._id,email:user.email},process.env.JWT_SECRET,{expiresIn:"7d"})
 
-            res.cookie("userToken",token,{
-                httpOnly:true,
-                secure:process.env.NODE_ENV === "production",
-                sameSite:"strict"
-            }).status(200)
+          res.cookie("userToken",token,{
+            httpOnly:true,
+            secure:process.env.NODE_ENV === "production",
+            sameSite:"strict"
+        }).status(200)
             .json({success:true,user:{
                 _id:user._id,
                 firsrName:user.firstName,
@@ -76,6 +78,44 @@ exports.userLogin = async(req,res,next)=>{
     } catch (error) {
         next(error); 
     }
+}
+          
+     
+    
+
+
+exports.addDetails = async (req, res, next) => {
+    console.log("Received Request Data:", req.body);
+    const userId = req.params.id;
+
+    try {
+        const updatedUser = await User.findByIdAndUpdate(
+            userId, 
+            { $set: req.body },
+            { new: true, runValidators: true } 
+        );
+
+        if (!updatedUser) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        res.status(200).json({ success:true, message: "User details updated successfully", user: updatedUser });
+    } catch (error) {
+        console.error("Error updating user details:", error);
+        res.status(500).json({ message: "Internal Server Error" });
+    }
+};
+
+exports.loadVolenteer=async(req,res,next)=>{
+  console.log("iiiiiiiiiid",req.user._id);
+  const userId = new mongoose.Types.ObjectId(req.user._id);
+
+
+  
+  const user =await User.findById(userId)
+  console.log("hhhhhost",user);
+  
+  res.status(200).json({success:true, user})
 }
 
 

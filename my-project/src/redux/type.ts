@@ -1,14 +1,19 @@
 
-// User type definition
-export interface User {
-    _id: string;
+export interface Volenteer {
+    _id: string;  // ObjectId is stored as a string in JSON
     firstName: string;
     lastName: string;
     email: string;
-    status:string,
-    age:number
-    country:string
-    role: "user" | "admin" | "host";
+    role: "volunteer" | "admin" | "host";
+    avatar: string;
+    skills: string;
+    status: "active" | "inactive";
+    availability: string;
+    verified: boolean;
+    createdAt: string;  // Date should be stored as an ISO string
+    activities: string; // Change to `string[]` if multiple activities
+    description: string;
+    travelStatus: string;
 }
 export interface Host {
     _id: string;
@@ -25,7 +30,7 @@ export interface Host {
 
 // Admin state type for Redux
 export interface AdminState {
-    volunteers: User[];
+    volunteers: Volenteer[];
     hosts:Host[]
     loading: boolean;
     admin:admiAuth | null
@@ -34,11 +39,11 @@ export interface AdminState {
 
 // Authentication state type for Redux
 export interface AuthState {
-    user: User | null;
+    user: Volenteer | null;
     loading: boolean;
 }
 
 export interface admiAuth {
-    user: User | null;
+    user: Volenteer | null;
     loading: boolean;
 }

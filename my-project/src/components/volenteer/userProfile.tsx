@@ -1,23 +1,30 @@
-import React, { useState } from "react";
-import { IoLocationSharp, IoShareSocial } from "react-icons/io5";
+import React, { useEffect, useState } from "react";
 import { MdEmail, MdOutlineElderlyWoman, MdRestore } from "react-icons/md";
 import Divider from "../Divider";
-import { FaEye, FaHeartCircleCheck, FaRegStar } from "react-icons/fa6";
-import { LuMessageSquareText, LuNotebookPen, LuTrees } from "react-icons/lu";
-import {
-  CiCalendar,
-  CiEdit,
-  CiMenuKebab,
-  CiSquareChevLeft,
-  CiSquareChevRight,
-} from "react-icons/ci";
+import { FaEye,FaRegStar } from "react-icons/fa6";
+import {  LuNotebookPen, LuTrees } from "react-icons/lu";
 import { RiFeedbackFill } from "react-icons/ri";
 import { SiAmazonsimpleemailservice } from "react-icons/si";
 import { TbFileDescription } from "react-icons/tb";
 import { GiDrowning, GiTeacher } from "react-icons/gi";
 import { PiCookingPot } from "react-icons/pi";
 import { IoMdHeart } from "react-icons/io";
+import { AppDispatch, RootState } from "../../redux/store";
+import { useSelector } from "react-redux";
+import { CiEdit } from "react-icons/ci";
+import { useDispatch } from "react-redux";
+import { loadVolenteer } from "../../redux/thunks/volenteerThunk";
 const HostPreview = () => {
+  const dispatch = useDispatch<AppDispatch>();
+
+  useEffect(() => {
+    dispatch(loadVolenteer());
+    console.log("loaded");
+    
+  }, []);
+
+  const { volenteerData } = useSelector((state: RootState) => state.volenteer);
+  
   const [addIntrestedActivities, setAddIntrestedActivities] =useState<boolean>(false);
   const [editTravelStatus, setEditTravelStatus] = useState<boolean>(false);
   const [travelStatus, setTravelStatus] = useState<string>("Home");
@@ -33,6 +40,8 @@ const HostPreview = () => {
     { id: 3, label: "MAP" },
     { id: 4, label: "FEEDBACK(2)" },
   ]
+
+
   const calculateAge = () => {
     console.log(birthDate);
 
@@ -162,7 +171,7 @@ const HostPreview = () => {
                       <option value="Travelling">Travelling</option>
                     </select>
                   ) : (
-                    <h2>{travelStatus}</h2>
+                    <h2>{volenteerData?.user?.travelStatus}</h2>
                   )}
                 </div>
                 <button
@@ -197,7 +206,7 @@ const HostPreview = () => {
               {addIntrestedActivities ? (
                 <input type="text" className="border border-black w-2/3 pt-1" />
               ) : (
-                <></>
+                <>{volenteerData?.user?.activities}</>
               )}
 
               <div className="flex justify-between items-center pt-4">
@@ -251,21 +260,7 @@ const HostPreview = () => {
                 </button>
               </div>
               <p>
-                vero eos et accusamus et iusto odio dignissimos ducimus qui
-                blanditiis praesentium voluptatum deleniti atque corrupti quos
-                dolores et quas molestias excepturi sint occaecati cupiditate
-                non provident, similique sunt in culpa qui officia deserunt
-                mollitia animi, id est laborum et dolorum fuga. Et harum quidem
-                rerum facilis est et expedita distinctio. Nam libero tempore,
-                cum soluta nobis est eligendi optio cumque nihil impedit quo
-                minus id quod maxime placeat facere possimus, omnis voluptas
-                assumenda est, omnis dolor repellendus. Temporibus autem
-                quibusdam et aut officiis debitis aut rerum necessitatibus saepe
-                eveniet ut et voluptates repudiandae sint et molestiae non
-                recusandae. Itaque earum rerum hic tenetur a sapiente delectus,
-                ut aut reiciendis voluptatibus maiores alias consequatur aut
-                perferendis doloribus asperiores repellat." 1914 translation by
-                H. Rackham
+               {volenteerData?.user?.description}
               </p>
             </div>
             <Divider />
@@ -290,7 +285,7 @@ const HostPreview = () => {
               <textarea className="border border-black w-full mt-1" />
             ) : (
               <>
-                <h1>Web Developer</h1>
+                <h1>{volenteerData?.user?.skills}</h1>
               </>
             )}
             <Divider />
@@ -346,6 +341,7 @@ const HostPreview = () => {
               <input type="text" className="border border-black w-2/3 pt-1" />
             ) : (
               <></>
+
             )}
 
             <Divider />

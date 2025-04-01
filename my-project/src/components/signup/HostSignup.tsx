@@ -5,7 +5,7 @@ import Logo from "../Logo"
 import Inputbox from "../Inputbox"
 import { FcGoogle } from "react-icons/fc";
 import { Toaster, toast } from "sonner";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import axios from 'axios'
 import server from '../../server/app'
@@ -15,6 +15,7 @@ import { nextStep, updateEmail } from '../../redux/Slices/hostFormSlice'
 
 
 const HostSignup = () => {
+  const navigate=useNavigate()
 const dispatch=useDispatch<AppDispatch>()
 
   type formValues={
@@ -48,8 +49,8 @@ const dispatch=useDispatch<AppDispatch>()
       const data = response.data; 
       dispatch(updateEmail(data.host.email));
       console.log("Host created successfully ", data.host.email);
-      dispatch(nextStep());
-      console.log("dispatch");
+navigate(`/host/add-details/${data.host._id}`)
+    
       
     } catch (error) {
       console.log("An error occurred", error);

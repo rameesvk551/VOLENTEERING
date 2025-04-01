@@ -7,7 +7,7 @@ export const loadVolenteer = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       console.log("Calling API...");
-      const response = await axios.get(`${server}/volenteer/load-volenteer`, { withCredentials: true });
+      const response = await axios.get(`${server}/user/load-volenteer`, { withCredentials: true });
       console.log("Response Data:", response.data);
       return response.data;
     } catch (error: any) {

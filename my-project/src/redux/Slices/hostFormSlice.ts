@@ -32,7 +32,7 @@ interface FormState {
    about:string
    helpDescription:string
    accomadationType:string,
-   culturalExchane:string,
+   culturalExchange:string,
    whatElse:string,
    wifiDescription:string
    parkingDescription:string
@@ -107,7 +107,7 @@ const initialState: FormState = {
    wifiDescription:"",
    parkingDescription:"",
    phone:"",
-   volenteerCapacity:"",
+   volenteerCapacity:1,
 }
 
 }
@@ -118,6 +118,8 @@ const hostFormSlice = createSlice({
   reducers: {
     nextStep: (state) => {
       state.step += 1;
+      console.log("steeppppppp   is",state.step);
+      
     },
     prevStep: (state) => {
       state.step -= 1;

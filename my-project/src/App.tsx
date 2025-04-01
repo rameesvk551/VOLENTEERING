@@ -1,6 +1,6 @@
 import React from 'react'
 import { BrowserRouter, Route, Routes } from "react-router-dom";
-import {UserLoginPage, UserProfilePage, UserSignupPage} from './routes/userRoutes';
+import {UserLoginPage, UserProfilePage, UserSignupPage, VolenteerAddDetails} from './routes/userRoutes';
 import { HostAddDetailsPage, HostLoginPage, HostPreviewPage, HostProfileEditPage, HostSignupPage } from './routes/hostRoutes';
 import { BlogDetails, BlogListPage, HomePage, HostDetailsPage, HostListPage } from './routes/publicRoutes';
 import { AdminAllHostPage, AdminAllVolenteersPage, AdminDashbordPage, CreateBlog } from './routes/adminRoutes';
@@ -16,7 +16,7 @@ const App = () => {
      
         <Route path="/host/signup" element={<HostSignupPage/>} />
          <Route path="/host/login" element={<HostLoginPage/>} />
-         <Route path="/host/add-details" element={<HostAddDetailsPage/>} />
+         <Route path="/host/add-details/:id" element={<HostAddDetailsPage/>} />
          <Route path="/host/preview" element={<HostPreviewPage/>} />
          <Route path="/host/edit-profile" element={<HostProfileEditPage/>} />
      {/**public routes */}
@@ -27,7 +27,7 @@ const App = () => {
         <Route path="/blogs" element={<BlogListPage/>} />
         <Route path="/blog/:id" element={<BlogDetails/>} />
         <Route path="/oppertunities" element={<HostListPage/>} />
-        <Route path="/host-details" element={<HostDetailsPage/>} />
+        <Route path="/host-details/:id" element={<HostDetailsPage/>} />
 
 
         {/**admin routes */}
@@ -42,7 +42,8 @@ const App = () => {
         <Route path="/admin/dashboard" element={<AdminDashbordPage/>} />
 
         {/** volenteer routes */}
-        <Route path="/volenteer/profile" element={<UserProfilePage/>} />
+        <Route path="/volenteer/add-details/:id" element={<VolenteerAddDetails/>} />
+        <Route path="/volenteer/profile/:id" element={<UserProfilePage/>} />
 
 
    {/**message */}

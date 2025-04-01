@@ -7,6 +7,7 @@ const userRoutes=require("./routes/user")
 const hostRoutes=require("./routes/host");
 const blogRoutes=require("./routes/blog");
 const adminRoutes=require("./routes/admin")
+const publicRoutes=require("./routes/public")
 const errorHandler = require("./middleware/errorHandler");
 const dbConnect = require("./config/db");
 
@@ -20,6 +21,7 @@ app.use(express.json());//for parsing json paylload
 app.use(express.urlencoded({ extended: true }));//for parsing url encoded payload
 app.use(cookieParser());
 //routes
+app.use("/api/v1",publicRoutes)
 app.use("/api/v1/user",userRoutes)
 app.use("/api/v1/host",hostRoutes)
 app.use("/api/v1/admin",adminRoutes)

@@ -21,33 +21,31 @@ const itemVariants = {
   visible: { opacity: 1, y: 0 },
 };
 
-const FeaturesSection = () => {
+const HomePageSection1 = () => {
   const featureData = [
     {
-      imageSrc: "/host.jpg",
-      title: "🔥 Host Extraordinary Stays & Experiences",
+      imageSrc: "/landing-icon-search.png",
+      title: "Find Unique Stays & Volunteer Roles",
       description:
-        "Welcome travelers, volunteers into your home or community. Become a host and create unforgettable moments for guests from around the world.",
-      linkText: "Start Hosting",
-      linkHref: "/host/signup",
-    },
-    
-    {
-      imageSrc: "/search.jpg",
-      title: " Effortless Travel Planning in One Place",
-      description:
-        "Find everything you need for a seamless journey—hotels, flights, volunteering opportunities, cab rentals, and more—all in one platform.",
+        "Browse a curated list of volunteer opportunities and accommodations that let you immerse in local cultures while giving back.",
       linkText: "Explore Now",
-      linkHref: "/hosts",
-    }
-,    
+      linkHref: "/search",
+    },
     {
-      imageSrc: "/volenteer (2).jpg",
+      imageSrc: "/banner.png.jpg",
+      title: "Connect with Hosts & Organizations",
+      description:
+        "Easily connect with trusted hosts, NGOs, and eco-friendly stays that align with your values and skills.",
+      linkText: "Find Hosts",
+      linkHref: "/hosts",
+    },
+    {
+      imageSrc: "/landing-icon-experience.png",
       title: "Live the Experience, Make an Impact",
       description:
         "Contribute to sustainable projects, learn new skills, and create unforgettable travel memories while making a real difference.",
       linkText: "Start Volunteering",
-      linkHref: "/user/signup",
+      linkHref: "/volunteer",
     },
   ];
 
@@ -64,7 +62,7 @@ const FeaturesSection = () => {
           variants={itemVariants}
           className="text-3xl font-bold text-center mb-12 w-full sm:w-2/3 mx-auto"
         >
-           Compare options, book with ease, and experience stress-free travel like never before
+          Quickly find the experience you want using our powerful search filters!
         </motion.h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 lg:gap-12 xl:gap-16">
           {featureData.map((card, index) => (
@@ -88,39 +86,28 @@ const FeatureCard = ({
   imageSrc: string;
   title: string;
   description: string;
-  linkText?: string;
-  linkHref?: string;
+  linkText?: string; // Made optional
+  linkHref?: string; // Made optional
 }) => (
-  <div className="relative bg-white shadow-lg rounded-2xl overflow-hidden transform transition duration-300 hover:scale-105">
-    {/* Image Section with Overlay */}
-    <div className="relative w-full h-56">
+  <div className="text-center">
+    <div className="p-4 rounded-lg mb-4 flex items-center justify-center h-32 w-32 mx-auto">
       <img
         src={imageSrc}
         alt={title}
-        className="w-full h-full object-cover"
-        loading="lazy"
+        className="w-32 h-32 object-contain"
       />
-      <div className="absolute inset-0 bg-black bg-opacity-40 flex justify-center items-center">
-        <h3 className="text-white text-xl font-semibold px-4 text-center">{title}</h3>
-      </div>
     </div>
-
-    {/* Content Section */}
-    <div className="p-6 text-center">
-      <p className="text-gray-600 text-base">{description}</p>
-
-      {/* Button */}
-      {linkText && linkHref && (
-        <Link
-          to={linkHref}
-          className="mt-4 inline-block bg-blue-600 text-white rounded-lg px-5 py-2 hover:bg-blue-700 transition duration-300"
-        >
-          {linkText}
-        </Link>
-      )}
-    </div>
+    <h3 className="text-xl font-semibold mb-2">{title}</h3>
+    <p className="mb-4">{description}</p>
+    {linkText && linkHref && (
+      <Link
+        to={linkHref}
+        className="inline-block border border-gray-300 rounded px-4 py-2 hover:bg-gray-100"
+      >
+        {linkText}
+      </Link>
+    )}
   </div>
 );
 
-
-export default FeaturesSection;
+export default HomePageSection1;
