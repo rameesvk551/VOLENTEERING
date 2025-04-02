@@ -7,7 +7,7 @@ const CustomError = require("../utils/customError")
 
 exports.isAuthenticated=async(req,res,next)=>{
     const {userToken}=req.cookies
-    console.log("userToken in cookies",userToken);
+    console.log("userToken in cookies",req.cookies);
     
     if(!userToken) return next(new CustomError("no jwt token provided",400))
 

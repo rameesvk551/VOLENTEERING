@@ -6,6 +6,7 @@ import { BlogDetails, BlogListPage, HomePage, HostDetailsPage, HostListPage } fr
 import { AdminAllHostPage, AdminAllVolenteersPage, AdminDashbordPage, CreateBlog } from './routes/adminRoutes';
 import AdminLoginPage from './pages/admin/AdminLoginPage';
 import Messages from './pages/messagesPage/Messages';
+import MemberShipPlanPage from './pages/user/MemberShipPlanPage';
 
 const App = () => {
   return (
@@ -23,6 +24,7 @@ const App = () => {
      <Route path="/" element={<HomePage/>} />
      <Route path="/user/signup" element={<UserSignupPage />} />
      <Route path="/user/login" element={<UserLoginPage />} />
+     <Route path="/user/membership" element={<MemberShipPlanPage />} />
         <Route path="/" element={<HomePage/>} />
         <Route path="/blogs" element={<BlogListPage/>} />
         <Route path="/blog/:id" element={<BlogDetails/>} />

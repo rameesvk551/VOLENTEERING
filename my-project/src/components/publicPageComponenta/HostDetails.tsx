@@ -24,6 +24,11 @@ const HostDetails = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  interface Image {
+    url: string;
+    description: string;
+    _id: string;
+  }
 
 
   useEffect(() => {
@@ -103,18 +108,33 @@ const HostDetails = () => {
               <span>Last Activity:7 Mar 2025</span>
             </div>
           </div>
+          <div className="flex w-[1000px] h-[500px] border gap-2">
+  {/* Left side (Main Image) */}
+  <div className="w-1/2 h-full bg-black">
+    <img
+      src={host?.images?.[0]?.url}
+      alt={host?.images?.[0]?.description}
+      className="w-full h-full object-cover"
+    />
+  </div>
 
-          <div className="flex w-[1000px] h-[500px] border">
-            {/* Left side (Half width, full height) */}
-            <div className="w-1/2 h-full bg-black"></div>
+  {/* Right side (4 smaller images in a grid) */}
+  <div className="w-1/2 h-full grid grid-cols-2 grid-rows-2 gap-3">
+    {host?.images?.slice(1, 5).map((img:Image, index:number) => (
+      <div key={index} className="relative w-full h-full">
+        <img
+          src={img.url}
+          alt={img.description}
+          className="w-full h-full object-cover rounded"
+        />
+        <p className="absolute bottom-2 left-2 text-white bg-black bg-opacity-50 p-1 text-sm rounded">
+          {img.description}
+        </p>
+      </div>
+    ))}
+  </div>
+</div>
 
-            <div className="w-1/2 h-full grid grid-cols-2 grid-rows-2">
-              <div className="bg-red-500"></div>
-              <div className="bg-blue-500"></div>
-              <div className="bg-green-500"></div>
-              <div className="bg-yellow-500"></div>
-            </div>
-          </div>
         </div>
 
         <Divider />

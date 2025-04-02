@@ -1,12 +1,13 @@
 {
   "compilerOptions": {
+    "module": "esnext",   // ✅ Change to esnext
+    "target": "esnext",   // ✅ Change to esnext
     "moduleResolution": "node",
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "strict": true,
     "types": ["react-redux"],
     "jsx": "react-jsx",
-     "lib": ["es2016", "dom"], 
-    "target": "es2016"
+    "lib": ["es2020", "dom"]  // ✅ Update to es2020
   }
 }

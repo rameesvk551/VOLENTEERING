@@ -12,10 +12,20 @@ const userSchema = new mongoose.Schema({
   skills: { type: String }, 
   status:{type:String,default:"active"},
   availability: { type: String, enum: ["full-time", "part-time", "flexible"], default: "flexible" },
-birthData:{type:String},
+birthDate:{type:String},
 activities:{type:String},
+payments: [
+  {
+    orderId: { type: String, required: true },
+    paymentId: { type: String, required: true },
+    amount: { type: Number, required: true },
+    status: { type: String, enum: ["Paid", "Failed"], default: "Paid" },
+    method: { type: String },
+    createdAt: { type: Date, default: Date.now },
+  },
+],
   verified: { type: Boolean, default: false }, 
-  createdAt: { type: Date, default: Date.now, immutable: true } // 📅 Prevent accidental modification
+  createdAt: { type: Date, default: Date.now, immutable: true } 
 });
 
 module.exports = mongoose.model("User", userSchema);
