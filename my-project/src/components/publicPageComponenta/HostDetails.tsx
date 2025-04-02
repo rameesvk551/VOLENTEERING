@@ -17,6 +17,7 @@ import { GiDrowning, GiTeacher } from "react-icons/gi";
 import { PiCookingPot } from "react-icons/pi";
 import { useParams } from "react-router-dom";
 import { fetchHostById } from "../../api";
+import Review from "../review";
 const HostDetails = () => {
 
   const { id } = useParams<{ id: string }>(); // Get host ID from URL
@@ -370,6 +371,12 @@ const HostDetails = () => {
 
 <div className="flex items-center justify-center text-[rgb(51 51 51 / 75%)] pb-56">
     Host ref number: 851331489494
+  
+</div>
+
+<div className="flex flex-col gap-2">  <Review/>
+<Review/>
+<Review/>
 </div>
 
             </div>

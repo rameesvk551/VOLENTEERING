@@ -7,6 +7,7 @@ import { AdminAllHostPage, AdminAllVolenteersPage, AdminDashbordPage, CreateBlog
 import AdminLoginPage from './pages/admin/AdminLoginPage';
 import Messages from './pages/messagesPage/Messages';
 import MemberShipPlanPage from './pages/user/MemberShipPlanPage';
+import MembershipDetailsPage from './pages/user/MembershipDetails';
 
 const App = () => {
   return (
@@ -46,8 +47,7 @@ const App = () => {
         {/** volenteer routes */}
         <Route path="/volenteer/add-details/:id" element={<VolenteerAddDetails/>} />
         <Route path="/volenteer/profile/:id" element={<UserProfilePage/>} />
-
-
+     
    {/**message */}
    <Route path="/message" element={<Messages/>} />
 

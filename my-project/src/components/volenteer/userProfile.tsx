@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from "react";
+import React, { lazy, Suspense, useEffect, useState } from "react";
 import { MdEmail, MdOutlineElderlyWoman, MdRestore } from "react-icons/md";
 import Divider from "../Divider";
-import { FaEye,FaRegStar } from "react-icons/fa6";
+import { FaCrown, FaEye,FaRegStar } from "react-icons/fa6";
 import {  LuNotebookPen, LuTrees } from "react-icons/lu";
 import { RiFeedbackFill } from "react-icons/ri";
 import { SiAmazonsimpleemailservice } from "react-icons/si";
@@ -14,9 +14,12 @@ import { useSelector } from "react-redux";
 import { CiEdit } from "react-icons/ci";
 import { useDispatch } from "react-redux";
 import { loadVolenteer } from "../../redux/thunks/volenteerThunk";
+import { useNavigate, useParams } from "react-router-dom";
 const HostPreview = () => {
+ 
+  const navigate=useNavigate()
   const dispatch = useDispatch<AppDispatch>();
-
+const {id}=useParams()
   useEffect(() => {
     dispatch(loadVolenteer());
     console.log("loaded");
@@ -24,7 +27,13 @@ const HostPreview = () => {
   }, []);
 
   const { volenteerData } = useSelector((state: RootState) => state.volenteer);
-  
+
+  const showMembership=()=>{
+    navigate(`/volenteer/membership/${id}`)
+    
+  }
+  const MembershipModal = lazy(() => import("./MemberShipModal"));
+  const [isMembershipOpen,setIsMembershipOpen]=useState<boolean>()
   const [addIntrestedActivities, setAddIntrestedActivities] =useState<boolean>(false);
   const [editTravelStatus, setEditTravelStatus] = useState<boolean>(false);
   const [travelStatus, setTravelStatus] = useState<string>("Home");
@@ -418,8 +427,22 @@ const HostPreview = () => {
                             Upgrade to couple account
                           </span>
                         </div>
+                        <Divider />
+                        
+                        <div className="flex  items-center">
+                          <span className="flex items-center gap-2">
+                            < FaCrown className="text-yellow-300"  onClick={()=>setIsMembershipOpen(true)}/>
+                            My Membership
+                          </span>
+
+                        </div>
+                        {isMembershipOpen && (
+        <Suspense fallback={<div className="text-center">Loading...</div>}>
+          <MembershipModal />
+        </Suspense>
+      )}
                     
-                
+                        <Divider />
         
                         <div className="flex  items-center">
                           <span className="flex items-center gap-2">
