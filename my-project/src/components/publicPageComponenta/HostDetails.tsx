@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { IoLocationSharp, IoShareSocial } from "react-icons/io5";
-import { MdEmail, MdOutlineElderlyWoman, MdRestore } from "react-icons/md";
+import { MdEmail, MdOutlineElderlyWoman, MdOutlineVerifiedUser, MdRestore } from "react-icons/md";
 import Divider from "../Divider";
 import { FaHeartCircleCheck, FaRegStar } from "react-icons/fa6";
 import { LuMessageSquareText, LuNotebookPen, LuTrees } from "react-icons/lu";
@@ -45,24 +45,7 @@ const HostDetails = () => {
         });
     }
   }, [id]);
-  const languageSpoken = [
-    {
-      language: "germen",
-      level: "beginer",
-    },
-    {
-      language: "germen",
-      level: "beginer",
-    },
-    {
-      language: "germen",
-      level: "beginer",
-    },
-    {
-      language: "germen",
-      level: "beginer",
-    },
-  ];
+
 
   const helpOptions = [
     { label: "Cooking", icon: <PiCookingPot size={30} /> },
@@ -74,41 +57,13 @@ const HostDetails = () => {
       icon: <LuTrees size={30} className="bg-green-500" />,
     },
   ];
-  console.log("hhhhhhhhhost ",host);
-  
+ 
   return (
     <div className="flex flex-col bg-[#f5f5f5] ">
       <div className="bg-[#fff] ">
         <div className="px-[100px]">
-          <div className="flex justify-between">
-            <div className="flex space-x-1 text-yellow-400">
-              <span className="text-2xl">&#9733;</span>
-              <span className="text-2xl">&#9733;</span>
-              <span className="text-2xl">&#9733;</span>
-              <span className="text-2xl">&#9733;</span>
-              <span className="text-2xl">&#9733;</span>
-            </div>
-            <button className="bg-green-400 rounded-full">updated</button>
-          </div>
-          <div>
-            <h1 className="text-[#0a3f5f] text-[27px] font-bold my-[5px] mb-[15px]">
-              Be part of our family, share, improve and leave an impact on us
-              for generations to <br />
-              come in Gerbstedt, Germany
-            </h1>
-          </div>
-          <div className="flex flex-row">
-            <div className="flex ">
-              <IoLocationSharp size={25} />
-              <span>Germanay</span>
-            </div>
-
-            <div className="flex ">
-              <MdRestore size={25} />
-              {"   "}
-              <span>Last Activity:7 Mar 2025</span>
-            </div>
-          </div>
+        
+        
           <div className="flex w-[1000px] h-[500px] border gap-2">
   {/* Left side (Main Image) */}
   <div className="w-1/2 h-full bg-black">
@@ -140,32 +95,41 @@ const HostDetails = () => {
 
         <Divider />
 
-        <div className="flex justify-between pl-[100px] pr-[249px] text-[#0a3f5f] text-[20px] p">
-          <div className="flex flex-row space-x-6 ">
-            <h1>Overview</h1>
-            <h1>PHOTOS</h1>
-            <h1>MAP</h1>
-            <h1>FEEDBACK(29)</h1>
-          </div>
-          <div className="flex flex-row space-x-6 ">
-            <button className="bg-slate-400 rounded-full ">
-              <CiMenuKebab />
-            </button>
-            <button className="bg-slate-400 rounded-full ">
-              <IoShareSocial />
-            </button>
-            <button className="flex flex-row bg-slate-400 rounded-full ">
-              <FaHeartCircleCheck /> ADD TO MY HOSTLIST
-            </button>
-            <button className="flex flex-row  bg-slate-400 rounded-full p-2">
-              <LuMessageSquareText /> CONTACT
-            </button>{" "}
-          </div>
-        </div>
+    
       </div>
+
+     
 
       <div className="px-[100px] flex flex-row  mt-8 gap-7">
         <div className="w-2/3  ">
+
+        <div className=" bg-[#fff] px-5">
+        <div>
+            <h1 className="text-[#0a3f5f] text-md font-bold my-[5px] mb-[15px] pt-3">
+              Be part of our family, share, improve and leave an impact on us
+              for generations to <br />
+              come in Gerbstedt, Germany
+            </h1>
+          </div>
+          <div className="flex justify-between ">
+          <div className="flex flex-row gap-3">
+            <div className="flex items-center ">
+              <IoLocationSharp size={15} />
+              <span>Germanay</span>
+            </div>
+
+            <div className="flex items-center gap-2 ">
+              <MdRestore size={15} />
+              {"   "}
+              <span>Last Activity:7 Mar 2025</span>
+            </div>
+            </div>
+            <div className="flex items-center gap-2 ">
+              <span>4.5(247 reviews)</span>
+              <span className="flex flex-row items-center"><MdOutlineVerifiedUser/> Verified Host</span>
+            </div>
+          </div>
+          </div>
           {/**aviailability  */}
           <div className="w-80% p-6  bg-[#fff]">
             <div className="pt-10">

@@ -7,7 +7,6 @@ import { AdminAllHostPage, AdminAllVolenteersPage, AdminDashbordPage, CreateBlog
 import AdminLoginPage from './pages/admin/AdminLoginPage';
 import Messages from './pages/messagesPage/Messages';
 import MemberShipPlanPage from './pages/user/MemberShipPlanPage';
-import MembershipDetailsPage from './pages/user/MembershipDetails';
 
 const App = () => {
   return (
