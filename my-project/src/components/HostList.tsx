@@ -15,16 +15,7 @@ const HostList = () => {
    
   }
 
-  const [page, setPage] = useState(1); 
-  const { data, isLoading, error } = useQuery({
-    queryKey: ["hosts", page], 
-    queryFn: () => fetchHosts(page),
-    staleTime: 300000, 
-  });
-
-  if (isLoading) return <p>Loading hosts...</p>;
-  if (error) return <p>Error fetching hosts!</p>;
-
+ 
   return (
     <div className='py-10 2xl:py-5'>
      
