@@ -11,6 +11,7 @@ const adminRoutes=require("./routes/admin")
 const publicRoutes=require("./routes/public")
 const errorHandler = require("./middleware/errorHandler");
 const dbConnect = require("./config/db");
+const updateLastActive = require("./middleware/updateLastActive");
 
 //middlewares
 app.use(cors({
@@ -21,6 +22,8 @@ app.use(cors({
 app.use(express.json());//for parsing json paylload
 app.use(express.urlencoded({ extended: true }));//for parsing url encoded payload
 app.use(cookieParser());
+
+app.use(updateLastActive)
 //routes
 app.use("/api/v1",publicRoutes)
 app.use("/api/v1/user",userRoutes)

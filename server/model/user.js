@@ -23,6 +23,7 @@ payments: [
     method: { type: String },
     createdAt: { type: Date, default: Date.now },
   },
+  {lastActive: Date},
 ],
   verified: { type: Boolean, default: false }, 
   createdAt: { type: Date, default: Date.now, immutable: true } 

@@ -12,6 +12,7 @@ const hostSchema = new mongoose.Schema(
       required: [true, "Last name is required"],
       trim: true,
     },
+    lastActive: Date,
     email: {
       type: String,
       required: [true, "Email is required"],
