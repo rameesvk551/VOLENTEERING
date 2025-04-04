@@ -27,7 +27,7 @@ const HostListPage = () => {
     <div>
      {/**header */}
      <div className='w-full  flex justify-between mt-3 h-full'>
-      <div className=' flex items-center gap-4'>
+      <div className=' flex items-center gap-4 p-1'>
         <button className='border border-black rounded-full px-3 ' onClick={() => setShowFilters(prev => !prev)}>Filter</button >
         <div className="relative">
       <input
@@ -51,14 +51,29 @@ const HostListPage = () => {
 <div className="flex flex-row">
 {showFilters ? <Filters/> : <></> }
 <MapComponent isFilterComponentOpen={showFilters}/> 
-    {showFilters ? <></> :<div className={` ${showFilters  ? "w-1/4": "w-1/2"}  flex flex-col gap-y-22 px-2 pt-3`}>
+    {showFilters ? <></> :<div className={` ${showFilters  ? "w-1/4": "w-1/2"}  flex flex-col gap-y-22  gap-2 px-2 pt-3`}>
             {data.hosts.map((host:Host) => (
         <HostCard key={host._id} host={host} />
       ))}
-
+<div className="flex justify-center mt-5 gap-3">
+      <button
+        disabled={page === 1}
+        onClick={() => setPage(page - 1)}
+        className="px-4 py-2 bg-gray-200 rounded"
+      >
+        Previous
+      </button>
+      <button
+        onClick={() => setPage(page + 1)}
+        className="px-4 py-2 bg-gray-200 rounded"
+      >
+        Next
+      </button>
+    </div>
          
         </div>}
 </div>
+
     </div>
   )
 }

@@ -3,6 +3,7 @@ const jwt=require("jsonwebtoken")
 const bcrypt=require("bcrypt")
 const CustomError = require("../utils/customError"); // Adjust path based on your project
 const mongoose =require("mongoose")
+const cloudinary = require("../config/cloudineryCofig");
 
 exports.userSignup= async(req,res,next)=>{
    
@@ -119,6 +120,36 @@ exports.loadVolenteer=async(req,res,next)=>{
 }
 
 
-
-
-
+exports.updateProfile = async (req, res) => {
+    console.log("llllllllog",req.file);
+    
+    try {
+      let uploadedImage = ""; 
+  
+      if (req.file) {
+        const result = await cloudinary.uploader.upload(req.file.path);
+        uploadedImage = result.secure_url; // Store Cloudinary URL
+      }
+      
+  
+    
+      const updatedUser = await User.findByIdAndUpdate(
+        req.user.id, 
+        {profileImage: uploadedImage },
+        { new: true, runValidators: true } 
+      );
+  
+      if (!updatedUser) {
+        return res.status(404).json({ error: "User not found" });
+      }
+  
+      res.status(200).json({
+        message: "Profile updated successfully",
+        user: updatedUser,
+      });
+  
+    } catch (error) {
+      console.error("Error uploading image:", error);
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  };

@@ -53,7 +53,7 @@ const hashedPassword=await bcrypt.hash(password,10)
 
 exports.addDetails = async (req, res, next) => {
   try {
-    console.log("Received host details");
+    console.log("Received host details",req.body);
 
     const {
       email,

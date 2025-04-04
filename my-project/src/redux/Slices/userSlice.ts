@@ -30,6 +30,7 @@ const volenteerSlice = createSlice({
         state.loading = false;
         console.log("Action Payload:", action.payload);
         state.volenteerData = action.payload;
+        state.isAuthenticated=true
       })
       .addCase(loadVolenteer.rejected, (state, action) => {
         state.loading = false;

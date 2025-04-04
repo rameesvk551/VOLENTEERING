@@ -15,6 +15,8 @@ import { CiEdit } from "react-icons/ci";
 import { useDispatch } from "react-redux";
 import { loadVolenteer } from "../../redux/thunks/volenteerThunk";
 import { useNavigate, useParams } from "react-router-dom";
+import axios from "axios";
+import server from "../../server/app";
 const HostPreview = () => {
  
   const navigate=useNavigate()
@@ -43,6 +45,35 @@ const {id}=useParams()
   const [birthDate, setBirthDate] = useState("");
   const [active,setActive]=useState<number>(1)
   const [age, setAge] = useState<number>(0);
+  const [image, setImage] = useState("/default-avatar.png"); // Default profile image
+
+  
+  const handleImageChange = async (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const imageUrl = URL.createObjectURL(file);
+      setImage(imageUrl);
+
+      const formData = new FormData();
+      formData.append("profileImage", file); // Name should match backend
+
+      try {
+        const response = await axios.put(
+          `${server}/user/update-profile`, 
+          formData,
+          {
+            headers: { "Content-Type": "multipart/form-data" },
+            withCredentials: true, 
+          }
+        );
+
+        console.log("Uploaded Image URL:", response.data.imageUrl);
+      } catch (error) {
+        console.error("Upload failed:", error);
+      }
+    }
+  };
+
   const tabs=[
     { id: 1, label: "OVERVIEW" },
     { id: 2, label: "PHOTOS" },
@@ -103,8 +134,28 @@ const {id}=useParams()
   ];
   return (
     <div className="flex flex-col bg-[#f5f5f5] ">
-      <div className="bg-[#fff] ">
-        <div className="px-[100px]">
+      <div className="bg-[#fff]   ">
+   <div className="flex flex-row pl-10 pt-4 gap-3">
+   <div className="relative w-32 h-32 ">
+      {/* Profile Image */}
+      <label htmlFor="profileUpload" className="cursor-pointer">
+        <img
+          src={volenteerData?.user?.profileImage} 
+          alt="Profile"
+          className="w-32 h-32 rounded-full border-4 border-gray-300 object-cover shadow-md"
+        />
+      </label>
+
+      {/* Hidden File Input */}
+      <input
+        type="file"
+        id="profileUpload"
+        accept="image/*"
+        className="hidden"
+        onChange={handleImageChange}
+      />
+    </div>
+        <div className="">
         
           <div>
             <h1 className="text-[#0a3f5f] text-[27px] font-bold my-[5px] mb-[15px] mt-6">
@@ -130,6 +181,7 @@ const {id}=useParams()
             </div>
           </div>
         </div>
+   </div>
 
         <Divider />
 

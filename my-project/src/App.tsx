@@ -7,14 +7,17 @@ import { AdminAllHostPage, AdminAllVolenteersPage, AdminDashbordPage, CreateBlog
 import AdminLoginPage from './pages/admin/AdminLoginPage';
 import Messages from './pages/messagesPage/Messages';
 import MemberShipPlanPage from './pages/user/MemberShipPlanPage';
+import Navbar from './components/Navbar';
+import TripPlanning from './pages/publicPages/TripPlanning';
 
 const App = () => {
   return (
  <>
+ <Navbar/>
  <BrowserRouter>
       <Routes>
  
-     
+      <Route path="/trip-planning" element={<TripPlanning/>} />
         <Route path="/host/signup" element={<HostSignupPage/>} />
          <Route path="/host/login" element={<HostLoginPage/>} />
          <Route path="/host/add-details/:id" element={<HostAddDetailsPage/>} />

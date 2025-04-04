@@ -22,6 +22,7 @@ const UserSignup = () => {
     lastName:string,
     email:string,
     password:string,
+    
 
   
   }
