@@ -8,7 +8,8 @@ import AdminLoginPage from './pages/admin/AdminLoginPage';
 import Messages from './pages/messagesPage/Messages';
 import MemberShipPlanPage from './pages/user/MemberShipPlanPage';
 import Navbar from './components/Navbar';
-import TripPlanning from './pages/publicPages/TripPlanning';
+import PlanYourTrip from './pages/TravelPlanning/PlanYourTrip';
+
 
 const App = () => {
   return (
@@ -17,7 +18,7 @@ const App = () => {
  <BrowserRouter>
       <Routes>
  
-      <Route path="/trip-planning" element={<TripPlanning/>} />
+      <Route path="/trip-planning" element={<PlanYourTrip/>} />
         <Route path="/host/signup" element={<HostSignupPage/>} />
          <Route path="/host/login" element={<HostLoginPage/>} />
          <Route path="/host/add-details/:id" element={<HostAddDetailsPage/>} />

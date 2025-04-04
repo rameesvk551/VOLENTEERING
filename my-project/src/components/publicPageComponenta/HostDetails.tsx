@@ -81,7 +81,7 @@ const images=host?.images
  
   return (
     <div className="flex flex-col bg-[#fff] ">
-      <div className="bg-[#fff] ">
+      <div className=" ">
         <div className="px-[100px]">
         
         
