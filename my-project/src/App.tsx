@@ -9,6 +9,7 @@ import Messages from './pages/messagesPage/Messages';
 import MemberShipPlanPage from './pages/user/MemberShipPlanPage';
 import Navbar from './components/Navbar';
 import PlanYourTrip from './pages/TravelPlanning/PlanYourTrip';
+import HotelBookingPage from './pages/publicPages/HotelBookingPage';
 
 
 const App = () => {
@@ -17,7 +18,7 @@ const App = () => {
  <Navbar/>
  <BrowserRouter>
       <Routes>
- 
+      <Route path="/hotel" element={<HotelBookingPage/>} />
       <Route path="/trip-planning" element={<PlanYourTrip/>} />
         <Route path="/host/signup" element={<HostSignupPage/>} />
          <Route path="/host/login" element={<HostLoginPage/>} />

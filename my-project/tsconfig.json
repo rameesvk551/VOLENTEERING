@@ -1,13 +1,12 @@
 {
   "compilerOptions": {
-    "module": "esnext",   // ✅ Change to esnext
-    "target": "esnext",   // ✅ Change to esnext
-    "moduleResolution": "node",
-    "esModuleInterop": true,
+    "baseUrl": "./",
+    "paths": {
+      "@/*": ["src/*"]
+    },
+    "jsx": "react-jsx",  // Required for JSX support
+    "jsxImportSource": "react",  // Needed for React 17+ with JSX transform
     "allowSyntheticDefaultImports": true,
-    "strict": true,
-    "types": ["react-redux"],
-    "jsx": "react-jsx",
-    "lib": ["es2020", "dom"]  // ✅ Update to es2020
+    "esModuleInterop": true
   }
 }
