@@ -10,9 +10,25 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { MapContainer, Marker, Popup, TileLayer } from "react-leaflet";
+import { dummyProperties } from "@/utils/mockhotels";
+import { log } from "console";
 const HotelBookingPage = () => {
+    const [filters,setFilters]=useState<string[]>([])
     const [currentPage, setCurrentPage] = useState<number>(1);
     const [isFilterComponentOpen, setIsFilterComponentOpen] = useState<boolean>(false);
+    console.log("ffffffilters",filters);
+    console.log(dummyProperties);
+    const filteredProperties = dummyProperties.filter((property) => {
+        // Match if any selected property type or facility matches
+        const matchType = filters.includes(property.type);
+        const matchFacility = property.facilities.some((f: string) => filters.includes(f));
+        
+        // If no filters selected, return all
+        if (filters.length === 0) return true;
+      
+        return matchType || matchFacility;
+      });
+    
 const totalPages = 5; 
 
 const handleNext = () => {
@@ -36,6 +52,8 @@ const handlePrev = () => {
   <Header
     isFilterComponentOpen={isFilterComponentOpen}
     setIsFilterComponentOpen={setIsFilterComponentOpen}
+    filters={filters}
+    setFilters={setFilters}
   />
 
   {/* Content */}
@@ -47,7 +65,7 @@ const handlePrev = () => {
       {/* Mobile Filters */}
       {isFilterComponentOpen && (
        
-          <Filters />
+          <Filters filters={filters} setFilters={setFilters}  />
       
       )}
 
@@ -65,9 +83,10 @@ const handlePrev = () => {
         } w-full h-full overflow-y-auto px-4 py-2`}
       >
         <div className="flex flex-col gap-2">
-          <HotelCard />
-          <HotelCard />
-          <HotelCard />
+        {filteredProperties && filteredProperties.map((property) => (
+  <HotelCard key={property.id} {...property} />
+))}
+
 
           {/* Pagination */}
           <div className="w-full flex justify-center items-center py-4">
@@ -134,15 +153,22 @@ export default HotelBookingPage;
 const Header =  ({
     isFilterComponentOpen,
     setIsFilterComponentOpen,
+    setFilters,
+    filters
   }: {
     isFilterComponentOpen: boolean;
     setIsFilterComponentOpen: React.Dispatch<React.SetStateAction<boolean>>;
+    filters: [];
+    setFilters: React.Dispatch<React.SetStateAction<string[]>>;
   }) => {
   const inputStyles =
     "bg-white border border-gray-300 rounded-2xl px-4 py-2 shadow-sm focus:ring-2 focus:ring-blue-400 focus:outline-none transition duration-200 text-sm";
   const buttonStyles =
     "bg-white border border-gray-300 rounded-2xl px-5 py-2 font-medium text-sm shadow-sm hover:bg-gray-100 focus:ring-2 focus:ring-blue-400 focus:outline-none transition duration-200";
-    
+    useEffect(() => {
+        console.log("Filters updated:", filters);
+      }, [filters]);
+      
   return (
     <div className="w-full px-6 py-4 fixed top-0 left-0  z-50">
       <div className="flex flex-wrap items-center justify-between gap-4">
@@ -170,9 +196,19 @@ const Header =  ({
           </div>
 
         
+          <button
+  className={buttonStyles}
+  onClick={() =>
+    setFilters((prev) =>
+      prev.includes("Nearest")
+        ? prev.filter((f) => f !== "Nearest")
+        : [...prev, "Nearest"]
+    )
+  }
+>
+  Nearest to me
+</button>
 
-          {/* Nearest to Me */}
-          <button className={buttonStyles}>Nearest to me</button>
         </div>
 
         {/* Right Actions (Dropdowns) */}
@@ -180,17 +216,22 @@ const Header =  ({
         <MyDropdown
             name="Stars"
             dropdownItems={["2 Star", "3 Star", " 4 Star", "5 Star"]}
+            onSelect={(item) =>
+                setFilters((prev) =>
+                  prev.includes(item) ? prev : [...prev, item]
+                )
+              }
           />
-          <MyDropdown
-            name="Rating"
-            dropdownItems={[
-              "5 stars",
-              "4 stars & up",
-              "3 stars & up",
-              "2 stars & up",
-              "1 star & up",
-            ]}
-          />
+  <MyDropdown
+  name="Rating"
+  dropdownItems={["5 stars", "4 stars & up", "3 stars & up"]}
+  onSelect={(item) =>
+    setFilters((prev) =>
+      prev.includes(item) ? prev : [...prev, item]
+    )
+  }
+/>
+
 
           <MyDropdown
             name="Sort"
@@ -211,36 +252,45 @@ const Header =  ({
 };
 
 const MyDropdown = ({
-  dropdownItems,
-  name,
-}: {
-  dropdownItems: string[];
-  name: string;
-}) => {
-  const [selectedItem, setSelectedItem] = useState<string>(name);
-  useEffect(() => {}, [selectedItem]);
-  const handleSelect = (item: string) => {
-    setSelectedItem(item);
+    dropdownItems,
+    name,
+    onSelect
+  }: {
+    dropdownItems: string[];
+    name: string;
+    onSelect?: (item: string) => void;
+  }) => {
+    const [selectedItem, setSelectedItem] = useState<string>(name);
+  
+    const handleSelect = (item: string) => {
+      setSelectedItem(item);
+      onSelect?.(item); // This will notify parent to update filters
+    };
+  
+    return (
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="outline">{selectedItem}</Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent>
+          {dropdownItems.map((item) => (
+            <DropdownMenuItem key={item} onClick={() => handleSelect(item)}>
+              {item}
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
+    );
   };
+  
 
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="outline">{selectedItem}</Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent>
-        {dropdownItems.map((item) => (
-          <DropdownMenuItem key={item} onClick={() => handleSelect(item)}>
-            {item}
-          </DropdownMenuItem>
-        ))}
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
-};
-
-const Filters = () => {
-  const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
+const Filters =  ({
+    filters,
+    setFilters,
+  }: {
+    filters: [];
+    setFilters: React.Dispatch<React.SetStateAction<string[]>>;
+  }) => {
 
   const propertyTypes = [
     "Homestays",
@@ -280,9 +330,11 @@ const Filters = () => {
   ];
  
 
-  const addToSelectedHelpType = (type: string) => {
-    setSelectedTypes((prev) =>
-      prev.includes(type) ? prev.filter((t) => t !== type) : [...prev, type]
+  const addToFilters = (type: string) => {
+    setFilters((prev) =>
+      prev.includes(type)
+        ? prev.filter((t) => t !== type) 
+        : [...prev, type]               
     );
   };
 
@@ -295,9 +347,9 @@ const Filters = () => {
           <div
             key={index}
             className={`p-2 flex items-center justify-between border rounded-2xl text-[13px] bg-white ${
-              selectedTypes.includes(type) ? "ring-2 focus:ring-blue-400 focus:outline-none transition" : ""
+              filters.includes(type) ? "ring-2 focus:ring-blue-400 focus:outline-none transition" : ""
             } cursor-pointer hover:bg-gray-100`}
-            onClick={() => addToSelectedHelpType(type)}
+            onClick={() => addToFilters(type)}
           >
             <span>{type}</span>
             <span className="text-gray-500 text-xs">
@@ -321,9 +373,9 @@ const Filters = () => {
             <div
               key={index}
               className={`p-2 flex items-center justify-between border rounded-2xl text-[13px] bg-white ${
-                selectedTypes.includes(type) ? "ring-2 focus:ring-blue-400 focus:outline-none transition" : ""
+                filters.includes(type) ? "ring-2 focus:ring-blue-400 focus:outline-none transition" : ""
               } cursor-pointer hover:bg-gray-100`}
-              onClick={() => addToSelectedHelpType(type)}
+              onClick={() => addToFilters(type)}
             >
               <span>{type}</span>
               <span className="text-gray-500 text-xs">
@@ -419,86 +471,121 @@ const MapComponent = ({
   );
 };
 
-const HotelCard = () => {
+
+
+interface HotelCardProps {
+  name: string;
+  location: string;
+  distance: string;
+  rating: number;
+  reviews: number;
+  tags: string[];
+  highlights: string[];
+  price: number;
+  images: string[]; // first image is the main, rest are thumbnails
+  perNightLabel?: string;
+  ctaLink: string;
+}
+
+const HotelCard: React.FC<HotelCardProps> = ({
+  name,
+  location,
+  distance,
+  rating,
+  reviews,
+  tags,
+  highlights,
+  price,
+  images,
+  perNightLabel = "per night for 2 guests",
+  ctaLink,
+}) => {
   return (
     <div className="flex flex-row bg-white rounded-2xl shadow-md m-4 overflow-hidden border border-gray-100 transition hover:shadow-lg duration-300">
-    <div className="flex w-full">
-      {/* Left: Images & Info */}
-      <div className="w-3/4 flex gap-4 p-4">
-        {/* Image Section */}
-        <div className="w-1/3 flex flex-col gap-2">
-          <img
-            src="/landing-i5.png"
-            alt="Retreat"
-            className="w-full h-[120px] object-cover rounded-xl shadow-sm"
-            loading="lazy"
-          />
-  
-          <div className="grid grid-cols-4 gap-1">
-            {[...Array(3)].map((_, index) => (
-              <img
-                key={index}
-                src="/landing-i5.png"
-                alt={`Thumb ${index + 1}`}
-                className="w-full h-8 object-cover rounded-md hover:scale-105 transition-transform duration-200 border"
-                loading="lazy"
-              />
-            ))}
+      <div className="flex w-full">
+        {/* Left: Images & Info */}
+        <div className="w-3/4 flex gap-4 p-4">
+          {/* Image Section */}
+          <div className="w-1/3 flex flex-col gap-2">
+            <img
+              src={images[0]}
+              alt={name}
+              className="w-full h-[120px] object-cover rounded-xl shadow-sm"
+              loading="lazy"
+            />
+
+            <div className="grid grid-cols-4 gap-1">
+              {images.slice(1, 4).map((img, index) => (
+                <img
+                  key={index}
+                  src={img}
+                  alt={`Thumb ${index + 1}`}
+                  className="w-full h-8 object-cover rounded-md hover:scale-105 transition-transform duration-200 border"
+                  loading="lazy"
+                />
+              ))}
+            </div>
+          </div>
+
+          {/* Info Section */}
+          <div className="flex flex-col justify-between text-sm">
+            <div>
+              <h2 className="text-base font-semibold text-gray-800 mb-1">
+                {name}
+              </h2>
+
+              <div className="flex items-center gap-1 text-yellow-500 text-sm mb-1">
+                {"★".repeat(Math.floor(rating))}
+                <span className="text-xs text-gray-500 ml-1">
+                  ({reviews} reviews)
+                </span>
+              </div>
+
+              <p className="text-xs text-gray-500">
+                {location} <span className="text-gray-300">|</span>{" "}
+                {distance} to beach
+              </p>
+
+              <div className="flex flex-wrap gap-2 mt-2">
+                {tags.map((tag, i) => (
+                  <span
+                    key={i}
+                    className="text-[10px] px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full"
+                  >
+                    {tag}
+                  </span>
+                ))}
+              </div>
+
+              <ul className="list-disc list-inside text-xs text-gray-600 mt-2 space-y-0.5">
+                {highlights.map((h, i) => (
+                  <li key={i}>{h}</li>
+                ))}
+              </ul>
+            </div>
           </div>
         </div>
-  
-        {/* Info Section */}
-        <div className="flex flex-col justify-between text-sm">
+
+        {/* Right: Pricing & CTA */}
+        <div className="w-1/4 p-4 border-l border-gray-100 flex flex-col justify-between text-sm">
           <div>
-            <h2 className="text-base font-semibold text-gray-800 mb-1">
-              Valentines Retreat – Near Candolim Beach
-            </h2>
-  
-            <div className="flex items-center gap-1 text-yellow-500 text-sm mb-1">
-              ★★★★★
-              <span className="text-xs text-gray-500 ml-1">(120 reviews)</span>
-            </div>
-  
-            <p className="text-xs text-gray-500">
-              Varkala <span className="text-gray-300">|</span> 9 min to beach
+            <p className="text-xs text-gray-500">Starting from</p>
+            <h3 className="text-2xl font-bold text-gray-800">₹{price}</h3>
+            <p className="text-xs text-gray-500">{perNightLabel}</p>
+            <p className="text-xs text-green-600 mt-1">
+              ✔ No prepayment needed
             </p>
-  
-            <div className="flex flex-wrap gap-2 mt-2">
-              <span className="text-[10px] px-2 py-0.5 bg-green-100 text-green-700 rounded-full">
-                Couple friendly
-              </span>
-              <span className="text-[10px] px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full">
-                Breakfast Included
-              </span>
-            </div>
-  
-            <ul className="list-disc list-inside text-xs text-gray-600 mt-2 space-y-0.5">
-              <li>Free cancellation</li>
-              <li>1+1 Happy Hours</li>
-              <li>Breakfast included</li>
-            </ul>
           </div>
+
+          <a
+            href={ctaLink}
+            className="mt-4 block text-center bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold py-1.5 rounded-lg transition duration-200"
+          >
+            Go to Site
+          </a>
         </div>
-      </div>
-  
-      {/* Right: Pricing & CTA */}
-      <div className="w-1/4 p-4 border-l border-gray-100 flex flex-col justify-between text-sm">
-        <div>
-          <p className="text-xs text-gray-500">Starting from</p>
-          <h3 className="text-2xl font-bold text-gray-800">₹1,899</h3>
-          <p className="text-xs text-gray-500">per night for 2 guests</p>
-          <p className="text-xs text-green-600 mt-1">✔ No prepayment needed</p>
-        </div>
-  
-        <a
-          href="#"
-          className="mt-4 block text-center bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold py-1.5 rounded-lg transition duration-200"
-        >
-          Go to Site
-        </a>
       </div>
     </div>
-  </div>
-  
   );
 };
+
