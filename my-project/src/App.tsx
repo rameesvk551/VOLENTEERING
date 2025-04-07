@@ -11,18 +11,20 @@ import Navbar from './components/Navbar';
 import PlanYourTrip from './pages/TravelPlanning/PlanYourTrip';
 import HotelBookingPage from './pages/publicPages/HotelBookingPage';
 import HotelBookingHomePage from './pages/publicPages/HotelBookingHomePage';
+import FlightPage from './pages/publicPages/FlightPage';
 
 
 const App = () => {
   return (
  <>
-
+<Navbar/>
  <BrowserRouter>
 
       <Routes>
       <Route path="/search-hotels" element={<HotelBookingPage/>} />
      
       <Route path="/hotels" element={<HotelBookingHomePage/>} />
+      <Route path="/flights" element={<FlightPage/>} />
      
       <Route path="/trip-planning" element={<PlanYourTrip/>} />
         <Route path="/host/signup" element={<HostSignupPage/>} />

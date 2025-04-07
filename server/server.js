@@ -7,6 +7,7 @@ const userRoutes=require("./routes/user")
 const hostRoutes=require("./routes/host");
 const blogRoutes=require("./routes/blog");
 const paymentRoutes=require("./routes/payment");
+const hotelRoutes=require("./routes/hotel");
 const adminRoutes=require("./routes/admin")
 const publicRoutes=require("./routes/public")
 const errorHandler = require("./middleware/errorHandler");
@@ -32,6 +33,7 @@ app.use("/api/v1/admin",adminRoutes)
 app.use("/api/v1/user",userRoutes)
 app.use("/api/v1/host",hostRoutes)
 app.use("/api/v1/blog",blogRoutes)
+app.use("/api/v1/hotel",hotelRoutes)
 app.use("/api/v1/payment",paymentRoutes)
 
 app.use(errorHandler);
