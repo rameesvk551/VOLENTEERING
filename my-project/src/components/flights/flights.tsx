@@ -8,68 +8,56 @@ import {
 import MyDropdown from "./DropDown";
 import FlightFilters from "./FlightFilter";
 import FlightCard from "./FlightCard";
+import axios from "axios";
+import server from "@/server/app";
+type Flight = {
+  id: string;
+  airline: string;
+  logoUrl: string;
+  from: string;
+  fromCode: string;
+  to: string;
+  toCode: string;
+  departure: string;
+  duration: string;
+  stops: string;
+  price: number;
+  displayPrice: string;
+
+  alliance: string;
+  arrival:string
+};
 
 const Flights = () => {
   const [tripType, setTripType] = useState<"oneway" | "roundtrip">("roundtrip");
   const [origin, setOrigin] = useState("");
   const [destination, setDestination] = useState("");
+  const [flights, setFlights] = useState<Flight[]>([]);
 
+  const searchFlights = async () => {
+    try {
+      const res = await axios.get(`${server}/flight/get-flights`, {
+        params: {
+          origin,
+          destination,
+          tripType,
+        }
+      });
+      console.log(res.data);
+      setFlights(res.data.results)
+    } catch (error) {
+      console.error("Error fetching flights", error);
+    }
+  };
+  console.log("ffffflights",flights);
+
+  
   const swapLocations = () => {
     setOrigin(destination);
     setDestination(origin);
   };
 
-  const flightResults = [
-    {
-      airline: "IndiGo",
-      logoUrl:
-        "https://seeklogo.com/images/I/indigo-airlines-logo-B6E6D3A7AD-seeklogo.com.png",
-      from: "Delhi",
-      to: "Mumbai",
-      departure: "08:00 AM",
-      arrival: "10:10 AM",
-      duration: "2h 10m",
-      stops: "Non-stop",
-      price: 3499,
-      returnFlight: {
-        departure: "06:00 PM",
-        arrival: "08:10 PM",
-        duration: "2h 10m",
-        stops: "Non-stop",
-      },
-    },
-    {
-      airline: "Vistara",
-      logoUrl:
-        "https://1000logos.net/wp-content/uploads/2020/04/Vistara-logo.png",
-      from: "Kochi",
-      to: "Bangalore",
-      departure: "06:45 AM",
-      arrival: "08:00 AM",
-      duration: "1h 15m",
-      stops: "Non-stop",
-      price: 2999,
-      returnFlight: {
-        departure: "07:15 PM",
-        arrival: "08:30 PM",
-        duration: "1h 15m",
-        stops: "Non-stop",
-      },
-    },
-    {
-      airline: "Air India",
-      logoUrl:
-        "https://seeklogo.com/images/A/air-india-logo-8A541B9730-seeklogo.com.png",
-      from: "Hyderabad",
-      to: "Chennai",
-      departure: "09:30 AM",
-      arrival: "11:00 AM",
-      duration: "1h 30m",
-      stops: "Non-stop",
-      price: 2799,
-      // No returnFlight for one-way option
-    },
-  ];
+
   
 
   return (
@@ -204,7 +192,7 @@ const Flights = () => {
 
           {/* Search Button */}
           <div className="w-full sm:w-auto">
-            <button className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition duration-300 w-full">
+            <button className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition duration-300 w-full" onClick={searchFlights}>
               Search
             </button>
           </div>
@@ -219,7 +207,7 @@ const Flights = () => {
 
           {/* Results */}
           <div className="lg:w-2/3 w-full space-y-4">
-            {flightResults.map((flight, index) => (
+            {flights.map((flight, index) => (
               <FlightCard key={index} {...flight} />
             ))}
           </div>
