@@ -1,7 +1,7 @@
 import {  Search } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import { AiOutlineSearch } from "react-icons/ai";
-
+import { useMap } from 'react-leaflet';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,24 +10,35 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { MapContainer, Marker, Popup, TileLayer } from "react-leaflet";
-import { dummyProperties } from "@/utils/mockhotels";
+
 import { log } from "console";
+import { useLocation } from "react-router-dom";
 const HotelBookingPage = () => {
+  const location = useLocation();
+  const hotels = location.state?.hotels || [];
+
+  const coordinates = hotels.map(hotel => ({
+    latitude: parseFloat(hotel.latitude),
+    longitude: parseFloat(hotel.longitude),
+    name:hotel.name,
+    price:hotel.price,
+    rating:hotel.rating
+  }));
+  const centerPosition: [number, number] = coordinates.length
+  ? [coordinates[0].latitude, coordinates[0].longitude]
+  : [40.7128, -74.006]; // fallback: New York
+
+  
+  useEffect(() => {
+    console.log("Hotels data:", hotels);
+  }, [hotels]);
+
+  if (!hotels) return <p>No hotels found. Please search again.</p>;
+
     const [filters,setFilters]=useState<string[]>([])
     const [currentPage, setCurrentPage] = useState<number>(1);
     const [isFilterComponentOpen, setIsFilterComponentOpen] = useState<boolean>(false);
-    console.log("ffffffilters",filters);
-    console.log(dummyProperties);
-    const filteredProperties = dummyProperties.filter((property) => {
-        // Match if any selected property type or facility matches
-        const matchType = filters.includes(property.type);
-        const matchFacility = property.facilities.some((f: string) => filters.includes(f));
-        
-        // If no filters selected, return all
-        if (filters.length === 0) return true;
-      
-        return matchType || matchFacility;
-      });
+
     
 const totalPages = 5; 
 
@@ -72,7 +83,11 @@ const handlePrev = () => {
       {/* Map */}
       {!isFilterComponentOpen && (
         <div className="hidden md:block w-1/2 h-full sticky top-[60px]">
-          <MapComponent isFilterComponentOpen={isFilterComponentOpen} />
+        <MapComponent
+  isFilterComponentOpen={isFilterComponentOpen}
+  coordinates={coordinates}
+  centerPosition={centerPosition}
+/>
         </div>
       )}
 
@@ -83,7 +98,7 @@ const handlePrev = () => {
         } w-full h-full overflow-y-auto px-4 py-2`}
       >
         <div className="flex flex-col gap-2">
-        {filteredProperties && filteredProperties.map((property) => (
+        {hotels && hotels.map((property) => (
   <HotelCard key={property.id} {...property} />
 ))}
 
@@ -158,7 +173,7 @@ const Header =  ({
   }: {
     isFilterComponentOpen: boolean;
     setIsFilterComponentOpen: React.Dispatch<React.SetStateAction<boolean>>;
-    filters: [];
+    filters: string[];
     setFilters: React.Dispatch<React.SetStateAction<string[]>>;
   }) => {
   const inputStyles =
@@ -288,7 +303,7 @@ const Filters =  ({
     filters,
     setFilters,
   }: {
-    filters: [];
+    filters: string[];
     setFilters: React.Dispatch<React.SetStateAction<string[]>>;
   }) => {
 
@@ -442,31 +457,61 @@ const PriceRangeSlider = () => {
 
 
 
-
-const locations = [
-  { id: 1, name: "New York", lat: 40.7128, lng: -74.006 },
-  { id: 2, name: "London", lat: 51.5074, lng: -0.1278 },
-  { id: 3, name: "Tokyo", lat: 35.6895, lng: 139.6917 },
-];
+type HotelCoordinate = {
+  latitude: number;
+  longitude: number;
+  name: string;
+  rating:number,
+  price:number
+};
 const MapComponent = ({
   isFilterComponentOpen,
+  coordinates,
+  centerPosition,
 }: {
   isFilterComponentOpen: boolean;
+  coordinates: {
+    latitude: number;
+    longitude: number;
+    name: string;
+    rating: number;
+    price: number;
+  }[];
+  centerPosition: [number, number]; // 👈 new prop for centering
 }) => {
+
+
+const ChangeMapView = ({ center }: { center: [number, number] }) => {
+  const map = useMap();
+  map.setView(center, 12); 
+  return null;
+};
+
   return (
     <div className={`w-1/2 h-[87vh] p-3 fixed left-0 top-[13vh] overflow-hidden z-10  `}>
-      <MapContainer
-        center={[40.7128, -74.006]}
-        zoom={3}
-        style={{ height: "100%", width: "100%" }}
-      >
-        <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-        {locations.map((loc) => (
-          <Marker key={loc.id} position={[loc.lat, loc.lng]}>
-            <Popup>{loc.name}</Popup>
-          </Marker>
-        ))}
-      </MapContainer>
+ <MapContainer
+  center={centerPosition}
+  zoom={3}
+  style={{ height: "100%", width: "100%" }}
+>
+  <ChangeMapView center={centerPosition} />
+  <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+  {coordinates.map((loc, index) => (
+    <Marker key={index} position={[loc.latitude, loc.longitude]}>
+      <Popup>
+        <div className="text-sm text-gray-800">
+          <h3 className="font-semibold text-base mb-1">{loc.name}</h3>
+          <div className="flex items-center gap-1 text-yellow-500 mb-1">
+            {"★".repeat(Math.floor(loc.rating))}
+            <span className="text-xs text-gray-500 ml-1">({loc.rating})</span>
+          </div>
+          <p className="text-sm font-semibold text-blue-600">€{loc.price}</p>
+        </div>
+      </Popup>
+    </Marker>
+  ))}
+</MapContainer>
+
     </div>
   );
 };
@@ -508,7 +553,7 @@ const HotelCard: React.FC<HotelCardProps> = ({
           {/* Image Section */}
           <div className="w-1/3 flex flex-col gap-2">
             <img
-              src={images[0]}
+              src=''
               alt={name}
               className="w-full h-[120px] object-cover rounded-xl shadow-sm"
               loading="lazy"

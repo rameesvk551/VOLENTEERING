@@ -17,7 +17,7 @@ import FlightPage from './pages/publicPages/FlightPage';
 const App = () => {
   return (
  <>
-<Navbar/>
+
  <BrowserRouter>
 
       <Routes>

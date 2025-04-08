@@ -1,45 +1,87 @@
-exports.getHotels=async()=>{
-    try {
-      const {destination,checkout,checkin}  =req.body
-      const options = {
-        method: 'GET',
-        url: 'https://booking-com.p.rapidapi.com/v1/hotels/search',
-        params: {
-          dest_id: destination,
-          checkin_date: checkin,
-          checkout_date: checkout,
-          dest_type: 'city',
-          units: 'metric',
-          order_by: 'popularity',
-          adults_number: '2',
-          filter_by_currency: 'INR',
-          locale: 'en-gb',
-          room_number: '1',
-          page_number: '0',
-        },
-        headers: {
-          'X-RapidAPI-Key':"",
-          'X-RapidAPI-Host': 'booking-com.p.rapidapi.com',
-        },
-      };
-      const response = await axios.request(options);
-      const hotels = response.data.result.map((hotet) => ({
-        id: hotel.hotel_id,
-        name: hotel.hotel_name,
-        city: hotel.city,
-        image: hotel.main_photo_url,
-        rating: hotel.review_score,
-        ratingText: hotel.review_score_word,
-        price: hotel.composite_price_breakdown?.gross_amount_hotel_currency?.value,
-        currency: hotel.currencycode,
-        checkIn: hotel.checkin?.from,
-        checkOut: hotel.checkout?.until,
-        roomType: hotel.unit_configuration_label,
-        badges: hotel.badges?.map((b) => b.text),
-      }));
-response.json({succes:true,hotels})  
-    } catch (error) {
-        console.error('Error fetching hotels:', error);
-        res.status(500).json({ error: 'Failed to fetch hotel data' });
+const crypto = require("crypto"); // ✅ required for createHash
+const querystring = require("querystring");
+const axios = require("axios");
+
+exports.getHotels = async (req, res) => {
+  try {
+    const { checkin, checkout } = req.body;
+    const destinationCode = "MAD";
+
+    if (!checkin || !checkout) {
+      return res.status(400).json({
+        success: false,
+        message: "Missing required fields: checkin, checkout",
+      });
     }
-}
+
+    const apiKey =process.env.HOTEL_BEDS_API_KEY
+    const secret = process.env.SECRET
+    const endpoint =process.env.ENDPOINT
+
+    const timestamp = Math.floor(Date.now() / 1000);
+    const signature = crypto
+      .createHash("sha256")
+      .update(apiKey + secret + timestamp)
+      .digest("hex");
+
+    const headers = {
+      "Api-Key": apiKey,
+      "X-Signature": signature,
+      Accept: "application/json",
+      "Content-Type": "application/json",
+    };
+
+    const payload = {
+      stay: {
+        checkIn: checkin,
+        checkOut: checkout,
+      },
+      occupancies: [
+        {
+          adults: 2,
+          children: 0,
+          rooms: 1,
+        },
+      ],
+      destination: {
+        code: destinationCode,
+      },
+    };
+
+    const response = await axios.post(endpoint, payload, { headers });
+    const hotelsRaw = response.data.hotels?.hotels || [];
+    console.log("Hoooootels",hotelsRaw);
+
+
+    const hotels = hotelsRaw.map((hotel) => {
+      const firstRoom = hotel.rooms?.[0]?.rates?.[0];
+      const price = firstRoom?.net ? parseFloat(firstRoom.net) : 0;
+
+      return {
+        name: hotel.name|| "Unnamed Hotel",
+        location: `${hotel.destinationName || "Unknown"}, ${hotel.zoneName || ""}`,
+        distance: "500m", // You can replace with actual logic if needed
+        rating: parseInt(hotel.categoryCode) || 3, // e.g. "3EST" -> 3
+        reviews: Math.floor(Math.random() * 1000), // Fake for now
+        tags: [hotel.categoryName || "Standard"],
+        latitude:hotel.latitude,
+        longitude:hotel.longitude,
+        highlights: ["Free WiFi", "Breakfast Included", "Central Location"],
+        price,
+        images: hotel.images?.slice(0, 5).map((img) => img.path) || [],
+        perNightLabel: "per night for 2 guests",
+        ctaLink: `/hotel/${hotel.code}`,
+      };
+    });
+
+    res.json({ success: true, hotels });
+  } catch (error) {
+    console.error("Hotelbeds API error:", error?.response?.data || error.message);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch hotel data",
+      error: error.message,
+    });
+  }
+};
+
