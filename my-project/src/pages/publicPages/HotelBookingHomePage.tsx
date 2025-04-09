@@ -18,7 +18,12 @@ const HotelSearchWithoutFilter = () => {
   const [toDate, setToDate] = useState("");
   const [guests, setGuests] = useState({ adults: 1, children: 0 });
   const [hotels, setHotels] = useState([]);
-
+const initaialDetails={
+  search,
+  fromDate,
+  toDate,
+  guests
+}
   const navigate = useNavigate();
 
   const FetchHotels = async () => {
@@ -39,7 +44,7 @@ const HotelSearchWithoutFilter = () => {
         setHotels(response.data.hotels);
         console.log("hotelsssss",hotels);
         
-        navigate("/search-hotels", { state: { hotels: response.data.hotels } });
+        navigate("/search-hotels", { state: { hotels: response.data.hotels,initaialDetails } });
 
       } else {
         alert("No hotels found or request failed.");

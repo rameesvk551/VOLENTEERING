@@ -3,6 +3,8 @@ import adminReducer from "./Slices/adminSlice";
 import hostFormReducer from "./Slices/hostFormSlice";
 import hostReducer from "./Slices/hostSlice";
 import volenteerReducer from "./Slices/userSlice";
+import messageReducer from "./Slices/messageSlice";
+import chatReducer from "./Slices/chatSlice";
 
 
 export const store = configureStore({
@@ -10,7 +12,10 @@ export const store = configureStore({
         admin: adminReducer,
         hostForm: hostFormReducer, 
         host:hostReducer,
-        volenteer:volenteerReducer
+        volenteer:volenteerReducer,
+        message: messageReducer,
+        chat:chatReducer
+
     },
 });
 

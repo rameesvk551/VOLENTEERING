@@ -1,7 +1,6 @@
-import {  Search } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import { AiOutlineSearch } from "react-icons/ai";
-import { useMap } from 'react-leaflet';
+import { useMap } from "react-leaflet";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,194 +9,288 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { MapContainer, Marker, Popup, TileLayer } from "react-leaflet";
-
-import { log } from "console";
 import { useLocation } from "react-router-dom";
 const HotelBookingPage = () => {
   const location = useLocation();
   const hotels = location.state?.hotels || [];
-
-  const coordinates = hotels.map(hotel => ({
+  const initaialDetails=location.state?.initaialDetails || [];
+  const coordinates = hotels.map((hotel) => ({
     latitude: parseFloat(hotel.latitude),
     longitude: parseFloat(hotel.longitude),
-    name:hotel.name,
-    price:hotel.price,
-    rating:hotel.rating
+    name: hotel.name,
+    price: hotel.price,
+    rating: hotel.rating,
   }));
   const centerPosition: [number, number] = coordinates.length
-  ? [coordinates[0].latitude, coordinates[0].longitude]
-  : [40.7128, -74.006]; // fallback: New York
-
-  
-  useEffect(() => {
-    console.log("Hotels data:", hotels);
-  }, [hotels]);
+    ? [coordinates[0].latitude, coordinates[0].longitude]
+    : [40.7128, -74.006]; 
 
   if (!hotels) return <p>No hotels found. Please search again.</p>;
 
-    const [filters,setFilters]=useState<string[]>([])
-    const [currentPage, setCurrentPage] = useState<number>(1);
-    const [isFilterComponentOpen, setIsFilterComponentOpen] = useState<boolean>(false);
-
-    
-const totalPages = 5; 
-
-const handleNext = () => {
-  if (currentPage < totalPages) {
-    setCurrentPage(currentPage + 1);
-    // fetch data for the next page
-  }
-};
-
-const handlePrev = () => {
-  if (currentPage > 1) {
-    setCurrentPage(currentPage - 1);
-    // fetch data for the previous page
-  }
-};
-
+  const [filters, setFilters] = useState<string[]>([]);
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [isFilterComponentOpen, setIsFilterComponentOpen] =useState<boolean>(false);
+  useEffect(() => {
+    console.log("Filters changed: ", filters);
+  }, [filters]);
   
+
+
+type Hotel = {
+  name: string;
+  location: string;
+  distance: string;
+  rating: number;
+  reviews: number;
+  tags: string[];
+  price: number;
+  ctaLink: string;
+  // other fields...
+};
+const starOptions = [
+  { label: "2 Star", value: "2" },
+  { label: "3 Star", value: "3" },
+  { label: "4 Star", value: "4" },
+  { label: "5 Star", value: "5" },
+];
+const sortOptions = [
+  { label: "Latest", value: "latest" },
+  { label: "Newest", value: "newest" },
+  { label: "Price (lowest first)", value: "price_asc" },
+  { label: "Price (highest first)", value: "price_desc" },
+  { label: "Property Rating (highest first)", value: "rating_high" },
+  { label: "Property Rating (lowest first)", value: "rating_low" },
+  { label: "Top reviewed", value: "top_reviewed" },
+];
+const ratingOptions = [
+  { label: "5 stars", value: "5" },
+  { label: "4 stars & up", value: "4+" },
+  { label: "3 stars & up", value: "3+" },
+];
+
+const filteredProperties = hotels
+  .filter((property) => {
+    if (filters.length === 0) return true;
+
+    // ⭐ Star Filtering via "tags" field like ["5 STARS"]
+    const starFilter = starOptions
+      .map((opt) => opt.value)
+      .filter((val) => filters.includes(val));
+    if (
+      starFilter.length > 0 &&
+      !starFilter.some((star) => property.tags.includes(`${star} STARS`))
+    ) {
+      return false;
+    }
+
+    // 🌟 Rating filter (e.g., "4+" means rating >= 4)
+    const ratingFilter = ratingOptions.find((opt) =>
+      filters.includes(opt.value)
+    );
+    if (ratingFilter) {
+      const ratingValue = parseFloat(ratingFilter.value);
+      if (property.rating < ratingValue) return false;
+    }
+
+    return true;
+  })
+  .sort((a, b) => {
+    const sortBy = sortOptions.find((opt) => filters.includes(opt.value))?.value;
+
+    switch (sortBy) {
+      case "price_asc":
+        return a.price - b.price;
+      case "price_desc":
+        return b.price - a.price;
+      case "rating_high":
+        return b.rating - a.rating;
+      case "rating_low":
+        return a.rating - b.rating;
+      case "top_reviewed":
+        return b.reviews - a.reviews;
+      default:
+        return 0; // No sort or unhandled sort type
+    }
+  });
+
+  const totalPages = 5;
+
+  const handleNext = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+
+  const handlePrev = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+
   return (
-<div className="min-h-screen bg-gradient-to-b from-blue-50 to-white relative overflow-hidden">
-  {/* Header */}
-  <Header
-    isFilterComponentOpen={isFilterComponentOpen}
-    setIsFilterComponentOpen={setIsFilterComponentOpen}
-    filters={filters}
-    setFilters={setFilters}
-  />
+    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white relative overflow-hidden">
+      <Header
+      initaialDetails={initaialDetails}
+        isFilterComponentOpen={isFilterComponentOpen}
+        setIsFilterComponentOpen={setIsFilterComponentOpen}
+        filters={filters}
+        setFilters={setFilters}
+      />
 
-  {/* Content */}
-  <div className="h-[calc(100vh-80px)] mt-[70px]">
+      {/* Content */}
+      <div className="h-[calc(100vh-80px)] mt-[70px]">
+        <div className="flex h-full w-full overflow-hidden">
+          {isFilterComponentOpen && (
+            <Filters filters={filters} setFilters={setFilters} />
+          )}
 
-    <div className="flex h-full w-full overflow-hidden">
-   
+          {/* Map */}
+          {!isFilterComponentOpen && (
+            <div className="hidden md:block w-1/2 h-full sticky top-[60px]">
+              <MapComponent
+                coordinates={coordinates}
+                centerPosition={centerPosition}
+              />
+            </div>
+          )}
 
-      {/* Mobile Filters */}
-      {isFilterComponentOpen && (
-       
-          <Filters filters={filters} setFilters={setFilters}  />
-      
-      )}
+          {/* Hotel Cards */}
+          <div
+            className={`${
+              isFilterComponentOpen ? "md:w-3/4" : "md:w-1/2"
+            } w-full h-full overflow-y-auto px-4 py-2`}
+          >
+            <div className="flex flex-col gap-2">
+              {filteredProperties &&
+                filteredProperties.map((property) => (
+                  <HotelCard key={property.id} {...property} />
+                ))}
 
-      {/* Map */}
-      {!isFilterComponentOpen && (
-        <div className="hidden md:block w-1/2 h-full sticky top-[60px]">
-        <MapComponent
-  isFilterComponentOpen={isFilterComponentOpen}
-  coordinates={coordinates}
-  centerPosition={centerPosition}
-/>
-        </div>
-      )}
+              {/* Pagination */}
+              <div className="w-full flex justify-center items-center py-4">
+                <div className="inline-flex items-center space-x-1 text-sm font-medium text-gray-700">
+                  {/* Previous Button */}
+                  <button
+                    onClick={handlePrev}
+                    disabled={currentPage === 1}
+                    className={`px-3 py-1.5 rounded-md border transition ${
+                      currentPage === 1
+                        ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                        : "bg-white hover:bg-gray-100"
+                    }`}
+                  >
+                    Previous
+                  </button>
 
-      {/* Hotel Cards */}
-      <div
-        className={`${
-          isFilterComponentOpen ? 'md:w-3/4' : 'md:w-1/2'
-        } w-full h-full overflow-y-auto px-4 py-2`}
-      >
-        <div className="flex flex-col gap-2">
-        {hotels && hotels.map((property) => (
-  <HotelCard key={property.id} {...property} />
-))}
+                  {/* Page Numbers */}
+                  {Array.from(
+                    { length: totalPages },
+                    (_, index) => index + 1
+                  ).map((page) => (
+                    <button
+                      key={page}
+                      onClick={() => setCurrentPage(page)}
+                      className={`px-3 py-1.5 rounded-md border transition ${
+                        currentPage === page
+                          ? "bg-blue-600 text-white border-blue-600"
+                          : "bg-white hover:bg-gray-100"
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  ))}
 
-
-          {/* Pagination */}
-          <div className="w-full flex justify-center items-center py-4">
-  <div className="inline-flex items-center space-x-1 text-sm font-medium text-gray-700">
-    
-    {/* Previous Button */}
-    <button
-      onClick={handlePrev}
-      disabled={currentPage === 1}
-      className={`px-3 py-1.5 rounded-md border transition ${
-        currentPage === 1
-          ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-          : 'bg-white hover:bg-gray-100'
-      }`}
-    >
-      Previous
-    </button>
-
-    {/* Page Numbers */}
-    {Array.from({ length: totalPages }, (_, index) => index + 1).map((page) => (
-      <button
-        key={page}
-        onClick={() => setCurrentPage(page)}
-        className={`px-3 py-1.5 rounded-md border transition ${
-          currentPage === page
-            ? 'bg-blue-600 text-white border-blue-600'
-            : 'bg-white hover:bg-gray-100'
-        }`}
-      >
-        {page}
-      </button>
-    ))}
-
-    {/* Next Button */}
-    <button
-      onClick={handleNext}
-      disabled={currentPage === totalPages}
-      className={`px-3 py-1.5 rounded-md border transition ${
-        currentPage === totalPages
-          ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-          : 'bg-white hover:bg-gray-100'
-      }`}
-    >
-      Next
-    </button>
-  </div>
-</div>
-
+                  {/* Next Button */}
+                  <button
+                    onClick={handleNext}
+                    disabled={currentPage === totalPages}
+                    className={`px-3 py-1.5 rounded-md border transition ${
+                      currentPage === totalPages
+                        ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                        : "bg-white hover:bg-gray-100"
+                    }`}
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
-  </div>
-</div>
-
-
-
   );
 };
 
 export default HotelBookingPage;
-
-
-
-const Header =  ({
-    isFilterComponentOpen,
-    setIsFilterComponentOpen,
-    setFilters,
-    filters
-  }: {
-    isFilterComponentOpen: boolean;
-    setIsFilterComponentOpen: React.Dispatch<React.SetStateAction<boolean>>;
-    filters: string[];
-    setFilters: React.Dispatch<React.SetStateAction<string[]>>;
-  }) => {
+type initaialDetails = {
+  search: string;
+  fromDate: string;
+  toDate: string;
+  guests: number
+};
+const Header = ({
+  initaialDetails,
+  setIsFilterComponentOpen,
+  setFilters,
+  filters,
+}: {
+  initaialDetails:initaialDetails
+  isFilterComponentOpen: boolean;
+  setIsFilterComponentOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  filters: string[];
+  setFilters: React.Dispatch<React.SetStateAction<string[]>>;
+}) => {
   const inputStyles =
     "bg-white border border-gray-300 rounded-2xl px-4 py-2 shadow-sm focus:ring-2 focus:ring-blue-400 focus:outline-none transition duration-200 text-sm";
   const buttonStyles =
     "bg-white border border-gray-300 rounded-2xl px-5 py-2 font-medium text-sm shadow-sm hover:bg-gray-100 focus:ring-2 focus:ring-blue-400 focus:outline-none transition duration-200";
-    useEffect(() => {
-        console.log("Filters updated:", filters);
-      }, [filters]);
-      
+  useEffect(() => {
+    console.log("Filters updated:", filters);
+  }, [filters]);
+
+  const starOptions = [
+    { label: "2 Star", value: "2" },
+    { label: "3 Star", value: "3" },
+    { label: "4 Star", value: "4" },
+    { label: "5 Star", value: "5" },
+  ];
+  const sortOptions = [
+    { label: "Latest", value: "latest" },
+    { label: "Newest", value: "newest" },
+    { label: "Price (lowest first)", value: "price_asc" },
+    { label: "Price (highest first)", value: "price_desc" },
+    { label: "Property Rating (highest first)", value: "rating_high" },
+    { label: "Property Rating (lowest first)", value: "rating_low" },
+    { label: "Top reviewed", value: "top_reviewed" },
+  ];
+  const ratingOptions = [
+    { label: "5 stars", value: "5" },
+    { label: "4 stars & up", value: "4+" },
+    { label: "3 stars & up", value: "3+" },
+  ];
+  
+  
+  
   return (
     <div className="w-full px-6 py-4 fixed top-0 left-0  z-50">
       <div className="flex flex-wrap items-center justify-between gap-4">
         {/* Left Actions */}
         <div className="flex flex-wrap items-center gap-2">
           {/* Filter Button */}
-          <button className={buttonStyles} onClick={() => setIsFilterComponentOpen(prev => !prev)}
-          >Filter</button>
+          <button
+            className={buttonStyles}
+            onClick={() => setIsFilterComponentOpen((prev) => !prev)}
+          >
+            Filter
+          </button>
 
           {/* Location Input with Icon */}
           <div className="relative">
             <input
               type="text"
-              placeholder="New Delhi"
+              placeholder={initaialDetails.search}
+              defaultValue={initaialDetails.search}
               className={inputStyles}
             />
             <AiOutlineSearch className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 text-lg" />
@@ -205,108 +298,121 @@ const Header =  ({
 
           {/* Date Range */}
           <div className="flex items-center gap-2">
-            <input type="date" className={inputStyles} />
+            <input type="date" className={inputStyles}  placeholder={initaialDetails.fromDate}
+              defaultValue={initaialDetails.fromDate}/>
             <span className="text-gray-500 text-sm font-semibold">to</span>
-            <input type="date" className={inputStyles} />
+            <input type="date" className={inputStyles} placeholder={initaialDetails.toDate}
+              defaultValue={initaialDetails.toDate} />
           </div>
 
-        
           <button
-  className={buttonStyles}
-  onClick={() =>
-    setFilters((prev) =>
-      prev.includes("Nearest")
-        ? prev.filter((f) => f !== "Nearest")
-        : [...prev, "Nearest"]
-    )
-  }
->
-  Nearest to me
-</button>
-
+            className={buttonStyles}
+            onClick={() =>
+              setFilters((prev) =>
+                prev.includes("Nearest")
+                  ? prev.filter((f) => f !== "Nearest")
+                  : [...prev, "Nearest"]
+              )
+            }
+          >
+            Nearest to me
+          </button>
         </div>
 
         {/* Right Actions (Dropdowns) */}
         <div className="flex flex-wrap items-center gap-1">
         <MyDropdown
-            name="Stars"
-            dropdownItems={["2 Star", "3 Star", " 4 Star", "5 Star"]}
-            onSelect={(item) =>
-                setFilters((prev) =>
-                  prev.includes(item) ? prev : [...prev, item]
-                )
-              }
-          />
-  <MyDropdown
+  dropdownItems={starOptions}
+  name="Star"
+  onSelect={(item) => {
+    setFilters((prev) => {
+      const updated = prev.filter((f) => !["2", "3", "4", "5"].includes(f));
+      return [...updated, item.value];
+    });
+  }}
+/>
+
+<MyDropdown
+  dropdownItems={ratingOptions}
   name="Rating"
-  dropdownItems={["5 stars", "4 stars & up", "3 stars & up"]}
-  onSelect={(item) =>
-    setFilters((prev) =>
-      prev.includes(item) ? prev : [...prev, item]
-    )
-  }
+  onSelect={(item) => {
+    setFilters((prev) => {
+      const updated = prev.filter((f) => !["3+", "4+", "5+"].includes(f));
+      return [...updated, item.value];
+    });
+  }}
+/>
+
+<MyDropdown
+  dropdownItems={sortOptions}
+  name="Sort"
+  onSelect={(item) => {
+    setFilters((prev) => {
+      const updated = prev.filter((f) =>
+        ![
+          "latest",
+          "newest",
+          "price_asc",
+          "price_desc",
+          "rating_high",
+          "rating_low",
+          "top_reviewed",
+        ].includes(f)
+      );
+      return [...updated, item.value];
+    });
+  }}
 />
 
 
-          <MyDropdown
-            name="Sort"
-            dropdownItems={[
-              "Latest",
-              "Newest",
-              "Price (lowest first)",
-              "Price (highest first)",
-              "Property Rating (highest first)",
-              "Property Rating (lowest first)",
-              "Top reviewed",
-            ]}
-          />
         </div>
       </div>
     </div>
   );
 };
 
+type DropdownItem = { label: string; value: string };
+
 const MyDropdown = ({
-    dropdownItems,
-    name,
-    onSelect
-  }: {
-    dropdownItems: string[];
-    name: string;
-    onSelect?: (item: string) => void;
-  }) => {
-    const [selectedItem, setSelectedItem] = useState<string>(name);
-  
-    const handleSelect = (item: string) => {
-      setSelectedItem(item);
-      onSelect?.(item); // This will notify parent to update filters
-    };
-  
-    return (
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="outline">{selectedItem}</Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent>
-          {dropdownItems.map((item) => (
-            <DropdownMenuItem key={item} onClick={() => handleSelect(item)}>
-              {item}
-            </DropdownMenuItem>
-          ))}
-        </DropdownMenuContent>
-      </DropdownMenu>
-    );
+  dropdownItems,
+  name,
+  onSelect,
+}: {
+  dropdownItems: DropdownItem[];
+  name: string;
+  onSelect?: (item: DropdownItem) => void;
+}) => {
+  const [selectedItem, setSelectedItem] = useState<string>(name);
+
+  const handleSelect = (item: DropdownItem) => {
+    setSelectedItem(item.label); // show the label in the button
+    onSelect?.(item); // pass the whole item back to parent
   };
-  
 
-const Filters =  ({
-    filters,
-    setFilters,
-  }: {
-    filters: string[];
-    setFilters: React.Dispatch<React.SetStateAction<string[]>>;
-  }) => {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="outline">{selectedItem}</Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent>
+        {dropdownItems.map((item) => (
+          <DropdownMenuItem key={item.value} onClick={() => handleSelect(item)}>
+            {item.label}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+};
 
+
+const Filters = ({
+  filters,
+  setFilters,
+}: {
+  filters: string[];
+  setFilters: React.Dispatch<React.SetStateAction<string[]>>;
+}) => {
   const propertyTypes = [
     "Homestays",
     "Hostels",
@@ -315,7 +421,7 @@ const Filters =  ({
     "Villas",
     "Farmstay",
     "Lodges",
-"Tent",
+    "Tent",
     "GustHouses",
   ];
 
@@ -329,7 +435,7 @@ const Filters =  ({
     Farmstay: 7,
     Lodges: 3,
     GustHouses: 6,
-    Tent:7
+    Tent: 7,
   };
 
   const facilities = [
@@ -339,17 +445,15 @@ const Filters =  ({
     "AC",
     "Pool",
     " Restaurent",
-    "Family room",,
+    "Family room",
+    ,
     "Room Service",
     "Kitchenette",
   ];
- 
 
   const addToFilters = (type: string) => {
     setFilters((prev) =>
-      prev.includes(type)
-        ? prev.filter((t) => t !== type) 
-        : [...prev, type]               
+      prev.includes(type) ? prev.filter((t) => t !== type) : [...prev, type]
     );
   };
 
@@ -362,7 +466,9 @@ const Filters =  ({
           <div
             key={index}
             className={`p-2 flex items-center justify-between border rounded-2xl text-[13px] bg-white ${
-              filters.includes(type) ? "ring-2 focus:ring-blue-400 focus:outline-none transition" : ""
+              filters.includes(type)
+                ? "ring-2 focus:ring-blue-400 focus:outline-none transition"
+                : ""
             } cursor-pointer hover:bg-gray-100`}
             onClick={() => addToFilters(type)}
           >
@@ -381,14 +487,15 @@ const Filters =  ({
 
       {/* Host Welcomes */}
       <div className="mt-2 mb-2 ">
-    
         <h4 className="font-bold mb-2">Facilities:</h4>
         <div className="flex flex-wrap gap-2">
           {facilities.map((type, index) => (
             <div
               key={index}
               className={`p-2 flex items-center justify-between border rounded-2xl text-[13px] bg-white ${
-                filters.includes(type) ? "ring-2 focus:ring-blue-400 focus:outline-none transition" : ""
+                filters.includes(type)
+                  ? "ring-2 focus:ring-blue-400 focus:outline-none transition"
+                  : ""
               } cursor-pointer hover:bg-gray-100`}
               onClick={() => addToFilters(type)}
             >
@@ -405,15 +512,13 @@ const Filters =  ({
 
       {/* Apply Button */}
       <div className="flex justify-center items-center py-1 px-4">
-  <button className="w-full max-w-sm bg-blue-600 text-white font-semibold tracking-wide py-1 rounded-xl shadow-md hover:bg-blue-700 transition duration-200 ease-in-out">
-    Apply Filters
-  </button>
-</div>
-
+        <button className="w-full max-w-sm bg-blue-600 text-white font-semibold tracking-wide py-1 rounded-xl shadow-md hover:bg-blue-700 transition duration-200 ease-in-out">
+          Apply Filters
+        </button>
+      </div>
     </div>
   );
 };
-
 
 const PriceRangeSlider = () => {
   const [value, setValue] = useState(1000);
@@ -435,7 +540,9 @@ const PriceRangeSlider = () => {
         onChange={(e) => setValue(Number(e.target.value))}
         className="w-full h-2 bg-gray-300 rounded-lg appearance-none cursor-pointer transition-all focus:outline-none focus:ring-2 focus:ring-blue-400"
         style={{
-          background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${((value - 500) / 9500) * 100}%, #e5e7eb ${((value - 500) / 9500) * 100}%, #e5e7eb 100%)`,
+          background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${
+            ((value - 500) / 9500) * 100
+          }%, #e5e7eb ${((value - 500) / 9500) * 100}%, #e5e7eb 100%)`,
         }}
       />
 
@@ -455,21 +562,17 @@ const PriceRangeSlider = () => {
   );
 };
 
-
-
 type HotelCoordinate = {
   latitude: number;
   longitude: number;
   name: string;
-  rating:number,
-  price:number
+  rating: number;
+  price: number;
 };
 const MapComponent = ({
-  isFilterComponentOpen,
   coordinates,
   centerPosition,
 }: {
-  isFilterComponentOpen: boolean;
   coordinates: {
     latitude: number;
     longitude: number;
@@ -479,44 +582,45 @@ const MapComponent = ({
   }[];
   centerPosition: [number, number]; // 👈 new prop for centering
 }) => {
-
-
-const ChangeMapView = ({ center }: { center: [number, number] }) => {
-  const map = useMap();
-  map.setView(center, 12); 
-  return null;
-};
+  const ChangeMapView = ({ center }: { center: [number, number] }) => {
+    const map = useMap();
+    map.setView(center, 12);
+    return null;
+  };
 
   return (
-    <div className={`w-1/2 h-[87vh] p-3 fixed left-0 top-[13vh] overflow-hidden z-10  `}>
- <MapContainer
-  center={centerPosition}
-  zoom={3}
-  style={{ height: "100%", width: "100%" }}
->
-  <ChangeMapView center={centerPosition} />
-  <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-  {coordinates.map((loc, index) => (
-    <Marker key={index} position={[loc.latitude, loc.longitude]}>
-      <Popup>
-        <div className="text-sm text-gray-800">
-          <h3 className="font-semibold text-base mb-1">{loc.name}</h3>
-          <div className="flex items-center gap-1 text-yellow-500 mb-1">
-            {"★".repeat(Math.floor(loc.rating))}
-            <span className="text-xs text-gray-500 ml-1">({loc.rating})</span>
-          </div>
-          <p className="text-sm font-semibold text-blue-600">€{loc.price}</p>
-        </div>
-      </Popup>
-    </Marker>
-  ))}
-</MapContainer>
-
+    <div
+      className={`w-1/2 h-[87vh] p-3 fixed left-0 top-[13vh] overflow-hidden z-10  `}
+    >
+      <MapContainer
+        center={centerPosition}
+        zoom={3}
+        style={{ height: "100%", width: "100%" }}
+      >
+        <ChangeMapView center={centerPosition} />
+        <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+        {coordinates.map((loc, index) => (
+          <Marker key={index} position={[loc.latitude, loc.longitude]}>
+            <Popup>
+              <div className="text-sm text-gray-800">
+                <h3 className="font-semibold text-base mb-1">{loc.name}</h3>
+                <div className="flex items-center gap-1 text-yellow-500 mb-1">
+                  {"★".repeat(Math.floor(loc.rating))}
+                  <span className="text-xs text-gray-500 ml-1">
+                    ({loc.rating})
+                  </span>
+                </div>
+                <p className="text-sm font-semibold text-blue-600">
+                  €{loc.price}
+                </p>
+              </div>
+            </Popup>
+          </Marker>
+        ))}
+      </MapContainer>
     </div>
   );
 };
-
-
 
 interface HotelCardProps {
   name: string;
@@ -553,7 +657,7 @@ const HotelCard: React.FC<HotelCardProps> = ({
           {/* Image Section */}
           <div className="w-1/3 flex flex-col gap-2">
             <img
-              src=''
+              src=""
               alt={name}
               className="w-full h-[120px] object-cover rounded-xl shadow-sm"
               loading="lazy"
@@ -587,8 +691,8 @@ const HotelCard: React.FC<HotelCardProps> = ({
               </div>
 
               <p className="text-xs text-gray-500">
-                {location} <span className="text-gray-300">|</span>{" "}
-                {distance} to beach
+                {location} <span className="text-gray-300">|</span> {distance}{" "}
+                to beach
               </p>
 
               <div className="flex flex-wrap gap-2 mt-2">
@@ -633,4 +737,3 @@ const HotelCard: React.FC<HotelCardProps> = ({
     </div>
   );
 };
-

@@ -50,7 +50,7 @@ exports.getHotels = async (req, res) => {
 
     const response = await axios.post(endpoint, payload, { headers });
     const hotelsRaw = response.data.hotels?.hotels || [];
-    console.log("Hoooootels",hotelsRaw);
+ 
 
 
     const hotels = hotelsRaw.map((hotel) => {
@@ -73,7 +73,7 @@ exports.getHotels = async (req, res) => {
         ctaLink: `/hotel/${hotel.code}`,
       };
     });
-
+    console.log("Hoooootels",hotels);
     res.json({ success: true, hotels });
   } catch (error) {
     console.error("Hotelbeds API error:", error?.response?.data || error.message);
