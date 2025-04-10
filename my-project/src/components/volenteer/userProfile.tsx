@@ -77,7 +77,6 @@ const {id}=useParams()
   const tabs=[
     { id: 1, label: "OVERVIEW" },
     { id: 2, label: "PHOTOS" },
-    { id: 3, label: "MAP" },
     { id: 4, label: "FEEDBACK(2)" },
   ]
 
@@ -201,11 +200,6 @@ const {id}=useParams()
     </div>
   ))}
 </div>
-          <div className="flex flex-row space-x-6 ">
-            <button className="flex flex-row  bg-[#f5f5f5] rounded-full p-2 items-center px-6">
-              <FaEye /> View Online
-            </button>{" "}
-          </div>
         </div>
       </div>
 
@@ -398,33 +392,10 @@ const {id}=useParams()
               </button>
             </div>
 
-            {addIntrestedActivities ? (
-              <input type="text" className="border border-black w-2/3 pt-1" />
-            ) : (
-              <></>
-
-            )}
+  
 
             <Divider />
 
-            <div className="flex justify-between items-center pt-4">
-              <div className="flex flex-col">
-                <h1 className="font-bold">
-                  {" "}
-                  Do you have special dietary requirements?
-                </h1>
-              </div>
-              <button
-                className="bg-green-400 rounded-md  flex items-center px-3 h-5"
-                onClick={() => {
-                  setAddIntrestedActivities(!addIntrestedActivities);
-                }}
-              >
-                {" "}
-                <CiEdit />
-                Edit
-              </button>
-            </div>
 
             {addIntrestedActivities ? (
               <input type="text" className="border border-black w-2/3 pt-1" />
@@ -455,9 +426,7 @@ const {id}=useParams()
               <></>
             )}
 
-            <div className="flex items-center justify-center text-[rgb(51 51 51 / 75%)] pb-56">
-              Host ref number: 851331489494
-            </div>
+          
           </div>
         </div>
 
@@ -465,21 +434,7 @@ const {id}=useParams()
                   <div className="bg-[#fff] w-70% flex">
                     <div className="w-full h-full  p-10 rounded-md">
                       <div className="space-y-4 mt-4">
-                        <div className="flex  items-center">
-                          <span className="flex items-center gap-2">
-                            <FaRegStar className="text-yellow-500" />
-                            My Settings
-                          </span>
-                        </div>
-                        <Divider />
-                        
-                        <div className="flex  items-center">
-                          <span className="flex items-center gap-2">
-                            <FaRegStar className="text-yellow-500" />
-                            Upgrade to couple account
-                          </span>
-                        </div>
-                        <Divider />
+                   
                         
                         <div className="flex  items-center">
                           <span className="flex items-center gap-2">
@@ -496,13 +451,8 @@ const {id}=useParams()
                     
                         <Divider />
         
-                        <div className="flex  items-center">
-                          <span className="flex items-center gap-2">
-                            <SiAmazonsimpleemailservice className="text-blue-500" />
-                            Verify via Facebook
-                          </span>
-                        </div>
-                        <Divider />
+                       
+                        
         
                         <div className="flex justify-between items-center">
                           <span className="flex items-center gap-2">
@@ -547,17 +497,6 @@ const {id}=useParams()
                     </div>
                   </div>
         
-                  {/**personal note */}
-                  <div className="bg-[#fff] w-80% flex mt-5 flex-col pb-10">
-                    <h1 className="text-[#666] text-[25px] font-bold pl-3">
-                      PersonalNote
-                    </h1>
-                    <div className="flex items-center justify-center pt-5">
-                      <button className="flex items-center bg-[#f5f5f5] text-[22px] rounded-full w-fit px-[80px]">
-                        <LuNotebookPen size={22} /> Add note
-                      </button>
-                    </div>
-                  </div>
                 </div>
       </div>
     </div>

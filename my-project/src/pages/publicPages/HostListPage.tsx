@@ -10,8 +10,42 @@ import { fetchHosts } from '../../api';
 import { useQuery } from '@tanstack/react-query';
 import { AiOutlineSearch } from 'react-icons/ai';
 import { BiChevronDown } from 'react-icons/bi';
+import server from '@/server/app';
+import axios from 'axios';
+type AddressValues = {
+  place_id: string;
+  display_name: string;
+  lat: string;
+  lon: string;
+};
 
 const HostListPage = () => {
+    const [input, setInput] = useState("");
+    const [suggestions, setSuggestions] = useState<AddressValues[]>([]);
+    const [selectedPlace, setSelectedPlace] = useState<AddressValues | null>(null);
+    const [loading, setLoading] = useState(false);
+  
+    useEffect(() => {
+      if (input.length < 3) {
+        setSuggestions([]); 
+        return;
+      }
+  
+      const fetchSuggestions = async () => {
+        setLoading(true);
+        try {
+          const response = await axios.get(`${server}/host/places?input=${input}`);
+          setSuggestions(response.data || []);
+        } catch (error) {
+          console.error("Error fetching places:", error);
+        } finally {
+          setLoading(false);
+        }
+      };
+  
+      const timeoutId = setTimeout(fetchSuggestions, 300);
+      return () => clearTimeout(timeoutId);
+    }, [input]);
   const [showFilters,setShowFilters]=useState <boolean>(false)
    const [page, setPage] = useState(1); 
     const { data, isLoading, error } = useQuery({
@@ -19,7 +53,12 @@ const HostListPage = () => {
       queryFn: () => fetchHosts(page),
       staleTime: 300000, 
     });
-  
+
+    const handleSelect = (place: AddressValues) => {
+      setInput(place.display_name);
+      setSelectedPlace(place);
+      setSuggestions([]);
+    };
     if (isLoading) return <p>Loading hosts...</p>;
     if (error) return <p>Error fetching hosts!</p>;
   
@@ -29,14 +68,33 @@ const HostListPage = () => {
      <div className='w-full  flex justify-between mt-3 h-full'>
       <div className=' flex items-center gap-4 p-1'>
         <button className='border border-black rounded-full px-3 ' onClick={() => setShowFilters(prev => !prev)}>Filter</button >
-        <div className="relative">
-      <input
-        type="text"
-        className="border border-black rounded-full pl-3 pr-10"
-        placeholder="New Delhi"
-      />
-      <AiOutlineSearch className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500" />
-    </div>
+        <div className="relative w-full max-w-xs">
+  <input
+    value={input}
+    type="text"
+    className="border border-black rounded-full pl-3 pr-10 py-1 w-full"
+    placeholder="Search for a place"
+    onChange={(e) => setInput(e.target.value)}
+  />
+  <AiOutlineSearch className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500" />
+
+  {loading && <p className="text-gray-500 text-sm mt-1">Loading...</p>}
+
+  {suggestions.length > 0 && (
+    <ul className="absolute z-50 left-0 right-0 bg-white border mt-2 rounded shadow-lg max-h-60 overflow-auto">
+      {suggestions.map((place) => (
+        <li
+          key={place.place_id}
+          className="cursor-pointer px-3 py-2 hover:bg-gray-200 text-sm"
+          onClick={() => handleSelect(place)}
+        >
+          {place.display_name}
+        </li>
+      ))}
+    </ul>
+  )}
+</div>
+
         <button className='border border-black rounded-full px-3'>Aviailability</button>
         <button className='border border-black rounded-full px-3'> Host Type</button>
         <button className='border border-black rounded-full px-3'>Host In My Destinations</button>
