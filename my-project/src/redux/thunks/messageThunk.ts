@@ -7,10 +7,10 @@ export const loadMessages = createAsyncThunk(
   "messages/loadMessages",
   async ({ userId, receiverId }: { userId: string; receiverId: string }, { rejectWithValue }) => {
     try {
-      const res = await axios.get(`/api/messages?userId=${userId}&receiverId=${receiverId}`, {
+      const res = await axios.get(`${server}/message/messages/${receiverId}`, {
         withCredentials: true,
       });
-      return res.data;
+      return res.data.allmessagesBetweenThem
     } catch (err: any) {
       return rejectWithValue(err.response?.data || err.message);
     }

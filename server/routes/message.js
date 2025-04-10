@@ -5,7 +5,7 @@ const { isAuthenticated } = require("../middleware/auth")
 const app=express()
 const router=express.Router()
 
-router.post("/get-all-messages/:id",getMessages)
+router.get("/messages/:id",isAuthenticated,getMessages)
 router.get("/get-all-users",isAuthenticated,getUsersForSidebar)
 router.post("/send-message/:id",isAuthenticated,sendMessage)
 

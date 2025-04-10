@@ -1,51 +1,45 @@
 // socket.ts
 import { io, Socket } from "socket.io-client";
-import { store } from "@/redux/store";
+import { RootState, store } from "@/redux/store";
 import { updateOnlineUsers } from "@/redux/Slices/userSlice";
 import { addMessage } from "@/redux/Slices/messageSlice";
+import { useSelector } from "react-redux";
 
 const BASE_URL = import.meta.env.VITE_SERVER_URL;
-let socket: Socket;
-let isSubscribed = false; // 🛡 Prevent duplicate subscriptions
-
+let socket: Socket | null = null;
 export const connectSocket = (userId: string) => {
-  if (!socket || !socket.connected) {
-    socket = io(BASE_URL, {
-      query: { userId },
-      withCredentials: true,
-    });
+  if (socket) return;
 
-    socket.on("connect", () => {
-      console.log("🔌 Connected to socket:", socket.id);
-    });
+  socket = io(BASE_URL, {
+    query: { userId },
+    withCredentials: true,
+  });
 
-    socket.on("disconnect", () => {
-      console.log("🔌 Disconnected from socket");
-    });
+  socket.on("connect", () => {
+    console.log("🔌 Connected:", socket?.id);
+  });
 
-    socket.on("getAllOnlineUsers", (userIds: string[]) => {
-      console.log("📡 Online users:", userIds);
-      store.dispatch(updateOnlineUsers(userIds));
-    });
+  socket.on("disconnect", () => {
+    console.log("🔌 Disconnected");
+    socket = null;
+  });
 
-    // Subscribe only once after connection
-    if (!isSubscribed) {
-      subscribeToMessages();
-      isSubscribed = true;
-    }
-  }
-};
+  socket.on("getAllOnlineUsers", (userIds: string[]) => {
+    console.log("📡 Online users:", userIds);
+    store.dispatch(updateOnlineUsers(userIds));
+  });
 
-export const disconnectSocket = () => {
-  if (socket && socket.connected) {
-    socket.disconnect();
-    isSubscribed = false;
-  }
-};
-
-export const subscribeToMessages = () => {
   socket.on("newMessage", (message) => {
+    const currentUserId = store.getState().volenteer.volenteerData.user?._id;
     console.log("📩 New message received:", message);
+    if(message.senderId ! === currentUserId)
     store.dispatch(addMessage(message));
   });
 };
+
+export const disconnectSocket = () => {
+  socket?.disconnect();
+  socket = null;
+};
+
+export const getSocket = () => socket;

@@ -3,7 +3,7 @@ import { useDispatch } from 'react-redux';
 
 import axios from 'axios';
 import server from '@/server/app';
-import { setSelectedUser } from '@/redux/Slices/chatSlice';
+import { setSelectedUser } from '@/redux/Slices/messageSlice';
 
 const ChatList = () => {
   const [users, setUsers] = useState<User[]>([]);

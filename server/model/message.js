@@ -11,7 +11,7 @@ receverId:{
     ref:"User",
     required:true
 },
-text:{
+content:{
     type:String
 },
 image:{

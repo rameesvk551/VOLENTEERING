@@ -33,7 +33,7 @@ exports.getUsersForSidebar = async (req,res) => {
 // getting all message between two users
 exports.getMessages=async (req,res)=>{
     try {
-        const senderId=req.user._id.toString();
+        const senderId=req.user.id.toString();
         const receverId=req.params.id
         console.log(senderId,receverId,"ffffffffrrijrijgijibj");
         
@@ -48,7 +48,6 @@ exports.getMessages=async (req,res)=>{
 console.log("aaaaaaaaaaaal meages ",allMessages);
 
         res.status(200).json({
-            success:true,
           allmessagesBetweenThem:allMessages
         })
       
@@ -66,7 +65,7 @@ exports.sendMessage=async (req,res)=>{
     try {
       
       
-        const {image,text}=req.body
+        const {image,content,}=req.body
      
         
 const receverId=req.params.id
@@ -86,7 +85,7 @@ if(image){
     senderId:senderId,
     receverId:receverId,
     image:imageUrl,
-    text:text
+    content:content
    })
   console.log(newMessage)
 await newMessage.save()
@@ -97,9 +96,10 @@ console.log("reciverid",receiverSocketId);
 if (receiverSocketId) {
     io.to(receiverSocketId).emit("newMessage", newMessage);  
 }
+console.log("endddddddddddding");
+
 
    res.status(200).json({
-    success:true,
    newMessage
 })
 
