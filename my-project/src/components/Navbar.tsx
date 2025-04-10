@@ -12,14 +12,15 @@ const Navbar = () => {
   const [showProfileMenu,setShowProfileMenu]=useState<boolean>(false)
   const [isOpen, setIsOpen] = useState(false);
   const menuItems = [
-    { id: 1, icon: <MdOutlineFlight size={22} className="text-black" />, text: "Flight" },
-    { id: 2, icon: <FaTaxi size={22} className="text-black" />, text: "Car Rental" },
-    { id: 3, icon: <MdHotel size={22} className="text-black" />, text: "Stay" },
-    { id: 4, icon: <FaEnvelope size={22} className="text-black" />, text: "Volunteering" },
-    { id: 5, icon: <MdOutlineFlight size={22} className="text-black" />, text: "Tours" },
-    { id: 6, icon: <FaTaxi size={22} className="text-black" />, text: "Plan Your Trip" },
-    { id: 7, icon: <FaEnvelope size={22} className="text-black" />, text: "Contact" },
+    { id: 1, icon: <MdOutlineFlight size={22} className="text-black" />, text: "Flight", route: "/flights" },
+    { id: 2, icon: <FaTaxi size={22} className="text-black" />, text: "Car Rental", route: "/car-rental" },
+    { id: 3, icon: <MdHotel size={22} className="text-black" />, text: "Stay", route: "/hotels" },
+    { id: 4, icon: <FaEnvelope size={22} className="text-black" />, text: "Volunteering", route: "/volunteering-oppertunities" },
+    { id: 5, icon: <MdOutlineFlight size={22} className="text-black" />, text: "Tours", route: "/tours" },
+    { id: 6, icon: <FaTaxi size={22} className="text-black" />, text: "Plan Your Trip", route: "/trip-planning" },
+    { id: 7, icon: <FaEnvelope size={22} className="text-black" />, text: "Contact", route: "/contact" },
   ];
+  
   // Close sidebar on Escape key press
   useEffect(() => {
     const handleKeyDown = (event) => {
@@ -114,16 +115,20 @@ const Navbar = () => {
 
         {/* Menu Items */}
         <ul className="px-6 py-4 text-gray-700 space-y-4">
-  {menuItems &&
-    menuItems.map((item, index) => (
-      <li
-        key={index} // ✅ Always add a unique key
-        className="flex items-center gap-3 cursor-pointer px-4 py-2 rounded-md hover:bg-gray-100 transition"
-      >
-        <span className="text-black font-bold">{item.icon}</span> {/* ✅ Moved className inside */}
+        {menuItems &&
+  menuItems.map((item, index) => (
+    <li
+    key={index}
+    className="flex items-center gap-3 cursor-pointer px-4 py-2 rounded-md hover:bg-gray-100 transition"
+    onClick={() => setIsOpen(false)} // 👈 Close sidebar on click
+  >
+      <Link to={item.route} className="flex items-center gap-3 w-full">
+        <span className="text-black font-bold">{item.icon}</span>
         {item.text}
-      </li>
-    ))}
+      </Link>
+    </li>
+  ))}
+
 </ul>
 
       </div>

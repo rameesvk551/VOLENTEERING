@@ -19,20 +19,21 @@ const App = () => {
  <>
 
  <BrowserRouter>
-
+ <Navbar/>
       <Routes>
-      <Route path="/search-hotels" element={<HotelBookingPage/>} />
      
-      <Route path="/hotels" element={<HotelBookingHomePage/>} />
-      <Route path="/flights" element={<FlightPage/>} />
-     
-      <Route path="/trip-planning" element={<PlanYourTrip/>} />
+  
+
         <Route path="/host/signup" element={<HostSignupPage/>} />
          <Route path="/host/login" element={<HostLoginPage/>} />
          <Route path="/host/add-details/:id" element={<HostAddDetailsPage/>} />
          <Route path="/host/preview" element={<HostPreviewPage/>} />
          <Route path="/host/edit-profile" element={<HostProfileEditPage/>} />
      {/**public routes */}
+     <Route path="/search-hotels" element={<HotelBookingPage/>} />
+      <Route path="/hotels" element={<HotelBookingHomePage/>} />
+      <Route path="/flights" element={<FlightPage/>} />
+      <Route path="/trip-planning" element={<PlanYourTrip/>} />
      <Route path="/" element={<HomePage/>} />
      <Route path="/user/signup" element={<UserSignupPage />} />
      <Route path="/user/login" element={<UserLoginPage />} />
@@ -40,7 +41,7 @@ const App = () => {
         <Route path="/" element={<HomePage/>} />
         <Route path="/blogs" element={<BlogListPage/>} />
         <Route path="/blog/:id" element={<BlogDetails/>} />
-        <Route path="/oppertunities" element={<HostListPage/>} />
+        <Route path="/volunteering-oppertunities" element={<HostListPage/>} />
         <Route path="/host-details/:id" element={<HostDetailsPage/>} />
 
 
