@@ -13,6 +13,16 @@ const userSchema = new mongoose.Schema({
   activities: [{ type: String }],
   status: { type: String, default: "inactive", enum: ["active", "inactive"] },
   membershipStartDate: { type: Date },
+  kycStatus: {
+    type: String,
+    enum: ["none", "pending", "verified", "rejected"],
+    default: "none"
+  },
+  kycDetailsId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "KycDetails"
+  },
+  
   nextDestination:{
     destination:String,
     fromDate:Date,
