@@ -48,18 +48,24 @@ exports.verifyPayment= async (req, res) => {
     // ✅ Find User & Update Payment History
     console.log("user",req.user.id);
     
-    const userId = req.user.id; // Assuming you have user authentication
+    const userId = req.user.id; 
     await User.findByIdAndUpdate(userId, {
       $push: {
         payments: {
           orderId: razorpay_order_id,
           paymentId: razorpay_payment_id,
-          amount: req.body.amount || 0, // Amount must be stored
+          amount: req.body.amount || 0,
           status: "Paid",
           method: req.body.method || "Unknown",
         },
       },
+      $set: {
+        status: "active",
+        membershipStartDate: new Date(), 
+      },
     });
+    
+    
 console.log(User.findById(userId));
 
     return res.status(200).json({ success: true, message: "Payment Verified" });

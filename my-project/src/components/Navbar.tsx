@@ -3,7 +3,7 @@ import { GiHamburgerMenu } from "react-icons/gi";
 import { FaHeart, FaTimes, FaEnvelope } from "react-icons/fa";
 import { MdHotel, MdOutlineFlight } from "react-icons/md";
 import { FaTaxi } from "react-icons/fa6";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { RootState } from "../redux/store";
 import { useSelector } from "react-redux";
 
@@ -11,7 +11,7 @@ const Navbar = () => {
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [showFavorites, setShowFavorites] = useState(false);
-
+const navigate=useNavigate()
   const menuItems = [
     { id: 1, icon: <MdOutlineFlight size={22} className="text-black" />, text: "Flight", route: "/flights" },
     { id: 2, icon: <FaTaxi size={22} className="text-black" />, text: "Car Rental", route: "/car-rental" },
@@ -23,7 +23,14 @@ const Navbar = () => {
   ];
 
   const { volenteerData, isAuthenticated } = useSelector((state: RootState) => state.volenteer);
+  const  userId=volenteerData?.user?._id
+const goToProfile=()=>{
+  setShowProfileMenu(false)
+  if(volenteerData.user?.role==="volunteer"){
+    navigate(`/volenteer/profile/${userId}`)
+  }else{navigate(`/user/profile/${userId}`)}
 
+}
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
@@ -31,10 +38,14 @@ const Navbar = () => {
         setShowFavorites(false);
       }
     };
+   
 
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, []);
+  const logOutHandler=()=>{
+    setShowProfileMenu(false)
+  }
 
   return (
     <div>
@@ -72,13 +83,14 @@ const Navbar = () => {
               {showProfileMenu && (
                 <div className="absolute right-0 top-12 w-60 bg-white rounded-lg shadow-xl border border-gray-200 z-50 overflow-hidden transition-all duration-300 transform scale-100 opacity-100">
                   <div className="px-5 py-4 text-gray-800 font-semibold text-center bg-gray-100">
-                    {volenteerData?.d?.name || "Guest"}
+                    {volenteerData?.user?.firstName || "Guest"}
                   </div>
                   <hr />
-                  <button className="w-full text-left px-5 py-3 text-gray-700 hover:bg-gray-100 transition-all">
+                  <button className="w-full text-left px-5 py-3 text-gray-700 hover:bg-gray-100 transition-all"
+                  onClick={goToProfile}>
                     Profile
                   </button>
-                  <button className="w-full text-left px-5 py-3 text-red-500 hover:bg-gray-100 transition-all">
+                  <button className="w-full text-left px-5 py-3 text-red-500 hover:bg-gray-100 transition-all" onClick={logOutHandler}>
                     Logout
                   </button>
                 </div>

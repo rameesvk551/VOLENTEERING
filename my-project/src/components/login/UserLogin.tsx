@@ -1,7 +1,7 @@
 
 import React, { useState } from "react";
 import { FcGoogle } from "react-icons/fc";
-import { Toaster, toast } from "sonner";
+
 import { Link, useNavigate } from "react-router-dom";
 import Button from "../Button"
 import Divider from "../Divider"
@@ -10,6 +10,7 @@ import Inputbox from "../Inputbox"
 import {useForm} from "react-hook-form"
 import server from "../../server/app.js"
 import axios from "axios";
+import toast from "react-hot-toast";
 const UserLogin = () => {
   const navigate=useNavigate()
  type formData = {
@@ -27,12 +28,13 @@ const onSubmit=(loginData:formData)=>{
     
 console.log("login form submitted",loginData);
 axios.post(`${server}/user/login`,loginData,{withCredentials:true}).then((res)=>{
-    console.log("user Loged in succesfully",res);
-    navigate(`/volenteer/profile/${res.data.user._id}`)
+   toast.success("Logged in Successfully")
+    navigate(`/`)
 
     
 }).catch((error)=>{
     console.log("an error occured",error);
+    toast.error("Something went wrong")
     
 })
 
@@ -42,11 +44,12 @@ axios.post(`${server}/user/login`,loginData,{withCredentials:true}).then((res)=>
   
   return (
     <div className='flex w-full  h-[100vh]'>
-      <div className='hidden md:flex flex-col gap-y-4 w-1/3 min-h-screen bg-black items-center justify-center'>
-        <Logo  />
-        <span className='text-xl font-semibold text-white'>Welcome, back!</span>
-      </div>
-
+         <div className='hidden md:flex flex-col gap-y-4 w-1/3 h-full bg-black items-center justify-center'>
+  <h5 className="text-3xl font-bold tracking-widest text-gray-900 uppercase">
+    <span className="bg-gradient-to-r from-blue-500 to-green-500 text-transparent bg-clip-text">RAIH</span>
+  </h5>
+  <span className='text-xl font-semibold text-white'>Welcome Back</span>
+</div>
       <div className='flex w-full md:w-2/3 h-full bg-white dark:bg-gradient-to-b md:dark:bg-gradient-to-r from-black via-[#071b3e] to-black items-center px-10 md:px-20 lg:px-40'>
         <div className='h-full flex flex-col items-center justify-center  py-12 px-4 sm:px-6 lg:px-8'>
           <div className='block mb-10 md:hidden'>
@@ -121,7 +124,6 @@ axios.post(`${server}/user/login`,loginData,{withCredentials:true}).then((res)=>
         </div>
       </div>
 
-      <Toaster richColors />
     </div>
   );
 };

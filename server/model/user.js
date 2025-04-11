@@ -7,13 +7,19 @@ const userSchema = new mongoose.Schema({
   password: { type: String, required: true, minlength: 6, select: false }, // 🔒 Secure password
  travelStatus:{type:String},
  description:{type:String},
-  role: { type: String, enum: ["volunteer", "host", "admin"], default: "volunteer" },
+  role: { type: String, enum: ["volunteer", "host", "admin","user"], default: "user" },
   profileImage: { type: String, default: "" },
-  skills: { type: String }, 
-  status:{type:String,default:"active"},
-  availability: { type: String, enum: ["full-time", "part-time", "flexible"], default: "flexible" },
+  skills: [{ type: String }], 
+  activities: [{ type: String }],
+  status: { type: String, default: "inactive", enum: ["active", "inactive"] },
+  membershipStartDate: { type: Date },
+  nextDestination:{
+    destination:String,
+    fromDate:Date,
+    toDate:Date
+  },
+
 birthDate:{type:String},
-activities:{type:String},
 payments: [
   {
     orderId: { type: String, required: true },

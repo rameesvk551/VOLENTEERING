@@ -7,10 +7,4 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-cloudinary.uploader.upload("test-image.jpg", function (error, result) {
-  if (error) {
-    console.error("Cloudinary Error:", error);
-  } else {
-    console.log("Cloudinary Upload Success:", result.secure_url);
-  }
-});
+module.exports = cloudinary;

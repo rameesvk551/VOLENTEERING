@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import {UserLoginPage, UserProfilePage, UserSignupPage, VolenteerAddDetails} from './routes/userRoutes';
 import { HostAddDetailsPage, HostLoginPage, HostPreviewPage, HostProfileEditPage, HostSignupPage } from './routes/hostRoutes';
@@ -12,14 +12,38 @@ import PlanYourTrip from './pages/TravelPlanning/PlanYourTrip';
 import HotelBookingPage from './pages/publicPages/HotelBookingPage';
 import HotelBookingHomePage from './pages/publicPages/HotelBookingHomePage';
 import FlightPage from './pages/publicPages/FlightPage';
-
+import { Toaster } from 'react-hot-toast';
+import { loadVolenteer } from './redux/thunks/volenteerThunk';
+import { useDispatch } from 'react-redux';
+import { AppDispatch } from './redux/store';
+import VolenteerUserProfilePage from './pages/user/VolenteerUserProfilePage';
+import KycPage from './pages/user/KycPage';
 
 const App = () => {
+    const dispatch = useDispatch<AppDispatch>();
+ 
+    useEffect(() => {
+      dispatch(loadVolenteer());
+      console.log("loaded");
+      
+    }, []);
+  
   return (
  <>
 
  <BrowserRouter>
  <Navbar/>
+ <Toaster
+        position="bottom-right"
+        toastOptions={{
+          duration: 3000,
+          style: {
+            background: '#333',
+            color: '#fff',
+          },
+        }}
+      />
+
       <Routes>
      
   
@@ -36,6 +60,7 @@ const App = () => {
       <Route path="/trip-planning" element={<PlanYourTrip/>} />
      <Route path="/" element={<HomePage/>} />
      <Route path="/user/signup" element={<UserSignupPage />} />
+     <Route path="/user/profile/:id" element={<UserProfilePage />} />
      <Route path="/user/login" element={<UserLoginPage />} />
      <Route path="/user/membership" element={<MemberShipPlanPage />} />
         <Route path="/" element={<HomePage/>} />
@@ -58,7 +83,8 @@ const App = () => {
 
         {/** volenteer routes */}
         <Route path="/volenteer/add-details/:id" element={<VolenteerAddDetails/>} />
-        <Route path="/volenteer/profile/:id" element={<UserProfilePage/>} />
+        <Route path="/volenteer/profile/:id" element={<VolenteerUserProfilePage/>} />
+        <Route path="/volenteer/kyc" element={<KycPage/>} />
      
    {/**message */}
    <Route path="/message" element={<Messages/>} />

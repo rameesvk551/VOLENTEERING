@@ -1,5 +1,4 @@
-const mongoose = require("mongoose");
-
+ 3
 const hostSchema = new mongoose.Schema(
   {
     firstName: {

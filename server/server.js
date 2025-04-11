@@ -10,6 +10,7 @@ const updateLastActive = require("./middleware/updateLastActive");
 
 // Routes
 const userRoutes = require("./routes/user");
+const kycRoutes = require("./routes/kyc");
 const hostRoutes = require("./routes/host");
 const blogRoutes = require("./routes/blog");
 const paymentRoutes = require("./routes/payment");
@@ -30,6 +31,7 @@ app.use(updateLastActive);
 
 // Routes
 app.use("/api/v1", publicRoutes);
+app.use("/api/v1/kyc", kycRoutes);
 app.use("/api/v1/user", userRoutes);
 app.use("/api/v1/host", hostRoutes);
 app.use("/api/v1/admin", adminRoutes);

@@ -38,7 +38,7 @@ const FeaturesSection = () => {
       description:
         "Find everything you need for a seamless journey—hotels, flights, volunteering opportunities, cab rentals, and more—all in one platform.",
       linkText: "Explore Now",
-      linkHref: "/hosts",
+      linkHref: "/trip-planning",
     }
 ,    
     {

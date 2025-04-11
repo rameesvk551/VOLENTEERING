@@ -34,7 +34,7 @@ const CallToActionSection = () => {
                 Start Your Journey
               </button>
               <Link
-                to="/signup"
+                to="user/signup"
                 className="inline-block text-white bg-secondary-500 rounded-lg px-6 py-3 font-semibold hover:bg-secondary-600"
               >
                 Join Us Now

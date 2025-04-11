@@ -2,6 +2,10 @@ import React from "react";
 import { FaUser, FaGift, FaHeart } from "react-icons/fa";
 import axios from "axios";
 import server from "../../server/app";
+import toast from "react-hot-toast";
+import { useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
+import { RootState } from "@/redux/store";
 
 // ✅ Extend Window interface for TypeScript
 declare global {
@@ -14,7 +18,10 @@ declare global {
 const razorpayKey = import.meta.env.VITE_RAZORPAY_KEY_ID as string;
 
 const MembershipPlans = () => {
-  // ✅ Define a type for Razorpay order response
+  const navigate=useNavigate()
+    const { volenteerData, isAuthenticated } = useSelector((state: RootState) => state.volenteer);
+    const  userId=volenteerData?.user?._id
+
 interface OrderResponse {
   amount: number;
   currency: string;
@@ -52,19 +59,20 @@ const handlePayment = async (amount: number) => {
           const verification = await axios.post(
             `${server}/payment/verify-payment`,
             response,
-            { withCredentials: true }  // ✅ Ensure cookies are included
+            { withCredentials: true }
           );
   
           console.log("✅ Verification Response:", verification.data);
           
           if (verification.data.success) {
-            alert("✅ Payment successful!");
+          toast.success(" Payment successful!");
+          navigate(`/volenteer/profile/${userId}`)
           } else {
-            alert("❌ Payment verification failed.");
+            toast.error(" Payment verification failed.");
           }
         } catch (error) {
-          console.error("❌ Payment verification error:", error);
-          alert("❌ Payment verification failed.");
+          console.error(" Payment verification error:", error);
+          toast.error(" Payment verification failed.");
         }
       },
   
@@ -94,7 +102,7 @@ const handlePayment = async (amount: number) => {
   ];
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 p-6">
+    <div className="flex flex-col items-center justify-center h-[88vh] bg-gray-100 p-6">
       <h2 className="text-4xl font-bold text-gray-800 mb-8">🌍 Volunteer Membership Plans</h2>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {plans.map((plan, index) => (

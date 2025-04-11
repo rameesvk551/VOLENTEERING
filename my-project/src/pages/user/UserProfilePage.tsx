@@ -1,6 +1,5 @@
-
+import UserProfile from '@/components/UserProfile'
 import React from 'react'
-import UserProfile from '../../components/volenteer/userProfile'
 
 const UserProfilePage = () => {
   return (

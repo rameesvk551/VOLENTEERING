@@ -4,8 +4,8 @@ import Divider from "../Divider"
 import Logo from "../Logo"
 import Inputbox from "../Inputbox"
 import { FcGoogle } from "react-icons/fc";
-import { Toaster, toast } from "sonner";
-import { Link } from "react-router-dom";
+import toast from 'react-hot-toast';
+import { Link, Navigate, useNavigate } from "react-router-dom";
 import { BiImages } from "react-icons/bi";
 import { IoArrowBackCircleSharp } from "react-icons/io5";
 import { useForm } from "react-hook-form";
@@ -15,7 +15,7 @@ import server from '../../server/app'
 
 
 const UserSignup = () => {
-
+const navigate= useNavigate()
 
   type formValues={
     firstName:string,
@@ -39,11 +39,11 @@ const UserSignup = () => {
     console.log("fffform values",formData);
     
     const data=await axios.post(`${server}/user/signup`,formData,{withCredentials:true}).then((res)=>{
-      console.log("user created Success fully ",res.data);
-      
+      toast.success('Signup successful!');
+      navigate('/user/login')
     }).catch((error)=>{
       console.log("an error ococred",error);
-      
+      toast.error("omething went wrong")
     })
     
   }
@@ -54,16 +54,20 @@ const UserSignup = () => {
     <div className='flex w-full h-[100vh]'>
       {/* LEFT */}
       <div className='hidden md:flex flex-col gap-y-4 w-1/3 h-full bg-black items-center justify-center'>
-        
-        <Logo  />
-        <span className='text-xl font-semibold text-white'>Welcome!</span>
-      </div>
+  <h5 className="text-3xl font-bold tracking-widest text-gray-900 uppercase">
+    <span className="bg-gradient-to-r from-blue-500 to-green-500 text-transparent bg-clip-text">RAIH</span>
+  </h5>
+  <span className='text-xl font-semibold text-white'>Welcome to Raih — where your journey begins ✨</span>
+</div>
+
 
       {/* RIGHT */}
       <div className='flex w-full md:w-2/3 h-full bg-white dark:bg-gradient-to-b md:dark:bg-gradient-to-r from-black via-[#071b3e] to-black items-center px-4 md:px-20 lg:px-40'>
         <div className='w-full h-full flex flex-col items-center justify-center py-12 px-4 sm:px-0 lg:px-8'>
           <div className='block mb-10 md:hidden -ml-8'>
-            <Logo />
+          <h5 className="text-3xl font-bold tracking-widest text-gray-900 uppercase">
+    <span className="bg-gradient-to-r from-blue-500 to-green-500 text-transparent bg-clip-text">RAIH</span>
+  </h5>
           </div>
 
           <div className='w-full space-y-6 flex flex-col justify-start'>
@@ -207,7 +211,7 @@ const UserSignup = () => {
         </div>
       </div>
 
-      <Toaster richColors />
+
     </div>
   )
 }

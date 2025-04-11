@@ -17,7 +17,7 @@ const FooterSection = () => {
         <div className="flex flex-col md:flex-row justify-between items-center">
           <div className="mb-4">
             <Link to="/" className="text-xl font-bold" >
-              RENTIFUL
+             RAIH
             </Link>
           </div>
           <nav className="mb-4">
