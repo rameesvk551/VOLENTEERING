@@ -6,26 +6,49 @@ import { useForm } from "react-hook-form";
 import PlacesAutocomplete from "../placeAutoCompleteAndMap/PlaceAutoComplete";
 import { AppDispatch } from "../../redux/store";
 import { useDispatch } from "react-redux";
-import { nextStep, prevStep } from "../../redux/Slices/hostFormSlice";
-
+import { nextStep, prevStep, updateAddress } from "../../redux/Slices/hostFormSlice";
+import PlacesAutocompleteForHost from "../placeAutoCompleteAndMap/PlaeAutocompleteForHost";
+type AddressValues = {
+  place_id: number;
+  display_name: string;
+  lat: string;
+  lon: string;
+  boundingbox: [string, string, string, string];
+  class: string;
+  type: string;
+  importance: number;
+  name: string;
+  osm_id: number;
+  osm_type: string;
+  place_rank: number;
+  addresstype: string;
+  licence: string;
+};
 const Address= () => {
   const dispatch=useDispatch<AppDispatch>()
+  const [selectedAddress, setSelectedAddress] = useState<AddressValues | null>(null);
 
-  type formValues = {
-    address: "[]";
-    email: string;
+
+  const handleAddressSelect = (place: AddressValues) => {
+    console.log("Selected place in parent:", place);
+    setSelectedAddress(place);
+  
+     dispatch(updateAddress(place));
   };
-  const form = useForm<formValues>();
-  const { register, handleSubmit, formState } = form;
-  const { errors } = formState;
+
 
   return (
     <div className="flex w-full h-[100vh]">
       {/* LEFT */}
-      <div className="hidden md:flex flex-col gap-y-4 w-1/3 h-full bg-black items-center justify-center">
-        <Logo />
-        <span className="text-xl font-semibold text-white">Welcome!</span>
-      </div>
+      <div className='hidden md:flex flex-col gap-y-5 w-1/3 h-full bg-black items-center justify-center px-8 text-center'>
+  <h5 className="text-3xl font-bold tracking-wide text-gray-900 uppercase">
+    <span className="bg-gradient-to-r from-pink-500 via-red-500 to-yellow-500 text-transparent bg-clip-text">RAIH</span>
+  </h5>
+  <p className='text-lg font-medium text-white'>
+    Ready to share your space?<br />
+    Become a <span className="text-yellow-400 font-semibold">Raih Host</span> and welcome travelers with open arms 🤝🏡
+  </p>
+</div>
 
       {/* RIGHT */}
       <div className="flex w-full md:w-2/3 h-full bg-white   md:px-20 ">
@@ -44,7 +67,7 @@ const Address= () => {
                 <span className="ml-5 mb-2" >
                   your addres (including streeet/house/building number)
                 </span>{" "}
-                <PlacesAutocomplete/>
+                <PlacesAutocompleteForHost onSelectAddress={handleAddressSelect} />
                 <Divider />
 
                 <div className="flex w-full justify-between py-3 px-4 ">

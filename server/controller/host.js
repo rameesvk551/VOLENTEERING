@@ -49,11 +49,14 @@ const hashedPassword=await bcrypt.hash(password,10)
 }
    
 }
-
-
 exports.addDetails = async (req, res, next) => {
+
+  console.log("iiiiiiiiiid",req.hostName);
+  const hostId = new mongoose.Types.ObjectId(req.hostName);
+
+
   try {
-    console.log("Received host details",req.body);
+    console.log("Received host details", req.body);
 
     const {
       email,
@@ -67,35 +70,27 @@ exports.addDetails = async (req, res, next) => {
       showIntreastInLanguageExchange,
       privateComment,
       organisation,
-      images, // ✅ Directly use images from request body
+      images, // ✅ Use image URLs and descriptions directly from body
     } = req.body;
 
-    console.log("Email:", email);
-    console.log("Request Body:", req.body);
+    // Convert stringified arrays if necessary (in case frontend sends them as strings)
+    const parsedImages = typeof images === "string" ? JSON.parse(images) : images;
 
-    let host = await Host.findOne({ email });
+    let host = await Host.findOne({_id:hostId});
+console.log("finded host",host);
 
     if (!host) {
       return res.status(404).json({ message: "Host not found" });
     }
+console.log("pared images",parsedImages);
 
-    // ✅ Use images from req.body instead of req.files
-    let uploadedImages = images || []; 
+    // ✅ Directly use images from the request body
+    const uploadedImages = parsedImages || [];
+console.log("aadingimages");
 
-    if (req.files && req.files.length > 0) {
-      uploadedImages = await Promise.all(
-        req.files.map(async (file, index) => {
-          const result = await cloudinary.uploader.upload(file.path);
-          return {
-            url: result.secure_url,
-            description: req.body.imageDescriptions?.[index] || "",
-          };
-        })
-      );
-    }
-
-    // ✅ Append images properly
+    // ✅ Append new images to existing ones
     host.images = [...host.images, ...uploadedImages];
+console.log("image added");
 
     // ✅ Update other fields
     host.address = address;
@@ -109,17 +104,16 @@ exports.addDetails = async (req, res, next) => {
     host.privateComment = privateComment;
     host.organisation = organisation;
 
-   
-    host = await host.save();
+    await host.save();
+
     console.log("Updated host images:", host.images);
 
     return res.status(200).json({ message: "Host details updated successfully", host });
   } catch (error) {
-    console.error("Error:", error);
+    console.error("Error updating host details:", error);
     next(error);
   }
 };
-
 exports.hostLogin=async(req,res,next)=>{
     try {
         console.log("eeethiiiii");
@@ -142,11 +136,7 @@ exports.hostLogin=async(req,res,next)=>{
         host.selectedHelpTypes?.length &&
         host.allowed?.length &&
         host.accepted?.length &&
-        host.languageDescription &&
-        host.languageAndLevel?.length &&
-        host.showIntreastInLanguageExchange &&
-        host.privateComment &&
-        host.organisation
+        host.languageAndLevel?.length 
       );
   
       if (isProfileIncomplete) {
@@ -182,9 +172,6 @@ else{
         next(error); 
     }
 }
-
-
-// Route to fetch places
  exports.fetchAddressPlaces=async (req, res) => {
     const { input } = req.query;
 
@@ -210,22 +197,22 @@ else{
         res.status(500).json({ error: "Failed to fetch places" });
     }
 }
-
-
-// loadhost 
-
 exports.loadHost=async(req,res,next)=>{
-  console.log("iiiiiiiiiid",req.hostUser._id);
-  const hostId = new mongoose.Types.ObjectId(req.hostUser._id);
+  console.log("iiiiiiiiiid",req.hostName_id);
+  const hostId = new mongoose.Types.ObjectId(req.hostName._id);
 
-
+  const host = await Host.findByIdAndUpdate(
+    hostId,
+    { lastActive: new Date() },
+    { new: true } 
+  );
   
-  const host =await Host.findById(hostId)
-  console.log("hhhhhost",host);
+  console.log("Updated host:", host);
+  
+
   
   res.status(200).json({success:true, host})
 }
-
 exports.getHosts = async (req, res) => {
   try {
     const { page = 1, limit = 10 } = req.query; // default to page 1, limit 10
@@ -251,7 +238,6 @@ exports.getHosts = async (req, res) => {
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
-
 exports.getHostById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -268,3 +254,31 @@ console.log("hhhhhhhhot foundd",host);
     res.status(500).json({ success: false, message: "Server Error" });
   }
 };
+exports.filteredHost= async (req, res) => {
+  try {
+    const { hostTypes, hostWelcomes, numberOfWorkawayers } = req.body;
+
+    const filter= {};
+
+    if (hostTypes.length > 0) {
+      filter.hostType = { $in: hostTypes };
+    }
+
+    if (hostWelcomes.length > 0) {
+      filter.welcomes = { $in: hostWelcomes };
+    }
+
+    if (numberOfWorkawayers !== "any") {
+      if (numberOfWorkawayers === "more") {
+        filter.numberOfWorkawayers = { $gt: 2 };
+      } else {
+        filter.numberOfWorkawayers = parseInt(numberOfWorkawayers);
+      }
+    }
+
+    const hosts = await Host.find(filter);
+    res.status(200).json(hosts);
+  } catch (err) {
+    res.status(500).json({ message: "Server Error", error: err });
+  }
+}

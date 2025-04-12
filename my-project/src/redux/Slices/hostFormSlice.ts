@@ -42,15 +42,23 @@ interface FormState {
   [key: string]: any; // To handle dynamic updates
   };
 }
-interface Address {
-  street: string;
-  city: string;
-  state: string;
-  country: string;
-  zipCode: string;
-  latitude: number; 
-  longitude: number; 
+export interface Address {
+  place_id: number;
+  display_name: string;
+  lat: string;
+  lon: string;
+  boundingbox: [string, string, string, string];
+  class: string;
+  type: string;
+  importance: number;
+  name: string;
+  osm_id: number;
+  osm_type: string;
+  place_rank: number;
+  addresstype: string;
+  licence: string;
 }
+
 // ** Async Thunk to Submit Form Data to Backend **
 export const addDetails = createAsyncThunk(
   "hostForm/addDetails",
@@ -79,13 +87,24 @@ const initialState: FormState = {
   data: {
     email: "",
     address: {
-      street: "",
-      city: "",
-      state: "",
-      country: "",
-      zipCode: "",
-      latitude: 0,
-      longitude: 0,
+      place_id: 0,
+      display_name: "",
+      lat: "",
+      lon: "",
+      boundingbox: ["", "", "", ""],
+      class: "",
+      type: "",
+      importance: 0,
+      name: "",
+      osm_id: 0,
+      osm_type: "",
+      place_rank: 0,
+      addresstype: "",
+      licence: ""
+     
+   
+     
+     
     },
     description: "",
     selectedHelpTypes: [],
@@ -179,6 +198,8 @@ const hostFormSlice = createSlice({
     },
     updateAddress: (state, action: PayloadAction<Address>) => {
       state.data.address = action.payload;
+      console.log("aaaaaaaaadress",state.data.address);
+      
     },
     addImages: (state, action: PayloadAction<UploadedImage[]>) => {
       state.data.images = [...state.data.images, ...action.payload];  // ✅ Fix reference

@@ -18,18 +18,45 @@ type AddressValues = {
   lat: string;
   lon: string;
 };
+export type FiltersType = {
+  hostTypes: string[];
+  numberOfWorkawayers: string;
+  hostWelcomes:string[]
+
+};
 
 const HostListPage = () => {
+  const [filters, setFilters] = useState<FiltersType>({
+    hostTypes: [],
+    hostWelcomes: [],
+    numberOfWorkawayers: "any",
+  });
+  const [hosts, setHosts] = useState<any[]>([]);
     const [input, setInput] = useState("");
     const [suggestions, setSuggestions] = useState<AddressValues[]>([]);
     const [selectedPlace, setSelectedPlace] = useState<AddressValues | null>(null);
     const [loading, setLoading] = useState(false);
-  
+    useEffect(() => {
+      const fetchFilteredHosts = async () => {
+       
+        try {
+          const response = await axios.post(`${server}/filtered-hosts`, filters);
+          console.log("fffffffffiterd res",response);
+          
+          setHosts(response.data);
+        } catch (error) {
+          console.error("Error fetching filtered hosts:", error);
+        }
+      };
+    
+      fetchFilteredHosts();
+    }, [filters]);
     useEffect(() => {
       if (input.length < 3) {
         setSuggestions([]); 
         return;
       }
+ 
   
       const fetchSuggestions = async () => {
         setLoading(true);
@@ -65,49 +92,70 @@ const HostListPage = () => {
   return (
     <div>
      {/**header */}
-     <div className='w-full  flex justify-between mt-3 h-full'>
-      <div className=' flex items-center gap-4 p-1'>
-        <button className='border border-black rounded-full px-3 ' onClick={() => setShowFilters(prev => !prev)}>Filter</button >
-        <div className="relative w-full max-w-xs">
-  <input
-    value={input}
-    type="text"
-    className="border border-black rounded-full pl-3 pr-10 py-1 w-full"
-    placeholder="Search for a place"
-    onChange={(e) => setInput(e.target.value)}
-  />
-  <AiOutlineSearch className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500" />
+     <div className="w-full flex items-center justify-between gap-4 px-4 py-2 bg-white border rounded-lg shadow-sm">
 
-  {loading && <p className="text-gray-500 text-sm mt-1">Loading...</p>}
+{/* Left Side - Filters & Search */}
+<div className="flex items-center gap-3 flex-grow">
+  
+  {/* Filter Button */}
+  <button
+    onClick={() => setShowFilters(prev => !prev)}
+    className="px-3 py-1 rounded-md border border-gray-300 hover:bg-gray-100 transition text-sm"
+  >
+    Filter
+  </button>
 
-  {suggestions.length > 0 && (
-    <ul className="absolute z-50 left-0 right-0 bg-white border mt-2 rounded shadow-lg max-h-60 overflow-auto">
-      {suggestions.map((place) => (
-        <li
-          key={place.place_id}
-          className="cursor-pointer px-3 py-2 hover:bg-gray-200 text-sm"
-          onClick={() => handleSelect(place)}
-        >
-          {place.display_name}
-        </li>
-      ))}
-    </ul>
-  )}
+  {/* Search Input */}
+  <div className="relative w-full max-w-sm">
+    <input
+      value={input}
+      type="text"
+      placeholder="Search for a place"
+      onChange={(e) => setInput(e.target.value)}
+      className="w-full pl-4 pr-10 py-1.5 rounded-full border border-gray-300 shadow-sm focus:ring-2 focus:ring-blue-500 text-sm"
+    />
+    <AiOutlineSearch className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+    
+    {loading && <p className="text-gray-500 text-xs mt-1">Loading...</p>}
+
+    {suggestions.length > 0 && (
+      <ul className="absolute z-50 left-0 right-0 bg-white border mt-2 rounded-md shadow max-h-60 overflow-auto">
+        {suggestions.map((place) => (
+          <li
+            key={place.place_id}
+            className="cursor-pointer px-3 py-2 hover:bg-gray-100 text-sm"
+            onClick={() => handleSelect(place)}
+          >
+            {place.display_name}
+          </li>
+        ))}
+      </ul>
+    )}
+  </div>
+
+  {/* More Filter Tags */}
+  <button className="px-3 py-1 rounded-md border border-gray-300 hover:bg-gray-100 text-sm">
+  Host In My Destinations
+  </button>
+
+  <SortDropdown />
+
+
 </div>
 
-        <button className='border border-black rounded-full px-3'>Aviailability</button>
-        <button className='border border-black rounded-full px-3'> Host Type</button>
-        <button className='border border-black rounded-full px-3'>Host In My Destinations</button>
-      <SortDropdown/>
-      </div>
-      <div className='flex flex-row px-3 gap-2 '>
-      <CiBoxList size={22} />
-      <CiBoxes size={22} />
-      </div>
+{/* View Icons */}
+<div className="flex items-center gap-2">
+  <button className="p-2 hover:bg-gray-100 rounded-md transition">
+    <CiBoxList size={22} />
+  </button>
+  <button className="p-2 hover:bg-gray-100 rounded-md transition">
+    <CiBoxes size={22} />
+  </button>
+</div>
+</div>
 
-     </div>
 <div className="flex flex-row">
-{showFilters ? <Filters/> : <></> }
+{showFilters ? <Filters setFilters={setFilters}/> : <></> }
 <MapComponent isFilterComponentOpen={showFilters}/> 
     {showFilters ? <></> :<div className={` ${showFilters  ? "w-1/4": "w-1/2"}  flex flex-col gap-y-22  gap-2 px-2 pt-3`}>
             {data.hosts.map((host:Host) => (
@@ -139,149 +187,131 @@ const HostListPage = () => {
 export default HostListPage
 
 
-const Filters =()=>{
+const Filters = ({ setFilters }: { setFilters: (filters: FiltersType) => void }) => {
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
   const [selectedRadio, setSelectedRadio] = useState("any");
-
-
+  const [hostWelcome, setHostWelcome] = useState<string[]>([]);
   const hostTypes = [
-    "Family",
-    "Hostel",
-    "Individual",
-    "Community",
-    "School",
-    "Farmstay",
-    "Sustainable Project",
-    "Others",
+    "Family", "Hostel", "Individual", "Community", 
+    "School", "Farmstay", "Sustainable Project", "Others"
   ];
-  const hostWelcomes = [
-    "Families",
-    " nomads",
-    "camperVan",
-    
-  ];
-  const hostDetails = [
-    "Internet Access",
-    "Have Pets",
-    "smoker",
-    "no fees",
-    
-  ];
+  const hostWelcomes = ["Families", "Nomads", "Camper Van"];
+  const hostDetails = ["Internet Access", "Have Pets", "Smoker", "No Fees"];
 
   const addToSelectedHelpType = (type: string) => {
-    setSelectedTypes((prev) =>
-      prev.includes(type) ? prev.filter((t) => t !== type) : [...prev, type]
+    setSelectedTypes(prev =>
+      prev.includes(type) ? prev.filter(t => t !== type) : [...prev, type]
     );
   };
-  console.log("sele",selectedTypes);
-  
-return(
-  <div className='w-1/4 h-[90vh] px-3 pt-3 my-3 mx-2   border border-black'>
-  <h4 className="text-lg font-bold">Host Type</h4>
-  <div className='grid grid-cols-2 gap-2   '>
-  {hostTypes.map((type, index) => (
-        <div key={index} className={`p-2  flex border rounded-md  justify-center bg-gray-100 ${selectedTypes.includes(type)? "border border-black":""} cursor-pointer`} onClick={()=>{addToSelectedHelpType(type)}}>
-          {type}
-        </div>
-      ))}
-  </div>
+  const addToHostWelcomes = (type: string) => {
+    setHostWelcome(prev =>
+      prev.includes(type) ? prev.filter(t => t !== type) : [...prev, type]
+    );
+  };
+  const handleApply = () => {
+    const filters: FiltersType = {
+      hostTypes: selectedTypes,
+      numberOfWorkawayers: selectedRadio,
+      hostWelcomes:hostWelcome
 
-  <div>
-    <RangeSlider/>
-  </div>
+    };
+    console.log("ffffffffffffffil",filters);
+    
+    setFilters(filters);
+  };
 
-  <div>
-    <h4 className='font-bold'>Host welcomes:</h4>
-  <div className='grid grid-cols-3 gap-2 pt-2  '>
-  {hostWelcomes.map((type, index) => (
-        <div key={index} className={`p-2  flex border rounded-md  text-sm justify-center bg-gray-100 ${selectedTypes.includes(type)? "border border-black":""} cursor-pointer`} onClick={()=>{addToSelectedHelpType(type)}}>
-          {type}
-        </div>
-      ))}
-  </div>
-  </div>
-
-
-  <div className='ml-6'>
-  <div className="flex flex-col  pt-4">
-<h4 className='font-bold'>Number of Workawayers accepted:</h4>
-<div className='flex flex-row  gap-2 px-2'>
-<label className="flex items-center gap-2 cursor-pointer hover:text-blue-500">
-    <input type="radio" name="quantity" value="any" checked={selectedRadio === "any"} onChange={() => setSelectedRadio("any")} />
-    Any
-  </label>
-  <label className="flex items-center gap-2 cursor-pointer hover:text-blue-500">
-    <input type="radio" name="quantity" value="1" checked={selectedRadio === "1"} onChange={() => setSelectedRadio("1")} />
-    1
-  </label>
-  <label className="flex items-center gap-2 cursor-pointer hover:text-blue-500">
-    <input type="radio" name="quantity" value="2" checked={selectedRadio === "2"} onChange={() => setSelectedRadio("2")} />
-    2
-  </label>
-  <label className="flex items-center gap-2 cursor-pointer hover:text-blue-500">
-    <input type="radio" name="quantity" value="more" checked={selectedRadio === "more"} onChange={() => setSelectedRadio("more")} />
-    More than two
-  </label>
-</div>
-</div>
-
-<div className="flex gap-4 pt-4 px-2 items-center">
-  <label>
-    <input type="checkbox" name="newHost" /> New Host
-  </label>
-  <label>
-    <input type="checkbox" name="recentlyUpdated" /> Recently Updated
-  </label>
-</div>
-
-  </div>
-
-<div className="flex justify-center items-center pt-3 ">
-<button className='bg-black text-white px-10 py-1 w-4/5 rounded-md  '>APPLAY</button>
-
-</div>
-</div>
-)
-}
-
-const RangeSlider = () => {
-  const [value, setValue] = useState(50);
 
   return (
-    <div className="flex flex-col items-center gap-4 w-full max-w-md mx-auto p-4">
-      {/* Label with value */}
-      <div className="text-lg font-semibold text-gray-700">
-       Host Score: <span className="text-blue-500">{value}% and up</span>
+    <div className="w-1/4 h-full px-4 py-5 my-4 mx-2 border border-gray-300 rounded-lg shadow-sm bg-white overflow-y-auto">
+      <h3 className="text-xl font-semibold mb-3">Filter Hosts</h3>
+
+      {/* Host Type */}
+      <div className="mb-5">
+        <h4 className="text-md font-bold mb-2">Host Type</h4>
+        <div className="grid grid-cols-2 gap-2">
+          {hostTypes.map((type, index) => (
+            <div
+              key={index}
+              className={`px-3 py-2 text-sm text-center rounded-md border transition cursor-pointer ${
+                selectedTypes.includes(type)
+                  ? "bg-black text-white border-black"
+                  : "bg-gray-100 hover:bg-gray-200"
+              }`}
+              onClick={() => addToSelectedHelpType(type)}
+            >
+              {type}
+            </div>
+          ))}
+        </div>
       </div>
 
-      {/* Range Slider */}
-      <input
-        type="range"
-        min="0"
-        max="90"
-        value={value}
-        onChange={(e) => setValue(Number(e.target.value))}
-        className="w-full h-2 bg-gray-300 rounded-lg appearance-none cursor-pointer transition-all focus:outline-none focus:ring-2 focus:ring-blue-400"
-        style={{
-          background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${value}%, #e5e7eb ${value}%, #e5e7eb 100%)`,
-        }}
-      />
-
-      {/* Indicator below the slider */}
-      <div className="relative w-full">
-        <div
-          className="absolute top-[-10px] text-sm font-medium text-white bg-blue-500 px-3 py-1 rounded-md"
-          style={{
-            left: `calc(${value}% - 15px)`,
-            transition: "left 0.2s ease-in-out",
-          }}
-        >
-          {value}
+      {/* Host Welcomes */}
+      <div className="mb-5">
+        <h4 className="text-md font-bold mb-2">Host Welcomes</h4>
+        <div className="grid grid-cols-3 gap-2">
+          {hostWelcomes.map((type, index) => (
+            <div
+              key={index}
+              className={`px-3 py-2 text-xs text-center rounded-md border transition cursor-pointer ${
+                hostWelcome.includes(type)
+                  ? "bg-black text-white border-black"
+                  : "bg-gray-100 hover:bg-gray-200"
+              }`}
+              onClick={() => addToHostWelcomes(type)}
+            >
+              {type}
+            </div>
+          ))}
         </div>
+      </div>
+
+      {/* Number of Workawayers */}
+      <div className="mb-5">
+        <h4 className="text-md font-bold mb-2">Number of Workawayers Accepted</h4>
+        <div className="flex flex-row gap-2">
+          {["any", "1", "2", "more"].map((value, index) => (
+            <label key={index} className="flex items-center gap-2 text-sm cursor-pointer hover:text-blue-600">
+              <input
+                type="radio"
+                name="quantity"
+                value={value}
+                checked={selectedRadio === value}
+                onChange={() => setSelectedRadio(value)}
+              />
+              {value === "any"
+                ? "Any"
+                : value === "more"
+                ? "More than two"
+                : value}
+            </label>
+          ))}
+        </div>
+      </div>
+
+      {/* Checkboxes */}
+      <div className="mb-5 flex flex-row  gap-2">
+        <label className="flex items-center gap-2 text-sm cursor-pointer">
+          <input type="checkbox" name="newHost" />
+          New Host
+        </label>
+        <label className="flex items-center gap-2 text-sm cursor-pointer">
+          <input type="checkbox" name="recentlyUpdated" />
+          Recently Updated
+        </label>
+      </div>
+
+      {/* Apply Button */}
+      <div className="pt-2">
+        <button className="w-full bg-black text-white py-2 rounded-md hover:bg-gray-900 transition" onClick={handleApply}>
+          Apply
+        </button>
       </div>
     </div>
   );
 };
+
+
+
 
 
 const locations = [

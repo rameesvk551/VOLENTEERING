@@ -71,11 +71,17 @@ const DescriptionAndHelps = () => {
   }, [description, setValue]);
   return (
     <div className="flex w-full h-[100vh]">
-      {/* LEFT */}
-      <div className="hidden md:flex flex-col gap-y-4 w-1/3 h-full bg-black items-center justify-center">
-        <Logo />
-        <span className="text-xl font-semibold text-white">Welcome!</span>
-      </div>
+     
+        {/* LEFT */}
+        <div className='hidden md:flex flex-col gap-y-5 w-1/3 h-full bg-black items-center justify-center px-8 text-center'>
+  <h5 className="text-3xl font-bold tracking-wide text-gray-900 uppercase">
+    <span className="bg-gradient-to-r from-pink-500 via-red-500 to-yellow-500 text-transparent bg-clip-text">RAIH</span>
+  </h5>
+  <p className='text-lg font-medium text-white'>
+    Ready to share your space?<br />
+    Become a <span className="text-yellow-400 font-semibold">Raih Host</span> and welcome travelers with open arms 🤝🏡
+  </p>
+</div>
 
       {/* RIGHT */}
       <div className="flex w-full md:w-2/3 h-full bg-white   md:px-20 ">

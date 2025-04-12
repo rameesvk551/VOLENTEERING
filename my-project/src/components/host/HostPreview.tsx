@@ -22,26 +22,70 @@ import { useDispatch } from "react-redux";
 import { AppDispatch, RootState } from "../../redux/store";
 import { useSelector } from "react-redux";
 import HostLogin from "../login/HostLogin";
+import Review from "../hostDetailsPageComponents/Review";
+import PhotosSection from "../hostDetailsPageComponents/PhotosSection";
+import { useNavigate } from "react-router-dom";
+type HostType = {
+  _id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  address: {
+    place_id: number;
+    display_name: string;
+    lat: string;
+    lon: string;
+    boundingbox: string[];
+    [key: string]: any;
+  };
+  description: string;
+  selectedHelpTypes: string[];
+  allowed: string[];
+  accepted: string[];
+  languageDescription: string;
+  languageAndLevel: {
+    language: string;
+    level: string;
+  }[];
+  showIntreastInLanguageExchange: boolean;
+  privateComment: string;
+  organisation: string;
+  images: {
+    url: string;
+    description: string;
+  }[];
+  availability: string;
+  minimumStay: string;
+  isVerified: boolean;
+  role: string;
+  createdAt: string;
+  updatedAt: string;
+  __v?: number;
+};
 
 const HostPreview = () => {
+
   const dispatch = useDispatch<AppDispatch>();
-  const [active, setActive] = useState<number>(1);
+  const [activeTabId, setActiveTabId] = useState<number>(1);
+
+  const [host, setHost] = useState<HostType | null>(null);
+  const { hostData, loading, error } = useSelector((state: RootState) => state.host);
 
   useEffect(() => {
     dispatch(loadHost());
   }, [dispatch]);
-
-  const { hostData, loading, error } = useSelector((state: RootState) => state.host);
-
-  // ✅ Move useEffect before early returns
+  
   useEffect(() => {
-    console.log("🎯 Host data updated:", hostData);
+    if (hostData?.host) {
+      setHost(hostData.host);
+    }
   }, [hostData]);
+
 
 if(loading){
   return <div> loading</div>
 }
-  console.log("hhhhhhhhhhhost data", hostData);
+  console.log("hhhhhhhhhhhost data", host);
 
   const tabs=[
     { id: 1, label: "OVERVIEW" },
@@ -49,452 +93,281 @@ if(loading){
     { id: 3, label: "MAP" },
     { id: 4, label: "FEEDBACK(2)" },
   ]
-  const languageSpoken = [
-    {
-      language: "germen",
-      level: "beginer",
-    },
-    {
-      language: "germen",
-      level: "beginer",
-    },
-    {
-      language: "germen",
-      level: "beginer",
-    },
-    {
-      language: "germen",
-      level: "beginer",
-    },
-  ];
 
-  const helpOptions = [
-    { label: "Cooking", icon: <PiCookingPot size={30} /> },
-    { label: "Art", icon: <GiDrowning size={30} /> },
-    { label: "Teaching", icon: <GiTeacher size={30} /> },
-    { label: "Gardening", icon: <MdOutlineElderlyWoman size={30} /> },
-    {
-      label: "Animal Care",
-      icon: <LuTrees size={30} className="bg-green-500" />,
-    },
-  ];
-  console.log("host",hostData?.host?.firstName);
-  
+
   return (
     
 
-  
+   
 
 
 
 
-    <div className="flex flex-col bg-[#f5f5f5] ">
-      <div className="bg-[#fff] ">
-        <div className="px-[100px]">
-          <div className="flex justify-between">
-            <div className="flex space-x-1 text-yellow-400">
-              <span className="text-2xl">&#9733;</span>
-              <span className="text-2xl">&#9733;</span>
-              <span className="text-2xl">&#9733;</span>
-              <span className="text-2xl">&#9733;</span>
-              <span className="text-2xl">&#9733;</span>
-            </div>
-            <button className="bg-green-400 rounded-full">updated</button>
+    <div className="flex flex-col bg-[#f5f5f5] min-h-screen">
+    <div className="bg-white w-full shadow-sm">
+      <div className="px-4 md:px-12 py-6">
+        <div className="flex flex-col sm:flex-row justify-between items-center">
+          <div className="flex space-x-1 text-yellow-400">
+            {Array(5).fill("★").map((star, i) => (
+              <span key={i} className="text-2xl">{star}</span>
+            ))}
           </div>
-          <div>
-            <h1 className="text-[#0a3f5f] text-[27px] font-bold my-[5px] mb-[15px]">
-              WELCOME {} {hostData?.host?.firstName } {}  {hostData?.host?.lastName}
-            </h1>
-          </div>
-          <div className="flex flex-row gap-2 ">
-            <div className="flex ">
-              <IoMdHeart size={25} />
-              <span>Favourited 0 times</span>
-            </div>
-
-            <div className="flex ">
-              <MdRestore size={25} />
-              {"   "}
-              <span>Last login: 7 Mar 2025 05:29 CST</span>
-            </div>
-
-            <div className="flex ">
-              <MdRestore size={25} />
-              {"   "}
-              <span>Last activity : 7 Mar 2025</span>
-            </div>
-          </div>
+          <button className="bg-green-500 text-white px-4 py-1 rounded-full mt-2 sm:mt-0">Updated</button>
         </div>
 
-        <Divider />
+        <h1 className="text-[#0a3f5f] text-xl md:text-2xl font-bold my-4">
+          WELCOME {host?.firstName} {host?.lastName}
+        </h1>
 
-        <div className="flex justify-between pl-[100px] pr-[160px] text-[#0a3f5f] text-[20px] pt-4 pb-5">
-        <div className="flex justify-center space-x-10  pb-2 flex items-center">
-  {tabs&& tabs.map((tab) => (
-    <div key={tab.id} className="relative cursor-pointer">
-      <h5
-        onClick={() => setActive(tab.id)}
-        className={`pb-2 ${
-          active === tab.id ? "font-bold text-crimson" : "text-gray-600"
-        }`}
-      >
-        {tab.label}
-      </h5>
-    
-    </div>
-  ))}
-</div>
-          <div className="flex flex-row space-x-6 ">
-     
-        
-            <button className="flex flex-row  bg-[#f5f5f5] rounded-full p-2 items-center px-6">
-            <FaEye/> View Online
-            </button>{" "}
+        <div className="flex flex-wrap gap-4 text-sm text-gray-700">
+          <div className="flex items-center gap-1">
+            <IoMdHeart size={20} />
+            <span>Favourited 0 times</span>
+          </div>
+
+          <div className="flex items-center gap-1">
+            <MdRestore size={20} />
+            <span>Last login: 7 Mar 2025 05:29 CST</span>
+          </div>
+
+          <div className="flex items-center gap-1">
+            <MdRestore size={20} />
+            <span>Last activity : 7 Mar 2025</span>
           </div>
         </div>
       </div>
 
-      <div className="px-[100px] flex flex-row  mt-8 gap-7">
-        <div className="w-2/3  ">
-          {/**aviailability  */}
-          <div className="w-80% p-6  bg-[#fff]">
-            <div className="pt-10">
-              <div className=" flex justify-between pb-4">
-                <h1 className="text-[#666] text-[25px] font-bold">
-                  Availability
-                </h1>
-                <div className="flex items-center">
-                  <CiSquareChevLeft size={37} /> 2025{" "}
-                  <CiSquareChevRight size={37} className="bg-green-500" />
-                </div>
-              </div>
-              <span className="flex items-center ">
-                <CiCalendar /> Min stay requested : atleast a week
-              </span>
-              <div className="flex flex-col gap-1 pt-7">
-              <div className="flex flex-nowrap w-full gap-1 pt-7">
-                {["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"].map((month) => (
-                  <div key={month} className="w-[8.25%] bg-fuchsia-500 text-white h-8 text-center">
-                    {month}
-                  </div>
-                ))}
-              </div>
-                <div className="flex flex-nowrap w-full gap-1">
-                  <div className="w-[8.25%] bg-fuchsia-500 text-white  h-8 text-center"></div>
-                  <div className="w-[8.25%] bg-fuchsia-500 text-white h-8 text-center"></div>
-                  <div className="w-[8.25%] bg-fuchsia-500 text-white h-8 text-center"></div>
-                  <div className="w-[8.25%] bg-fuchsia-500 text-white h-8 text-center"></div>
-                  <div className="w-[8.25%] bg-fuchsia-500 text-white h-8 text-center"></div>
-                  <div className="w-[8.25%] bg-fuchsia-500 text-white h-8 text-center"></div>
-                  <div className="w-[8.25%] bg-fuchsia-500 text-white h-8 text-center"></div>
-                  <div className="w-[8.25%] bg-fuchsia-500 text-white h-8 text-center"></div>
-                  <div className="w-[8.25%] bg-fuchsia-500 text-white h-8 text-center"></div>
-                  <div className="w-[8.25%] bg-fuchsia-500 text-white h-8 text-center"></div>
-                  <div className="w-[8.25%] bg-fuchsia-500 text-white h-8 text-center"></div>
-                  <div className="w-[8.25%] bg-fuchsia-500 text-white h-8 text-center"></div>
-                </div>
-                <div className="relative w-full  bg-gray-300">
-                  <div className="absolute top-0 right-0 cursor-pointer">
-                    What's this
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+      <Divider />
 
-          <div className="w-80% p-6  bg-[#fff] mt-5">
-            <h1 className="text-[#666] text-[25px] font-bold">Details</h1>
-            <div className="w-full pl-4">
-              <div className="flex justify-between">
-                <div className="flex items-center">
-                  <TbFileDescription />
-                  <h2 className=" text-[#b4cb3c] text-[1.1rem]">Description</h2>
-                </div>
-
-                <button className="bg-green-400 rounded-md  flex items-center px-3">
-                  {" "}
-                  <CiEdit />
-                  Edit
-                </button>
-              </div>
-              <p>
-           {hostData?.host.description}
-              </p>
-
-              <Divider />
-              <div className="flex justify-between">
-                <h2 className=" text-[#b4cb3c] text-[1.1rem]">
-                  {" "}
-                  Types of helps and learning oppertunities
-                </h2>
-                <button className="bg-green-400 rounded-md  flex items-center px-3">
-                  {" "}
-                  <CiEdit />
-                  Edit
-                </button>
-              </div>
-
-              <div>
-                {helpOptions &&
-                  helpOptions.map((help) => (
-                    <span className="flex items-center gap-4 pl-4">
-                      {help.icon} {help.label}
-                    </span>
-                  ))}
-              </div>
-
-              <div className="flex justify-between">
-                <h1 className=" text-[#b4cb3c] text-[1.1rem]">
-                  Cultural exchange and learning opportunities
-                </h1>
-                <button className="bg-green-400 rounded-md  flex items-center px-3">
-                  {" "}
-                  <CiEdit />
-                  Edit
-                </button>
-              </div>
-
-              <p>
-                I speak Dutch, French, English, Spanish, and German and we can
-                talk in any of these languages. I am an Advanced Photonic
-                Therapy instructor and can teach you a course in that as I use
-                it every day on the rescue animals. I live in beautiful
-                surroundings where you can enjoy walks in nature for hours
-                without meeting anyone. Alicante is close by where you can visit
-                the Santa Bárbara Castle, an ancient fortress with panoramic
-                views, the is an archaeological museum and a contemporary art
-                museum, a beautiful casco Antiguo, the old part of Alicante
-                which is like a village at the centre of the town, you have a
-                beautiful basilic of Santa Maria, lots of beaches, boat trips,
-                visit of the Island of Tabarca, beach sports, the is Elche
-                Palmeral, the largest palm grove in Europe, etc. The beaches of
-                El Campello and San Juan Playa are 15 minutes away by car, with
-                lots of sports to do and nice bars for a drink and tapas too of
-                course.
-              </p>
-              <Divider />
-
-              <h1 className=" text-[#b4cb3c] text-[1.1rem]">Help</h1>
-              <p>
-                Responsibilities encompass a wide range of tasks such as
-                building and repairing fences, installing flooring, tiling
-                walls, thorough weeding, participating in carpentry projects,
-                painting, aiding in hay-moving activities for the horses,
-                cleaning paddocks, stone removal, acquiring new skills, wood
-                collection, tree trimming, tree planting, and various other
-                assignments.
-              </p>
-
-              <Divider />
-              <div className="flex justify-between">
-                <h1 className=" text-[#b4cb3c] text-[1.1rem]">
-                  Languages spoken
-                </h1>
-                <button className="bg-green-400 rounded-md  flex items-center px-3">
-                  {" "}
-                  <CiEdit />
-                  Edit
-                </button>
-              </div>
-
-              {languageSpoken &&
-                languageSpoken.map((language) => (
-                  <h1>
-                    {language.language} : {language.level}
-                  </h1>
-                ))}
-              <Divider />
-
-              <div className="flex justify-between">
-                <h1 className=" text-[#b4cb3c] text-[1.1rem]">Accomadation</h1>
-                <button className="bg-green-400 rounded-md  flex items-center px-3">
-                  {" "}
-                  <CiEdit />
-                  Edit
-                </button>
-              </div>
-
-              <p>
-                I speak Dutch, French, English, Spanish, and German and we can
-                talk in any of these languages. I am an Advanced Photonic
-                Therapy instructor and can teach you a course in that as I use
-                it every day on the rescue animals. I live in beautiful
-                surroundings where you can enjoy walks in nature for hours
-                without meeting anyone. Alicante is close by where you can visit
-                the Santa Bárbara Castle, an ancient fortress with panoramic
-                views, the is an archaeological museum and a contemporary art
-                museum, a beautiful casco Antiguo, the old part of Alicante
-                which is like a village at the centre of the town, you have a
-                beautiful basilic of Santa Maria, lots of beaches, boat trips,
-                visit of the Island of Tabarca, beach sports, the is Elche
-                Palmeral, the largest palm grove in Europe, etc. The beaches of
-                El Campello and San Juan Playa are 15 minutes away by car, with
-                lots of sports to do and nice bars for a drink and tapas too of
-                course.
-              </p>
-              <Divider />
-              <div className="flex justify-between">
-                <h1 className=" text-[#b4cb3c] text-[1.1rem]">What else ...</h1>
-                <button className="bg-green-400 rounded-md  flex items-center px-3">
-                  {" "}
-                  <CiEdit />
-                  Edit
-                </button>
-              </div>
-
-              <p>
-                What else ... Remote location from public transport so you need
-        
-              </p>
-              <Divider />
-
-              <div className="flex justify-between">
-                <h1 className=" text-[#b4cb3c] text-[1.1rem]">
-                  Can host digital nomads
-                </h1>
-                <button className="bg-green-400 rounded-md  flex items-center px-3">
-                  {" "}
-                  <CiEdit />
-                  Edit
-                </button>
-              </div>
-
-              <span>Yes,WIFI 50/10 is available.</span>
-              <Divider />
-
-              <div className="flex justify-between">
-                <h1 className=" text-[#b4cb3c] text-[1.1rem]">
-                  Space for parking camper vans
-                </h1>
-                <button className="bg-green-400 rounded-md  flex items-center px-3">
-                  {" "}
-                  <CiEdit />
-                  Edit
-                </button>
-              </div>
-
-              <span>
-                Any size Van can park on the premises, water is available, no
-                extra electricity capacity as we have a solar-powered house with
-                no extra elec capacity.
-              </span>
-              <Divider />
-
-              <div className="flex justify-between pt-5">
-                <h1 className=" text-[#b4cb3c] text-[1.1rem]">
-                  How many Workawayers can stay?
-                </h1>
-                <button className="bg-green-400 rounded-md  flex items-center px-3">
-                  {" "}
-                  <CiEdit />
-                  Edit
-                </button>
-              </div>
-
-              <span>Two</span>
-
-              <div className="flex items-center justify-center text-[rgb(51 51 51 / 75%)] pb-56">
-                Host ref number: 851331489494
-              </div>
-            </div>
-          </div>
+      <div className="flex flex-col lg:flex-row justify-between px-4 md:px-12 py-4 items-center">
+        <div className="flex flex-wrap gap-6 text-[#0a3f5f] text-base font-medium">
+          {tabs && tabs.map((tab) => (
+            <h5
+              key={tab.id}
+              onClick={() => setActiveTabId(tab.id)}
+              className={`cursor-pointer pb-2 ${
+                activeTabId === tab.id ? "font-bold text-crimson border-b-2 border-crimson" : "text-gray-600"
+              }`}
+            >
+              {tab.label}
+            </h5>
+          ))}
         </div>
 
-        <div className="w-1/3">
-      
-          <div className="bg-[#fff] w-70% flex">
-            <div className="w-full h-full  p-10 rounded-md">
-           
-
-              <div className="space-y-4 mt-4">
-                <div className="flex  items-center">
-                  <span className="flex items-center gap-2">
-                    <FaRegStar className="text-yellow-500" />
-                    Edit Profile
-                  </span>
-                </div>
-                <Divider />
-
-       
-                <div className="flex  items-center">
-                  <span className="flex items-center gap-2">
-                    <SiAmazonsimpleemailservice className="text-blue-500" />
-                   Verify via Facebook
-                  </span>
-                 
-                </div>
-                <Divider />
-
-                <div className="flex justify-between items-center">
-                  <span className="flex items-center gap-2">
-                    <RiFeedbackFill className="text-green-500" />
-                   Go to the Top of Host list
-                  </span>
-                 
-                </div>
-                <Divider />
-                <div className="flex justify-between">
-                  <span className="flex  items-center gap-2">
-                    <MdEmail className="text-purple-500" />
-                   Last minute
-                  </span>
-                
-                </div>
-                
-             
-
-
-              </div>
-            </div>
-          </div>
-          
-
-    {/**profile information */}
-           <div className="bg-[#fff] w-70% flex mt-5" >
-                      <div className="w-full h-full  p-10 rounded-md">
-                        <h1 className="text-xl font-semibold">Profile Information</h1>
-          
-                        <div className="space-y-4 mt-4">
-                  
-          
-                    
-          
-                          <div className="flex justify-between items-center">
-                            <span className="flex items-center gap-2">
-                              <RiFeedbackFill className="text-green-500" />
-                              Feedback
-                            </span>
-                            <span>40</span>
-                          </div>
-                          <Divider />
-                     
-          
-                          <div className="flex justify-between items-center">
-                            <span className="flex items-center gap-2">
-                              <MdEmail className="text-purple-500" />
-                              Email verified
-                            </span>
-                            <span>80%</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-          {/**personal note */}
-          <div className="bg-[#fff] w-80% flex mt-5 flex-col pb-10">
-            <h1 className="text-[#666] text-[25px] font-bold pl-3">
-              PersonalNote
-            </h1>
-            <div className="flex items-center justify-center pt-5">
-              <button className="flex items-center bg-[#f5f5f5] text-[22px] rounded-full w-fit px-[80px]">
-                <LuNotebookPen size={22} /> Add note
-              </button>
-            </div>
-          </div>
-        </div>
+        <button className="flex items-center gap-2 mt-4 lg:mt-0 bg-gray-100 text-sm px-4 py-2 rounded-full shadow-sm">
+          <FaEye /> View Online
+        </button>
       </div>
     </div>
+
+    {activeTabId === 1 && <HostOverview host={host} />}
+{activeTabId === 2 && <PhotosSection images={host?.images} />}
+{activeTabId === 4 && (
+  <div className="flex flex-col items-center gap-3 mt-4">
+    <Review />
+    <Review />
+  </div>
+)}
+
+
+  </div>
   );
 };
 
 export default HostPreview;
+const HostOverview=({host})=>{
+  const navigate=useNavigate()
+  const editProfile=()=>{
+    navigate(`/host/edit-profile/${host._id}`)
+     }
+  return(
+    
+   
+
+    <div className="px-4 md:px-12 mt-8 flex flex-col lg:flex-row gap-8">
+      {/* Left section */}
+      <div className="lg:w-2/3 space-y-6">
+        {/* Availability */}
+        <div className="bg-white p-6 rounded-md shadow-md">
+          <div className="flex justify-between items-center pb-4">
+            <h1 className="text-xl font-bold text-gray-700">Availability</h1>
+            <div className="flex items-center gap-2 text-gray-500">
+              <CiSquareChevLeft size={28} />
+              <span className="font-medium">2025</span>
+              <CiSquareChevRight size={28} />
+            </div>
+          </div>
+
+          <span className="flex items-center text-sm text-gray-500">
+            <CiCalendar className="mr-2" /> Min stay requested: at least a week
+          </span>
+
+          <div className="mt-6">
+            <div className="grid grid-cols-12 gap-1 text-white text-sm">
+              {["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"].map((month) => (
+                <div key={month} className="bg-fuchsia-500 h-8 flex items-center justify-center rounded-md">
+                  {month}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Details */}
+        <div className="bg-white p-6 rounded-md shadow-md space-y-6">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-2">
+              <TbFileDescription />
+              <h2 className="text-lg text-[#b4cb3c] font-semibold">Description</h2>
+            </div>
+            <button className="bg-green-500 text-white px-3 py-1 rounded-md flex items-center gap-1">
+              <CiEdit /> Edit
+            </button>
+          </div>
+          <p className="text-gray-700 text-sm leading-relaxed">{host?.description}</p>
+
+          <Divider />
+
+          <div className="flex justify-between items-center">
+            <h2 className="text-lg text-[#b4cb3c] font-semibold">Types of help & learning opportunities</h2>
+            <button className="bg-green-500 text-white px-3 py-1 rounded-md flex items-center gap-1">
+              <CiEdit /> Edit
+            </button>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+            {host?.selectedHelpTypes?.map((help, index) => (
+              <div
+                key={index}
+                className="bg-white p-3 text-center rounded-md border border-gray-200 shadow hover:shadow-md transition"
+              >
+                {help}
+              </div>
+            ))}
+          </div>
+
+          <Divider />
+
+          <div className="flex justify-between items-center">
+            <h2 className="text-lg text-[#b4cb3c] font-semibold">Languages spoken</h2>
+            <button className="bg-green-500 text-white px-3 py-1 rounded-md flex items-center gap-1">
+              <CiEdit /> Edit
+            </button>
+          </div>
+          <div className="space-y-1">
+            {host?.languageAndLevel?.map((lang, index) => (
+              <p key={index} className="text-sm text-gray-700">{lang.language}: {lang.level}</p>
+            ))}
+          </div>
+
+          <Divider />
+
+          <div className="flex justify-between items-center">
+            <h2 className="text-lg text-[#b4cb3c] font-semibold">Accommodation</h2>
+            <button className="bg-green-500 text-white px-3 py-1 rounded-md flex items-center gap-1">
+              <CiEdit /> Edit
+            </button>
+          </div>
+          <p className="text-sm text-gray-700 leading-relaxed">
+            {/* Sample text about accommodation, replace with host.accommodation if exists */}
+            I speak Dutch, French, English, Spanish, and German and we can talk in any of these languages...
+          </p>
+
+          <Divider />
+
+          <div className="flex justify-between items-center">
+            <h2 className="text-lg text-[#b4cb3c] font-semibold">What else ...</h2>
+            <button className="bg-green-500 text-white px-3 py-1 rounded-md flex items-center gap-1">
+              <CiEdit /> Edit
+            </button>
+          </div>
+          <p className="text-sm text-gray-700">What else ... Remote location from public transport so you need</p>
+
+          <Divider />
+
+          <div className="flex justify-between items-center">
+            <h2 className="text-lg text-[#b4cb3c] font-semibold">Can host digital nomads</h2>
+            <button className="bg-green-500 text-white px-3 py-1 rounded-md flex items-center gap-1">
+              <CiEdit /> Edit
+            </button>
+          </div>
+          <p className="text-sm text-gray-700">Yes</p>
+        </div>
+      </div>
+      <div className="w-1/3">
+      
+      <div className="bg-[#fff] w-70% flex">
+        <div className="w-full h-full  p-10 rounded-md">
+       
+
+          <div className="space-y-4 mt-4">
+            <div className="flex  items-center" onClick={editProfile}>
+              <span className="flex items-center gap-2">
+                <FaRegStar className="text-yellow-500" />
+                Edit Profile
+              </span>
+            </div>
+            <Divider />
+
+   
+            <div className="flex  items-center">
+              <span className="flex items-center gap-2">
+                <SiAmazonsimpleemailservice className="text-blue-500" />
+               Verify via Facebook
+              </span>
+             
+            </div>
+      
+            <Divider />
+            <div className="flex justify-between">
+              <span className="flex  items-center gap-2">
+                <MdEmail className="text-purple-500" />
+               Last minute
+              </span>
+            
+            </div>
+            
+         
+
+
+          </div>
+        </div>
+      </div>
+      
+
+{/**profile information */}
+       <div className="bg-[#fff] w-70% flex mt-5" >
+                  <div className="w-full h-full  p-10 rounded-md">
+                    <h1 className="text-xl font-semibold">Profile Information</h1>
+      
+                    <div className="space-y-4 mt-4">
+              
+      
+                
+      
+                      <div className="flex justify-between items-center">
+                        <span className="flex items-center gap-2">
+                          <RiFeedbackFill className="text-green-500" />
+                          Feedback
+                        </span>
+                        <span>40</span>
+                      </div>
+                      <Divider />
+                 
+      
+                      <div className="flex justify-between items-center">
+                        <span className="flex items-center gap-2">
+                          <MdEmail className="text-purple-500" />
+                          Email verified
+                        </span>
+                        <span>80%</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+ 
+    </div>
+    </div>
+
+  )
+}

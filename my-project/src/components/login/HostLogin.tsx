@@ -26,10 +26,14 @@ const {errors}=formState
     console.log("server");
     
 console.log("login form submitted",loginData);
-axios.post(`${server}/host/login`,loginData,{withCredentials:true}).then((res)=>{
+const res=axios.post(`${server}/host/login`,loginData,{withCredentials:true}).then((res)=>{
     console.log("host Loged in succesfully",res);
-
-     navigate("/host/add-details")
+if(res.data.profileNotCompleted === true){
+  navigate(`/host/add-details/${res.data.host._id}`)
+}else{
+  navigate(`/host/preview/${res.data.host._id}`)
+}
+    
 }).catch((error)=>{
     console.log("an error occured",error);
     

@@ -57,19 +57,19 @@ const AddImage = () => {
       const requestBody = {
         ...allData, 
         images: uploadedImageUrls
-          .filter(url => url !== null) // ✅ Filter out failed uploads
+          .filter(url => url !== null)
           .map((url, index) => ({
             url,
             description: images[index].description || "",
           })),
       };
   
-      const response = await axios.post(`${server}/host/add-details`, requestBody);
+      const response = await axios.post(`${server}/host/add-details`, requestBody,{withCredentials:true});
 
-      console.log("Success:", response.data);
+
       dispatch(resetForm());
-      toast.success("Images uploaded successfully!");
-      navigate("/")
+      toast.success("details uploaded successfully!");
+      navigate(`/preview/${response.data.host._id}`)
      
     } catch (error) {
       console.error("Error sending images to backend:", error);

@@ -1,11 +1,17 @@
 const Host = require("../model/host");
 
 const updateLastActive = async (req, res, next) => {
+  console.log("uuuuuuuuuuuuuuuuuuuuupdating last ",);
+  
   try {
-    if (req.user) {
-      await Host.findByIdAndUpdate(req.user.id, { lastActive: new Date() });
+    if (req.hostName) {
+      console.log("hhhhhst und");
+      
+    
+      console.log("uuuuuuuuuuuuuuuuuuuuupdatid last ",);
+  
     }
-    next();
+    next(); 
   } catch (error) {
     console.error("Error updating lastActive:", error);
     next();

@@ -24,7 +24,7 @@ exports.isAuthenticated=async(req,res,next)=>{
 exports.isHost = async (req, res, next) => {
     try {
         const { hostToken } = req.cookies;
-        console.log("userToken in cookies", hostToken);
+        console.log("host in cookies", hostToken);
 
         if (!hostToken) return next(new CustomError("No JWT token provided", 400));
 
@@ -32,10 +32,10 @@ exports.isHost = async (req, res, next) => {
         console.log("Decoded JWT:", decoded); 
 
        
-        req.hostUser = await Host.findById(decoded._id);
-        console.log("Host from DB:", req.hostUser);
+        req.hostName = await Host.findById(decoded._id);
+        console.log("Host from DB:", req.hostName);
 
-        if (!req.hostUser) return next(new CustomError("Host not found", 404));
+        if (!req.hostName) return next(new CustomError("Host not found", 404));
 
         next();
     } catch (error) {

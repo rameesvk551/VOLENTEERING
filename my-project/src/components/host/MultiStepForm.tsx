@@ -5,7 +5,7 @@ import AddImage from "./AddImages";
 import DescriptionAndHelps from "./DescriptionAndHelps";
 import AddLanguage from "./AddLanguage";
 import AllowedAccepted from "./AllowedAccepted";
-import Address from "./Address";
+import Address from "./Address"
 import { useEffect } from "react";
 
 

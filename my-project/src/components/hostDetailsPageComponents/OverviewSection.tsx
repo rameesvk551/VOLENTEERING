@@ -101,8 +101,10 @@ const OverviewSection=({host})=>{
                   <TbFileDescription />
                   <h2 className=" text-[#b4cb3c] text-[1.1rem]">Description</h2>
                 </div>
-                <p>
-                 {host?.description}         </p>
+                <p style={{ wordBreak: "break-word" }}>
+  {host?.description}
+</p>
+
   
                 <Divider />
   
@@ -125,38 +127,13 @@ const OverviewSection=({host})=>{
   
                 
   
-                <h1 className=" text-[#b4cb3c] text-[1.1rem] mt-3">
-                  Cultural exchange and learning opportunities
-                </h1>
-                <p>
-                  I speak Dutch, French, English, Spanish, and German and we can
-                  talk in any of these languages. I am an Advanced Photonic
-                  Therapy instructor and can teach you a course in that as I use
-                  it every day on the rescue animals. I live in beautiful
-                  surroundings where you can enjoy walks in nature for hours
-                  without meeting anyone. Alicante is close by where you can visit
-                  the Santa Bárbara Castle, an ancient fortress with panoramic
-                  views, the is an archaeological museum and a contemporary art
-                  museum, a beautiful casco Antiguo, the old part of Alicante
-                  which is like a village at the centre of the town, you have a
-                  beautiful basilic of Santa Maria, lots of beaches, boat trips,
-                  visit of the Island of Tabarca, beach sports, the is Elche
-                  Palmeral, the largest palm grove in Europe, etc. The beaches of
-                  El Campello and San Juan Playa are 15 minutes away by car, with
-                  lots of sports to do and nice bars for a drink and tapas too of
-                  course.
-                </p>
-                <Divider />
   
                 <h1 className=" text-[#b4cb3c] text-[1.1rem]">Help</h1>
                 <p>
-                  Responsibilities encompass a wide range of tasks such as
-                  building and repairing fences, installing flooring, tiling
-                  walls, thorough weeding, participating in carpentry projects,
-                  painting, aiding in hay-moving activities for the horses,
-                  cleaning paddocks, stone removal, acquiring new skills, wood
-                  collection, tree trimming, tree planting, and various other
-                  assignments.
+                <p style={{ wordBreak: "break-word" }}>
+  {host?.description}
+</p>
+
                 </p>
   
                 <Divider />
@@ -171,41 +148,10 @@ const OverviewSection=({host})=>{
       </h1>
     ))}
   
-                <Divider />
-                <h1 className=" text-[#b4cb3c] text-[1.1rem]">Accomadation</h1>
-                <p>
-                  I speak Dutch, French, English, Spanish, and German and we can
-                  talk in any of these languages. I am an Advanced Photonic
-                  Therapy instructor and can teach you a course in that as I use
-                  it every day on the rescue animals. I live in beautiful
-                  surroundings where you can enjoy walks in nature for hours
-                  without meeting anyone. Alicante is close by where you can visit
-                  the Santa Bárbara Castle, an ancient fortress with panoramic
-                  views, the is an archaeological museum and a contemporary art
-                  museum, a beautiful casco Antiguo, the old part of Alicante
-                  which is like a village at the centre of the town, you have a
-                  beautiful basilic of Santa Maria, lots of beaches, boat trips,
-                  visit of the Island of Tabarca, beach sports, the is Elche
-                  Palmeral, the largest palm grove in Europe, etc. The beaches of
-                  El Campello and San Juan Playa are 15 minutes away by car, with
-                  lots of sports to do and nice bars for a drink and tapas too of
-                  course.
-                </p>
+              
                 <Divider />
   
-                <h1 className=" text-[#b4cb3c] text-[1.1rem]">What else ...</h1>
-                <p>
-                  What else ... Remote location from public transport so you need
-                  your own transport as I work fulltime I can't be driving you
-                  around in your free time. By car: 6 minutes to the village of
-                  Jijona, 15 minutes from the beaches of El Campello and San Juan
-                  Playa. 25 minutes from the center of Alicante with musea, art,
-                  festivals. 30 minutes to Benidorm. Lovely mountain villages
-                  surrounding Jijona like Torremanzanas, Sella, Relleu, el Castell
-                  de Guadalest...
-                </p>
-                <Divider />
-           
+         
    
   <div className="flex flex-col pt-5" >
     <h3 className="text-[26px]">Highlights</h3>
@@ -218,14 +164,11 @@ const OverviewSection=({host})=>{
   </div>
   <Divider/>
   <div className="flex items-center justify-center text-[rgb(51 51 51 / 75%)] pb-56">
-      Host ref number: 851331489494
+      Host ref number: {host._id}
     
   </div>
   
-  <div className="flex flex-col gap-2">  <Review/>
-  <Review/>
-  <Review/>
-  </div>
+  
   
               </div>
             </div>

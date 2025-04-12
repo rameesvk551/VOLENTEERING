@@ -51,8 +51,8 @@ const App = () => {
         <Route path="/host/signup" element={<HostSignupPage/>} />
          <Route path="/host/login" element={<HostLoginPage/>} />
          <Route path="/host/add-details/:id" element={<HostAddDetailsPage/>} />
-         <Route path="/host/preview" element={<HostPreviewPage/>} />
-         <Route path="/host/edit-profile" element={<HostProfileEditPage/>} />
+         <Route path="/host/preview/:id" element={<HostPreviewPage/>} />
+         <Route path="/host/edit-profile/:id" element={<HostProfileEditPage/>} />
      {/**public routes */}
      <Route path="/search-hotels" element={<HotelBookingPage/>} />
       <Route path="/hotels" element={<HotelBookingHomePage/>} />
@@ -68,7 +68,7 @@ const App = () => {
         <Route path="/blog/:id" element={<BlogDetails/>} />
         <Route path="/volunteering-oppertunities" element={<HostListPage/>} />
         <Route path="/host-details/:id" element={<HostDetailsPage/>} />
-
+        <Route path="/host-edit-details/:id" element={<HostDetailsPage/>} />
 
         {/**admin routes */}
         <Route path="/admin/login" element={<AdminLoginPage/>} />

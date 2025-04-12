@@ -81,12 +81,18 @@ const AddLanguage = () => {
 
 
   return (
-    <div className="flex w-full h-[100vh]">
+    <div className="flex w-full h-[87vh]">
       {/* LEFT */}
-      <div className="hidden md:flex flex-col gap-y-4 w-1/3 h-full bg-black items-center justify-center">
-        <Logo />
-        <span className="text-xl font-semibold text-white">Welcome!</span>
-      </div>
+          {/* LEFT */}
+          <div className='hidden md:flex flex-col gap-y-5 w-1/3 h-full bg-black items-center justify-center px-8 text-center'>
+  <h5 className="text-3xl font-bold tracking-wide text-gray-900 uppercase">
+    <span className="bg-gradient-to-r from-pink-500 via-red-500 to-yellow-500 text-transparent bg-clip-text">RAIH</span>
+  </h5>
+  <p className='text-lg font-medium text-white'>
+    Ready to share your space?<br />
+    Become a <span className="text-yellow-400 font-semibold">Raih Host</span> and welcome travelers with open arms 🤝🏡
+  </p>
+</div>
 
       {/* RIGHT */}
       <div className="flex w-full md:w-2/3 h-full bg-white   md:px-20 ">
@@ -95,7 +101,7 @@ const AddLanguage = () => {
             <Logo />
           </div>
 
-          <div className=" w-full md:w-[80%] lg:w-[90%] xl:w-[95%]  flex flex-col">
+          <div className=" w-full md:w-[80%] lg:w-[90%] xl:w-[95%] items-center justify-center flex flex-col">
             <form className=" w-full  space-y-6" >
               <div className="flex flex-col rounded-md shadow-sm -space-y-px border border-black  mt-5">
                 <h1 className="p-4">
@@ -194,16 +200,16 @@ const AddLanguage = () => {
                     )}
                   </>
                 ) : (
-                  <button
-                    className="bg-green-500 rounded-full mb-[21px] ml-[36px] flex items-center w-[180px] gap-2 px-4 py-2 text-white"
-                    onClick={(event) => {
-                      event.preventDefault();
-                      setOpenLanguageAndLevel(true);
-                    }}
-                  >
-                    <IoIosAddCircleOutline size={30} />
-                    Add Language
-                  </button>
+          <div className="pb-2">        <button
+          className="bg-green-500 rounded-full mb-[21px] ml-[36px] flex items-center w-[180px] gap-2 px-4 py-2 text-white"
+          onClick={(event) => {
+            event.preventDefault();
+            setOpenLanguageAndLevel(true);
+          }}
+        >
+          <IoIosAddCircleOutline size={30} />
+          Add Language
+        </button></div>
                 )}
 
                 <Divider />

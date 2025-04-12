@@ -38,6 +38,8 @@ const HostDetails = () => {
     { id: 3, label: "MAP" },
     { id: 4, label: "FEEDBACK (2)" },
   ];
+const lastActive=host?.lastActive
+console.log("hhhhost last active ",lastActive);
 
   const formatDate = (isoDate: string | Date): string => {
     const date = new Date(isoDate);
@@ -62,7 +64,18 @@ const HostDetails = () => {
 
   if (loading) return <div className="p-8">Loading...</div>;
   if (error) return <div className="p-8 text-red-500">{error}</div>;
+ 
+  const latiitude=host.address.lat
+  const longitude=host.address.lon
+  console.log("latt",latiitude,"log",longitude);
+  const extractPlace = host.address.display_name.split(',').map(part => part.trim());
+  const state = extractPlace[extractPlace.length - 3];      
+  const country = extractPlace[extractPlace.length - 1]; 
 
+console.log("City:", state);
+console.log("Country:", country);
+
+  
   return (
     <div className="flex flex-col bg-white">
       {/* IMAGE GRID */}
@@ -107,7 +120,7 @@ const HostDetails = () => {
             <div className="flex gap-4">
               <div className="flex items-center gap-1">
                 <IoLocationSharp size={16} />
-                <span>Germany</span>
+                <span>{country},{state}</span>
               </div>
               <div className="flex items-center gap-1">
                 <MdRestore size={16} />
@@ -158,7 +171,7 @@ const HostDetails = () => {
 
           {activeTab === 3 && (
             <div className="flex h-full flex-col items-center gap-3 mt-4">
-             <MapComponent lat={100} lon={200}/>
+             <MapComponent lat={latiitude} lon={longitude}/>
             </div>
           )}
         </div>
@@ -185,15 +198,7 @@ const HostDetails = () => {
                 </span>
                 <span>7 March 2025</span>
               </div>
-              <Divider />
-
-              <div className="flex justify-between">
-                <span className="flex items-center gap-2 text-green-600">
-                  <RiFeedbackFill />
-                  Feedback
-                </span>
-                <span>40</span>
-              </div>
+           
               <Divider />
 
            
