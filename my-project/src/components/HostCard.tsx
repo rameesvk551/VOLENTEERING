@@ -13,6 +13,13 @@ interface HostCardProps {
 
 
 const HostCard: React.FC<HostCardProps> = ({ host }) => {
+  
+  const projectNames = host?.selectedHelpTypes?.slice(0, 2)
+  const extractPlace = host?.address?.display_name
+  ? host.address.display_name.split(',').map(part => part.trim())
+  : [];
+
+  const country = extractPlace[extractPlace?.length - 1]; 
   return (
     <div
       key={host?._id}
@@ -25,17 +32,17 @@ const HostCard: React.FC<HostCardProps> = ({ host }) => {
 
       <div className='w-full md:w-2/4 flex flex-col gap-3'>
         <div className='flex gap-2 mt-2'>
-          <span className='text-sm text-gray-600 flex gap-1 items-center justify-center' ><CiLocationOn />Nadapuram</span>
-          <span className='text-sm text-rose-600 font-semibold'>Eco Project</span>
+          <span className='text-sm text-gray-600 flex gap-1 items-center justify-center' ><CiLocationOn />{country}</span>
+          <span className='text-sm text-rose-600 font-semibold'>{projectNames[0]}</span>
         </div>
 
         <h6 className='text-xl 2xl:text-3xl font-semibold text-black dark:text-white'>
          volenteer in a off grid cplot doei fg4iv
         </h6>
+        <div className="flex-1 overflow-hidden text-gray-600 dark:text-slate-500 text-sm text-justify line-clamp-4">
+  <Markdown options={{ wrapper: "article" }}>{host?.description}</Markdown>
+</div>
 
-        <div className='flex-1 overflow-hidden text-gray-600 dark:text-slate-500 text-sm text-justify'>
-          <Markdown options={{ wrapper: "article" }}>{host?.description?.slice(0, 250) + "..."}</Markdown>
-        </div>
 
         <Link to={`/`} className='flex items-center  text-black dark:text-white'>
         <Button

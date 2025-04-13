@@ -67,13 +67,10 @@ console.log("hhhhost last active ",lastActive);
  
   const latiitude=host.address.lat
   const longitude=host.address.lon
-  console.log("latt",latiitude,"log",longitude);
+
   const extractPlace = host.address.display_name.split(',').map(part => part.trim());
   const state = extractPlace[extractPlace.length - 3];      
   const country = extractPlace[extractPlace.length - 1]; 
-
-console.log("City:", state);
-console.log("Country:", country);
 
   
   return (

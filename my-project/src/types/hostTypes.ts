@@ -7,13 +7,20 @@
     description: string;
     volenteerCapacity: number;
     address: {
-      street: string;
-      city: string;
-      state: string;
-      country: string;
-      zipCode: string;
-      latitude: number;
-      longitude: number;
+      place_id: number;
+      display_name: string;
+      lat: string;
+      lon: string;
+      boundingbox: [string, string, string, string];
+      class: string;
+      type: string;
+      importance: number;
+      name: string;
+      osm_id: number;
+      osm_type: string;
+      place_rank: number;
+      addresstype: string;
+      licence: string;
     };
     selectedHelpTypes: string[];
     allowed: string[];

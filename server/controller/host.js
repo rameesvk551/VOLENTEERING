@@ -224,7 +224,7 @@ console.log("ggggggggggggggggggggggg");
       numberOfWorkawayers = "any",
       place = "",
       page = 1,
-      limit = 10,
+      limit = 2,
     } = req.query;
 
     const filter = {};

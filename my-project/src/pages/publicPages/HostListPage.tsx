@@ -52,7 +52,12 @@ const HostListPage = () => {
   const [nextDestination, setNextDestination] = useState("");
 const [loading,setLoading]=useState(null)
   const { volenteerData } = useSelector((state: RootState) => state.volenteer);
+  const [showMap,setShowMap]=useState<boolean>(true)
+const toggleMapView=()=>{
+  setShowFilters(!showFilters)
+  setShowMap(!showMap);
 
+}
   // Extract place when selectedPlace changes
   useEffect(() => {
     if (selectedPlace?.display_name) {
@@ -106,7 +111,10 @@ const [loading,setLoading]=useState(null)
     setNextDestination("");
     setSuggestions([]);
   };
-
+const toggleFilter=()=>{
+  setShowMap(!showMap)
+  setShowFilters(prev => !prev)
+}
   // Query to fetch filtered hosts
   const {
     data,
@@ -144,8 +152,12 @@ const [loading,setLoading]=useState(null)
   
   {/* Filter Button */}
   <button
-    onClick={() => setShowFilters(prev => !prev)}
-    className="px-3 py-1 rounded-md border border-gray-300 hover:bg-gray-100 transition text-sm"
+    onClick={toggleFilter}
+    className={`px-4 py-2 rounded-lg text-sm font-medium transition duration-200 border shadow-sm ${
+      showFilters
+        ? "bg-blue-600 text-white border-blue-600 hover:bg-blue-700"
+        : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
+    }`}
   >
     Filter
   </button>
@@ -157,7 +169,7 @@ const [loading,setLoading]=useState(null)
       type="text"
       placeholder="Search for a place"
       onChange={(e) => setInput(e.target.value)}
-      className="w-full pl-4 pr-10 py-1.5 rounded-full border border-gray-300 shadow-sm focus:ring-2 focus:ring-blue-500 text-sm"
+      className="w-full pl-4 pr-10 py-1.5 rounded-lg border border-gray-300 shadow-sm focus:ring-2 focus:ring-blue-500 text-sm"
     />
     <AiOutlineSearch className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
     
@@ -180,7 +192,7 @@ const [loading,setLoading]=useState(null)
 
   <button
   onClick={hostInMyNextDestination}
-  className={`px-4 py-2 rounded-full text-sm font-medium transition duration-200 border shadow-sm ${
+  className={`px-4 py-2 rounded-lg text-sm font-medium transition duration-200 border shadow-sm ${
     showNextDestination
       ? "bg-blue-600 text-white border-blue-600 hover:bg-blue-700"
       : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
@@ -188,9 +200,19 @@ const [loading,setLoading]=useState(null)
 >
   🌍 Host In My Destination
 </button>
+<button
+  onClick={toggleMapView}
+  className={`px-4 py-2 rounded-lg text-sm font-medium transition duration-200 border shadow-sm ${
+    showMap
+      ? "bg-blue-600 text-white border-blue-600 hover:bg-blue-700"
+      : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
+  }`}
+>
+ Map View
+</button>
 
 
-  <SortDropdown />
+
 
 
 </div>
@@ -208,9 +230,9 @@ const [loading,setLoading]=useState(null)
 
 <div className="flex flex-row">
 {showFilters ? <Filters filters={filters} setFilters={setFilters} /> : null}
-{/**<MapComponent isFilterComponentOpen={showFilters} locations={hostsForMap}/>  */}
+{showMap ? <MapComponent isFilterComponentOpen={showFilters} locations={hostsForMap}/>:<></> }
 
-    {<div className={` ${showFilters  ? "w-full": "w-1/2"}  flex flex-col gap-y-22  gap-2 px-2 pt-3`}>
+    {<div className={` ${showMap  ? "w-1/2": "w-full"}  flex flex-col gap-y-22  gap-2 px-2 pt-3`}>
     {isLoading ? (
       <div>Loooading</div>
     ):(
