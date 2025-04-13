@@ -4,7 +4,7 @@ const router=express.Router()
 
 router.get("/hosts",getHosts)
 router.get("/host-details/:id",getHostById) 
-router.post("/filtered-hosts",filteredHost)  
+
                                              
 
 

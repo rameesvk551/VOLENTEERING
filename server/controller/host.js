@@ -215,29 +215,71 @@ exports.loadHost=async(req,res,next)=>{
 }
 exports.getHosts = async (req, res) => {
   try {
-    const { page = 1, limit = 10 } = req.query; // default to page 1, limit 10
+console.log("ggggggggggggggggggggggg");
+
+
+    const {
+      hostTypes = "",
+      hostWelcomes = "",
+      numberOfWorkawayers = "any",
+      place = "",
+      page = 1,
+      limit = 10,
+    } = req.query;
+
+    const filter = {};
+
+    if (hostTypes) {
+      filter.hostType = { $in: hostTypes.split(",") };
+    }
+
+    if (hostWelcomes) {
+      filter.welcomes = { $in: hostWelcomes.split(",") };
+    }
+
+    if (place) {
+  filter["address.display_name"] = { $regex: place, $options: "i" }
+
+      console.log("Updated filter after place:", filter)
+
+    }
+
+    if (numberOfWorkawayers !== "any") {
+      if (numberOfWorkawayers === "more") {
+        filter.numberOfWorkawayers = { $gt: 2 };
+      } else {
+        filter.numberOfWorkawayers = parseInt(numberOfWorkawayers);
+      }
+    }
+ 
     const skip = (page - 1) * limit;
 
-    const apiFeatures = new ApiFeatures(Host.find(), req.query)
-      .filter()
-      .paginate(limit)
-      .sort();
 
-    const hosts = await apiFeatures.query;
-    const totalHosts = await Host.countDocuments();
+    const hostsQuery = Host.find(filter)
+      .skip(parseInt(skip))
+      .limit(parseInt(limit))
+      .sort({ createdAt: -1 });
+ 
+    
+    const [hosts, totalHosts] = await Promise.all([
+      hostsQuery,
+      Host.countDocuments(filter),
+    ]);
+
     const totalPages = Math.ceil(totalHosts / limit);
 
     res.status(200).json({
       hosts,
-      currentPage: page,
-      totalPages: totalPages,
-      totalHosts: totalHosts,
+      currentPage: parseInt(page),
+      totalPages,
+      totalHosts,
     });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: "Internal Server Error" });
+    res.status(500).json({ message: "Server Error", error: err });
   }
 };
+
 exports.getHostById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -254,31 +296,3 @@ console.log("hhhhhhhhot foundd",host);
     res.status(500).json({ success: false, message: "Server Error" });
   }
 };
-exports.filteredHost= async (req, res) => {
-  try {
-    const { hostTypes, hostWelcomes, numberOfWorkawayers } = req.body;
-
-    const filter= {};
-
-    if (hostTypes.length > 0) {
-      filter.hostType = { $in: hostTypes };
-    }
-
-    if (hostWelcomes.length > 0) {
-      filter.welcomes = { $in: hostWelcomes };
-    }
-
-    if (numberOfWorkawayers !== "any") {
-      if (numberOfWorkawayers === "more") {
-        filter.numberOfWorkawayers = { $gt: 2 };
-      } else {
-        filter.numberOfWorkawayers = parseInt(numberOfWorkawayers);
-      }
-    }
-
-    const hosts = await Host.find(filter);
-    res.status(200).json(hosts);
-  } catch (err) {
-    res.status(500).json({ message: "Server Error", error: err });
-  }
-}

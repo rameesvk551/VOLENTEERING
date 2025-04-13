@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import HostList from '../../components/HostList'
 
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
@@ -6,12 +6,14 @@ import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import { CiBoxes, CiBoxList } from 'react-icons/ci'
 import { boolean } from 'yup'
 import HostCard from '../../components/HostCard';
-import { fetchHosts } from '../../api';
+import {fetchHosts } from '../../api';
 import { useQuery } from '@tanstack/react-query';
 import { AiOutlineSearch } from 'react-icons/ai';
 import { BiChevronDown } from 'react-icons/bi';
 import server from '@/server/app';
 import axios from 'axios';
+import { useSelector } from 'react-redux';
+import { RootState } from '@/redux/store';
 type AddressValues = {
   place_id: string;
   display_name: string;
@@ -25,70 +27,113 @@ export type FiltersType = {
 
 };
 
+
+
+type FilteredHostsResponse = {
+  hosts: any[]; // replace `any` with your Host type if you have one
+  currentPage: number;
+  totalPages: number;
+  totalHosts: number;
+};
 const HostListPage = () => {
   const [filters, setFilters] = useState<FiltersType>({
     hostTypes: [],
     hostWelcomes: [],
     numberOfWorkawayers: "any",
   });
-  const [hosts, setHosts] = useState<any[]>([]);
-    const [input, setInput] = useState("");
-    const [suggestions, setSuggestions] = useState<AddressValues[]>([]);
-    const [selectedPlace, setSelectedPlace] = useState<AddressValues | null>(null);
-    const [loading, setLoading] = useState(false);
-    useEffect(() => {
-      const fetchFilteredHosts = async () => {
-       
-        try {
-          const response = await axios.post(`${server}/filtered-hosts`, filters);
-          console.log("fffffffffiterd res",response);
-          
-          setHosts(response.data);
-        } catch (error) {
-          console.error("Error fetching filtered hosts:", error);
-        }
-      };
-    
-      fetchFilteredHosts();
-    }, [filters]);
-    useEffect(() => {
-      if (input.length < 3) {
-        setSuggestions([]); 
-        return;
-      }
- 
-  
-      const fetchSuggestions = async () => {
-        setLoading(true);
-        try {
-          const response = await axios.get(`${server}/host/places?input=${input}`);
-          setSuggestions(response.data || []);
-        } catch (error) {
-          console.error("Error fetching places:", error);
-        } finally {
-          setLoading(false);
-        }
-      };
-  
-      const timeoutId = setTimeout(fetchSuggestions, 300);
-      return () => clearTimeout(timeoutId);
-    }, [input]);
-  const [showFilters,setShowFilters]=useState <boolean>(false)
-   const [page, setPage] = useState(1); 
-    const { data, isLoading, error } = useQuery({
-      queryKey: ["hosts", page], 
-      queryFn: () => fetchHosts(page),
-      staleTime: 300000, 
-    });
 
-    const handleSelect = (place: AddressValues) => {
-      setInput(place.display_name);
-      setSelectedPlace(place);
+  const [input, setInput] = useState("");
+  const [suggestions, setSuggestions] = useState<AddressValues[]>([]);
+  const [selectedPlace, setSelectedPlace] = useState<AddressValues | null>(null);
+  const [searchedPlace, setSearchedPlace] = useState("");
+  const [showFilters, setShowFilters] = useState(false);
+  const [page, setPage] = useState(1);
+  const [showNextDestination, setShowNextDestination] = useState(false);
+  const [nextDestination, setNextDestination] = useState("");
+const [loading,setLoading]=useState(null)
+  const { volenteerData } = useSelector((state: RootState) => state.volenteer);
+
+  // Extract place when selectedPlace changes
+  useEffect(() => {
+    if (selectedPlace?.display_name) {
+      const place = selectedPlace.display_name.split(",")[0].trim();
+      setSearchedPlace(place);
+      setShowNextDestination(false);
+    }
+  }, [selectedPlace]);
+
+  // Handler to show hosts in user's next destination
+  const hostInMyNextDestination = () => {
+    const destination =volenteerData?.user?.nextDestination.destination
+    if (destination) {
+      setNextDestination(destination);
+      setShowNextDestination(true);
+      setInput("");
+      setSelectedPlace(null);
+    }
+  };
+
+  // Decide final place based on user's action
+  const place = useMemo(() => {
+    return showNextDestination ? nextDestination : searchedPlace;
+  }, [searchedPlace, nextDestination, showNextDestination]);
+
+  // Fetch suggestions based on user input
+  useEffect(() => {
+    if (input.length < 3) {
       setSuggestions([]);
+      return;
+    }
+
+    const fetchSuggestions = async () => {
+      try {
+        const response = await axios.get(`${server}/host/places?input=${input}`);
+        setSuggestions(response.data || []);
+      } catch (error) {
+        console.error("Error fetching suggestions:", error);
+      }
     };
-    if (isLoading) return <p>Loading hosts...</p>;
-    if (error) return <p>Error fetching hosts!</p>;
-  
+
+    const timeoutId = setTimeout(fetchSuggestions, 300);
+    return () => clearTimeout(timeoutId);
+  }, [input]);
+
+  // Handle place selection
+  const handleSelect = (place: AddressValues) => {
+    setInput(place.display_name);
+    setSelectedPlace(place);
+    setShowNextDestination(false);
+    setNextDestination("");
+    setSuggestions([]);
+  };
+
+  // Query to fetch filtered hosts
+  const {
+    data,
+    isLoading,
+    error,
+  } = useQuery<FilteredHostsResponse, Error, FilteredHostsResponse, [string, FiltersType, string, number]>({
+    queryKey: ["fetchHosts", filters, place, page],
+    queryFn: fetchHosts,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+   
+  });
+
+  // Transform host data for map
+  const hostsForMap = useMemo(
+    () =>
+      data?.hosts.map((host) => ({
+        id: host._id,
+        desc: host.description,
+        lat: host.address?.lat,
+        lng: host.address?.lon,
+      })) || [],
+    [data]
+  );
+
+  if (error) return <p>Error fetching hosts!</p>;
+
+   
   return (
     <div>
      {/**header */}
@@ -133,10 +178,17 @@ const HostListPage = () => {
     )}
   </div>
 
-  {/* More Filter Tags */}
-  <button className="px-3 py-1 rounded-md border border-gray-300 hover:bg-gray-100 text-sm">
-  Host In My Destinations
-  </button>
+  <button
+  onClick={hostInMyNextDestination}
+  className={`px-4 py-2 rounded-full text-sm font-medium transition duration-200 border shadow-sm ${
+    showNextDestination
+      ? "bg-blue-600 text-white border-blue-600 hover:bg-blue-700"
+      : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
+  }`}
+>
+  🌍 Host In My Destination
+</button>
+
 
   <SortDropdown />
 
@@ -155,12 +207,18 @@ const HostListPage = () => {
 </div>
 
 <div className="flex flex-row">
-{showFilters ? <Filters setFilters={setFilters}/> : <></> }
-<MapComponent isFilterComponentOpen={showFilters}/> 
-    {showFilters ? <></> :<div className={` ${showFilters  ? "w-1/4": "w-1/2"}  flex flex-col gap-y-22  gap-2 px-2 pt-3`}>
-            {data.hosts.map((host:Host) => (
+{showFilters ? <Filters filters={filters} setFilters={setFilters} /> : null}
+{/**<MapComponent isFilterComponentOpen={showFilters} locations={hostsForMap}/>  */}
+
+    {<div className={` ${showFilters  ? "w-full": "w-1/2"}  flex flex-col gap-y-22  gap-2 px-2 pt-3`}>
+    {isLoading ? (
+      <div>Loooading</div>
+    ):(
+      data?.hosts.map((host:Host) => (
         <HostCard key={host._id} host={host} />
-      ))}
+      ))
+    )}
+       
 <div className="flex justify-center mt-5 gap-3">
       <button
         disabled={page === 1}
@@ -187,39 +245,40 @@ const HostListPage = () => {
 export default HostListPage
 
 
-const Filters = ({ setFilters }: { setFilters: (filters: FiltersType) => void }) => {
-  const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
-  const [selectedRadio, setSelectedRadio] = useState("any");
-  const [hostWelcome, setHostWelcome] = useState<string[]>([]);
-  const hostTypes = [
-    "Family", "Hostel", "Individual", "Community", 
-    "School", "Farmstay", "Sustainable Project", "Others"
-  ];
-  const hostWelcomes = ["Families", "Nomads", "Camper Van"];
-  const hostDetails = ["Internet Access", "Have Pets", "Smoker", "No Fees"];
 
-  const addToSelectedHelpType = (type: string) => {
-    setSelectedTypes(prev =>
-      prev.includes(type) ? prev.filter(t => t !== type) : [...prev, type]
-    );
-  };
-  const addToHostWelcomes = (type: string) => {
-    setHostWelcome(prev =>
-      prev.includes(type) ? prev.filter(t => t !== type) : [...prev, type]
-    );
-  };
-  const handleApply = () => {
-    const filters: FiltersType = {
-      hostTypes: selectedTypes,
-      numberOfWorkawayers: selectedRadio,
-      hostWelcomes:hostWelcome
+interface Props {
+  filters: FiltersType;
+  setFilters: (filters: FiltersType) => void;
+}
 
-    };
-    console.log("ffffffffffffffil",filters);
-    
-    setFilters(filters);
+const HOST_TYPES = [
+  "Family", "Hostel", "Individual", "Community", 
+  "School", "Farmstay", "Sustainable Project", "Others"
+];
+
+const HOST_WELCOMES = ["Families", "Nomads", "Camper Van"];
+const WORKAWAYERS_OPTIONS = ["any", "1", "2", "more"];
+
+const Filters = ({ filters, setFilters }: Props) => {
+  const toggleSelection = (list: string[], value: string): string[] => {
+    return list.includes(value)
+      ? list.filter(item => item !== value)
+      : [...list, value];
   };
 
+  const handleHostTypeClick = (type: string) => {
+    const updated = toggleSelection(filters.hostTypes, type);
+    setFilters({ ...filters, hostTypes: updated });
+  };
+
+  const handleWelcomeClick = (type: string) => {
+    const updated = toggleSelection(filters.hostWelcomes, type);
+    setFilters({ ...filters, hostWelcomes: updated });
+  };
+
+  const handleRadioChange = (value: string) => {
+    setFilters({ ...filters, numberOfWorkawayers: value });
+  };
 
   return (
     <div className="w-1/4 h-full px-4 py-5 my-4 mx-2 border border-gray-300 rounded-lg shadow-sm bg-white overflow-y-auto">
@@ -229,15 +288,15 @@ const Filters = ({ setFilters }: { setFilters: (filters: FiltersType) => void })
       <div className="mb-5">
         <h4 className="text-md font-bold mb-2">Host Type</h4>
         <div className="grid grid-cols-2 gap-2">
-          {hostTypes.map((type, index) => (
+          {HOST_TYPES.map(type => (
             <div
-              key={index}
+              key={type}
               className={`px-3 py-2 text-sm text-center rounded-md border transition cursor-pointer ${
-                selectedTypes.includes(type)
+                filters.hostTypes.includes(type)
                   ? "bg-black text-white border-black"
                   : "bg-gray-100 hover:bg-gray-200"
               }`}
-              onClick={() => addToSelectedHelpType(type)}
+              onClick={() => handleHostTypeClick(type)}
             >
               {type}
             </div>
@@ -249,15 +308,15 @@ const Filters = ({ setFilters }: { setFilters: (filters: FiltersType) => void })
       <div className="mb-5">
         <h4 className="text-md font-bold mb-2">Host Welcomes</h4>
         <div className="grid grid-cols-3 gap-2">
-          {hostWelcomes.map((type, index) => (
+          {HOST_WELCOMES.map(type => (
             <div
-              key={index}
+              key={type}
               className={`px-3 py-2 text-xs text-center rounded-md border transition cursor-pointer ${
-                hostWelcome.includes(type)
+                filters.hostWelcomes.includes(type)
                   ? "bg-black text-white border-black"
                   : "bg-gray-100 hover:bg-gray-200"
               }`}
-              onClick={() => addToHostWelcomes(type)}
+              onClick={() => handleWelcomeClick(type)}
             >
               {type}
             </div>
@@ -265,18 +324,21 @@ const Filters = ({ setFilters }: { setFilters: (filters: FiltersType) => void })
         </div>
       </div>
 
-      {/* Number of Workawayers */}
+      {/* Number of Workawayers Accepted */}
       <div className="mb-5">
         <h4 className="text-md font-bold mb-2">Number of Workawayers Accepted</h4>
-        <div className="flex flex-row gap-2">
-          {["any", "1", "2", "more"].map((value, index) => (
-            <label key={index} className="flex items-center gap-2 text-sm cursor-pointer hover:text-blue-600">
+        <div className="flex flex-col gap-2">
+          {WORKAWAYERS_OPTIONS.map(value => (
+            <label
+              key={value}
+              className="flex items-center gap-2 text-sm cursor-pointer hover:text-blue-600"
+            >
               <input
                 type="radio"
                 name="quantity"
                 value={value}
-                checked={selectedRadio === value}
-                onChange={() => setSelectedRadio(value)}
+                checked={filters.numberOfWorkawayers === value}
+                onChange={() => handleRadioChange(value)}
               />
               {value === "any"
                 ? "Any"
@@ -288,8 +350,8 @@ const Filters = ({ setFilters }: { setFilters: (filters: FiltersType) => void })
         </div>
       </div>
 
-      {/* Checkboxes */}
-      <div className="mb-5 flex flex-row  gap-2">
+      {/* Checkboxes (Optional UI only) */}
+      <div className="mb-5 flex flex-row gap-2">
         <label className="flex items-center gap-2 text-sm cursor-pointer">
           <input type="checkbox" name="newHost" />
           New Host
@@ -298,13 +360,6 @@ const Filters = ({ setFilters }: { setFilters: (filters: FiltersType) => void })
           <input type="checkbox" name="recentlyUpdated" />
           Recently Updated
         </label>
-      </div>
-
-      {/* Apply Button */}
-      <div className="pt-2">
-        <button className="w-full bg-black text-white py-2 rounded-md hover:bg-gray-900 transition" onClick={handleApply}>
-          Apply
-        </button>
       </div>
     </div>
   );
@@ -321,14 +376,27 @@ const locations = [
 ];
 
 
-   const MapComponent = ({ isFilterComponentOpen }: { isFilterComponentOpen: boolean }) => {
+const MapComponent = ({
+  isFilterComponentOpen,
+  locations,
+}: {
+  isFilterComponentOpen: boolean;
+  locations: { id: string; desc: string; lat: number | null; lng: number | null }[]; // Update types for lat/lng to include null
+}) => {
+  const defaultLat = 40.7128; // Default latitude (New York)
+  const defaultLng = -74.006; 
+console.log("lllllllllllllllllloac",locations);
+
   return (
     <div className={`${isFilterComponentOpen ? "w-3/4" : "w-1/2"} h-[90vh] pt-3`}>
-      <MapContainer center={[40.7128, -74.006]} zoom={3} style={{ height: "100%", width: "100%" }}>
+      <MapContainer center={[defaultLat, defaultLng]} zoom={3} style={{ height: "100%", width: "100%" }}>
         <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
         {locations.map((loc) => (
-          <Marker key={loc.id} position={[loc.lat, loc.lng]}>
-            <Popup>{loc.name}</Popup>
+          <Marker
+            key={loc.id}
+            position={[loc.lat ?? defaultLat, loc.lng ?? defaultLng]} // Fallback to defaultLat and defaultLng
+          >
+            <Popup>{loc.desc}</Popup>
           </Marker>
         ))}
       </MapContainer>
