@@ -70,7 +70,7 @@ const FooterSection = () => {
           </div>
         </div>
         <div className="mt-8 text-center text-sm text-gray-500 flex justify-center space-x-4">
-          <span>© RENTiful. All rights reserved.</span>
+          <span>© Raih. All rights reserved.</span>
           <Link to="/privacy">Privacy Policy</Link>
           <Link to="/terms">Terms of Service</Link>
           <Link to="/cookies">Cookie Policy</Link>

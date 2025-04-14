@@ -139,7 +139,7 @@ const toggleFilter=()=>{
     [data]
   );
 
-  if (error) return <p>Error fetching hosts!</p>;
+  ;
 
    
   return (
@@ -173,8 +173,7 @@ const toggleFilter=()=>{
     />
     <AiOutlineSearch className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
     
-    {loading && <p className="text-gray-500 text-xs mt-1">Loading...</p>}
-
+   
     {suggestions.length > 0 && (
       <ul className="absolute z-50 left-0 right-0 bg-white border mt-2 rounded-md shadow max-h-60 overflow-auto">
         {suggestions.map((place) => (
@@ -233,8 +232,34 @@ const toggleFilter=()=>{
 {showMap ? <MapComponent isFilterComponentOpen={showFilters} locations={hostsForMap}/>:<></> }
 
     {<div className={` ${showMap  ? "w-1/2": "w-full"}  flex flex-col gap-y-22  gap-2 px-2 pt-3`}>
-    {isLoading ? (
-      <div>Loooading</div>
+    {error ? (
+  <div className="space-y-4 animate-pulse">
+    {Array.from({ length: 2 }).map((_, i) => (
+      <div key={i} className="flex items-center space-x-4 p-4 bg-white rounded-xl shadow">
+        <div className="w-16 h-16 bg-red-200 rounded-full" />
+        <div className="flex-1 space-y-2">
+          <div className="w-1/3 h-4 bg-red-300 rounded" />
+          <div className="w-1/2 h-4 bg-red-200 rounded" />
+        </div>
+      </div>
+    ))}
+    <p className="text-red-500 font-semibold text-center">⚠️ Error fetching hosts!</p>
+  </div>
+) : isLoading ? (
+    
+<div className="space-y-4 animate-pulse">
+  {Array.from({ length: 4 }).map((_, i) => (
+    <div key={i} className="flex items-center space-x-4 p-4 bg-white rounded-xl shadow-sm">
+      <div className="w-16 h-16 bg-gray-300 rounded-full" />
+      <div className="flex-1 space-y-2">
+        <div className="w-1/3 h-4 bg-gray-300 rounded" />
+        <div className="w-1/2 h-4 bg-gray-200 rounded" />
+        <div className="w-1/4 h-3 bg-gray-200 rounded" />
+      </div>
+    </div>
+  ))}
+</div>
+
     ):(
       data?.hosts.map((host:Host) => (
         <HostCard key={host._id} host={host} />

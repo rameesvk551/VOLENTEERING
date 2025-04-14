@@ -8,7 +8,7 @@ import BlogSection from '../../components/HomeComponents/BlogSection'
 
 const HomePage = () => {
   return (
-    <div>
+    <div className=' bg-gradient-to-b from-blue-100 to-white '>
         <HeroSection />
             <FeaturesSection />
             <DiscoverSection />

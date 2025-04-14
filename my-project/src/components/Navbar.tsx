@@ -57,9 +57,10 @@ const goToProfile=()=>{
             className="cursor-pointer text-gray-700 hover:text-gray-900 transition"
             onClick={() => setIsOpen(true)}
           />
-          <h5 className="text-3xl font-bold tracking-widest text-gray-900 uppercase">
+        <Link to={"/"}>
+        <h5 className="text-3xl font-bold tracking-widest text-gray-900 uppercase cursor-default">
             <span className="bg-gradient-to-r from-blue-500 to-green-500 text-transparent bg-clip-text">RAIH</span>
-          </h5>
+          </h5></Link>
         </div>
 
         {/* Right side - Heart + Profile */}

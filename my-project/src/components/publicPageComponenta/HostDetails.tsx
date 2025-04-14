@@ -21,6 +21,9 @@ import Review from "../hostDetailsPageComponents/Review";
 import OverviewSection from "../hostDetailsPageComponents/OverviewSection";
 import PhotosSection from "../hostDetailsPageComponents/PhotosSection";
 import MapComponent from "../placeAutoCompleteAndMap/MapComponent";
+import useAddReview from "@/hooks/UseAddReview";
+import { useSelector } from "react-redux";
+import { RootState } from "@/redux/store";
 
 const HostDetails = () => {
   const { id } = useParams<{ id: string }>();
@@ -29,14 +32,14 @@ const HostDetails = () => {
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<number>(1);
   const [showReviewModal, setShowReviewModal] = useState(false);
-
+  const { volenteerData } = useSelector((state: RootState) => state.volenteer);
   const navigate = useNavigate();
 
   const tabs = [
     { id: 1, label: "OVERVIEW" },
     { id: 2, label: "PHOTOS" },
     { id: 3, label: "MAP" },
-    { id: 4, label: "FEEDBACK (2)" },
+    { id: 4, label: `FEEDBACK(${host?.reviews.length}) `},
   ];
 const lastActive=host?.lastActive
 console.log("hhhhost last active ",lastActive);
@@ -125,7 +128,7 @@ console.log("hhhhost last active ",lastActive);
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <span>4.5 (247 reviews)</span>
+              <span>4.5 ({host?.reviews.length})</span>
               <span className="flex items-center gap-1">
                 <MdOutlineVerifiedUser />
                 Verified Host
@@ -155,8 +158,18 @@ console.log("hhhhost last active ",lastActive);
           {activeTab === 2 && <PhotosSection images={host?.images} />}
           {activeTab === 4 && (
   <div className="flex flex-col items-center gap-3 mt-4">
-    <Review />
-    <Review />
+  {host.reviews.map((review) => {
+  return (
+    <Review
+      key={review.id}
+      rating={review.rating}
+      comment={review.comment}
+      reviewerProfile={review.reviewerProfile} 
+      reviewerName={review.reviewerName} 
+    />
+  );
+})}
+
     <button
       onClick={() => setShowReviewModal(true)}
       className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
@@ -212,7 +225,9 @@ console.log("hhhhost last active ",lastActive);
       >
         &times;
       </button>
-      <WriteReview />
+    {
+      volenteerData?.user ?(  <WriteReview hostId={host?._id} />):(<></>)
+    }
     </div>
   </div>
 )}
@@ -222,18 +237,18 @@ console.log("hhhhost last active ",lastActive);
 };
 
 export default HostDetails;
-
-const WriteReview = () => {
+type Props = {
+  hostId: string;
+};
+const WriteReview = ({ hostId }: Props) => {
+  const addReview=useAddReview()
   const [rating, setRating] = useState(0);
   const [hoveredRating, setHoveredRating] = useState<number | null>(null);
   const [review, setReview] = useState("");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log({ rating, review });
-   
-    setRating(0);
-    setReview("");
+    addReview.mutate({ rating, comment: review, hostId });
   };
 
   return (

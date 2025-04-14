@@ -1,6 +1,6 @@
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import { Search } from 'lucide-react';
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 
 const HotelBookingHomePage = () => {
   return (
@@ -13,13 +13,59 @@ const HotelBookingHomePage = () => {
 export default HotelBookingHomePage
 
 const HotelSearchWithoutFilter = () => {
-  const [search, setSearch] = useState("");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
   const [guests, setGuests] = useState({ adults: 1, children: 0 });
   const [hotels, setHotels] = useState([]);
+   const [input, setInput] = useState("");
+    const [suggestions, setSuggestions] = useState<AddressValues[]>([]);
+    const [selectedPlace, setSelectedPlace] = useState<AddressValues | null>(null);
+    const [loading, setLoading] = useState(false);
+type AddressValues = {
+  place_id: number;
+  display_name: string;
+  lat: string;
+  lon: string;
+  boundingbox: [string, string, string, string];
+  class: string;
+  type: string;
+  importance: number;
+  name: string;
+  osm_id: number;
+  osm_type: string;
+  place_rank: number;
+  addresstype: string;
+  licence: string;
+};
+// Fetch suggestions based on user input
+useEffect(() => {
+  if (input.length < 3) {
+    setSuggestions([]);
+    return;
+  }
+
+  const fetchSuggestions = async () => {
+    try {
+      const response = await axios.get(`${server}/host/places?input=${input}`);
+      setSuggestions(response.data || []);
+    } catch (error) {
+      console.error("Error fetching suggestions:", error);
+    }
+  };
+
+  const timeoutId = setTimeout(fetchSuggestions, 300);
+  return () => clearTimeout(timeoutId);
+}, [input]);
+
+// Handle place selection
+const handleSelect = (place: AddressValues) => {
+  setInput(place.display_name);
+  setSelectedPlace(place)
+
+  setSuggestions([]);
+};
 const initaialDetails={
-  search,
+  selectedPlace,
   fromDate,
   toDate,
   guests
@@ -27,14 +73,14 @@ const initaialDetails={
   const navigate = useNavigate();
 
   const FetchHotels = async () => {
-    if (!search || !fromDate || !toDate) {
+    if (!selectedPlace || !fromDate || !toDate) {
       alert("Please fill in all fields");
       return;
     }
 
     try {
       const response = await axios.post(`${server}/hotel/get-hotels`, {
-        destination: search,
+        destination: selectedPlace,
         checkin: fromDate,
         checkout: toDate,
         guests,
@@ -74,12 +120,29 @@ const initaialDetails={
             <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-xl px-4 py-2 shadow-md">
               <Search className="w-5 h-5 text-gray-500" />
               <input
-                type="text"
-                placeholder="Search for destinations..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="w-full text-sm focus:outline-none text-gray-800 placeholder-gray-400 bg-transparent"
-              />
+      value={input}
+      type="text"
+      placeholder="Search for a place"
+      onChange={(e) => setInput(e.target.value)}
+      className="w-full pl-4 pr-10 py-1.5 rounded-lg border border-gray-300 shadow-sm focus:ring-2 focus:ring-blue-500 text-sm"
+    />
+
+{loading && <p className="text-gray-500 text-xs mt-1">Loading...</p>}
+
+{suggestions.length > 0 && (
+  <ul className="absolute z-50 left-0 right-0 bg-white border mt-40 ml-[89px] rounded-md shadow max-h-60  overflow-auto w-[500px]">
+    {suggestions.map((place) => (
+      <li
+        key={place.place_id}
+        className="cursor-pointer px-3 py-2 hover:bg-gray-100 text-sm"
+        onClick={() => handleSelect(place)}
+      >
+        {place.display_name}
+      </li>
+    ))}
+  </ul>
+)}
+
             </div>
 
             {/* Inputs */}

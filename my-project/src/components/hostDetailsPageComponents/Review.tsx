@@ -1,46 +1,75 @@
-import React from 'react'
+import React from 'react';
 
-const Review = () => {
-  return (
-    <div>
-      <div className='flex flex-row'>
-      <div className="w-1/6 flex flex-col items-center">
-  <img src="/host.jpg" alt="Host Profile" className="rounded-full w-24 h-24" />
-  
-  {/* Star Rating */}
-  <div className="flex mt-2 text-yellow-500">
-    {[...Array(5)].map((_, index) => (
-      <svg
-        key={index}
-        className="w-5 h-5 fill-current"
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 24 24"
-      >
-        <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
-      </svg>
-    ))}
-  </div>
-</div>
-
-        <div className='w-5/6 border border-black '>
-        <div className='flex justify-between'>
-        <span className="text-sm">Left by Volunteer (Ramees) for host</span>
-
-        <span>22-10-2023</span>
-        </div>
-        <p>ndustry. Lorem Ipsum has been the industry's standard dummy text ever s
-            ince the 1500s, when an unknown printer took a galley of type and scrambled it to make
-             a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, 
-             remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets
-              containing Lorem Ipsum passages, and more recently
-             with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum</p>
-        
-        </div>
- 
-
-      </div>
-    </div>
-  )
+interface ReviewProps {
+  rating: number;
+  comment: string;
+  reviewerProfile: string;
+  reviewerName: string;
 }
 
-export default Review
+const Review: React.FC<ReviewProps> = React.memo(({ rating, comment, reviewerProfile, reviewerName }) => {
+  // Generate star elements dynamically based on the rating
+  const renderStars = () => {
+    const filledStars = new Array(rating).fill(true);
+    const emptyStars = new Array(5 - rating).fill(false);
+
+    return (
+      <>
+        {filledStars.map((_, index) => (
+          <svg
+            key={`filled-${index}`}
+            className="w-5 h-5 fill-current text-yellow-400"
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+          >
+            <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
+          </svg>
+        ))}
+        {emptyStars.map((_, index) => (
+          <svg
+            key={`empty-${index}`}
+            className="w-5 h-5 text-gray-300"
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+          >
+            <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
+          </svg>
+        ))}
+      </>
+    );
+  };
+
+  // Format the date for when the review is left (you can change it to a dynamic value)
+  const formattedDate = new Date().toLocaleDateString();
+
+  return (
+    <div className="bg-white shadow-lg rounded-lg w-full p-6 mb-4">
+      <div className="flex items-center space-x-4">
+        {/* Reviewer Profile Picture with lazy loading */}
+        <div className="flex flex-col items-center">
+          <img
+            src={reviewerProfile}
+            alt={`${reviewerName}'s profile`}
+            className="rounded-full w-16 h-16 border-2 border-gray-300 shadow-md"
+            loading="lazy"
+          />
+
+          {/* Star Rating */}
+          <div className="flex mt-2">{renderStars()}</div>
+        </div>
+
+        {/* Review Content */}
+        <div className="flex-1">
+          <div className="flex justify-between items-center">
+            <span className="text-sm font-medium text-gray-700">Left by {reviewerName}</span>
+            <span className="text-sm text-gray-500">{formattedDate}</span>
+          </div>
+
+          <p className="mt-2 text-gray-600 text-base">{comment}</p>
+        </div>
+      </div>
+    </div>
+  );
+});
+
+export default Review;

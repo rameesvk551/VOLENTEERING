@@ -4,6 +4,7 @@ const bcrypt=require("bcrypt")
 const CustomError = require("../utils/customError"); // Adjust path based on your project
 const mongoose =require("mongoose")
 const cloudinary = require("../config/cloudineryCofig");
+const Host = require("../model/host");
 
 exports.userSignup= async(req,res,next)=>{
    
@@ -194,3 +195,26 @@ exports.updateProfile = async (req, res) => {
       res.status(500).json({ message: "Internal server error" });
     }
   };
+
+  exports.addReview= async (req, res) => {
+    try {
+   console.log('req',req.body);
+   
+      const { rating, comment,hostId } = req.body;
+  const reviewerName=req.user.firstName
+   const reviewerProfile=req.user.profileImage
+      const host = await Host.findById(hostId);
+  
+      if (!host) {
+        return res.status(404).json({ message: 'Host not found!' });
+      }
+      host.reviews.push({ rating, comment,reviewerName,reviewerProfile});
+  console.log(host);
+  
+      await host.save();
+  
+      res.status(200).json({ message: 'Review added successfully!'});
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ message: 'Server error' });
+    }}
