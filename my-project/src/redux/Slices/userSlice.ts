@@ -16,6 +16,7 @@ const initialState: VolenteerState = {
   error: null,
   isAuthenticated: false,
   onlineUsers: [],
+ 
 };
 
 const volenteerSlice = createSlice({
@@ -28,6 +29,9 @@ const volenteerSlice = createSlice({
       
     },
   },
+  
+
+  
   extraReducers: (builder) => {
     builder
       .addCase(loadVolenteer.pending, (state) => {

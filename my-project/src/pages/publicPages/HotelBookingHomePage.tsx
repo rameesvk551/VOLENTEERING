@@ -49,6 +49,7 @@ useEffect(() => {
       const response = await axios.get(`${server}/host/places?input=${input}`);
       setSuggestions(response.data || []);
     } catch (error) {
+
       console.error("Error fetching suggestions:", error);
     }
   };
@@ -77,7 +78,7 @@ const initaialDetails={
       alert("Please fill in all fields");
       return;
     }
-
+setLoading(true)
     try {
       const response = await axios.post(`${server}/hotel/get-hotels`, {
         destination: selectedPlace,
@@ -85,15 +86,16 @@ const initaialDetails={
         checkout: toDate,
         guests,
       });
-
+      setLoading(false) 
       if (response.data.success) {
-        setHotels(response.data.hotels);
+        
+              setHotels(response.data.hotels);
         console.log("hotelsssss",hotels);
         
         navigate("/search-hotels", { state: { hotels: response.data.hotels,initaialDetails } });
 
       } else {
-        alert("No hotels found or request failed.");
+        toast.error(response.data.message)
       }
     } catch (err) {
       console.error("FetchHotels error:", err);
@@ -127,7 +129,6 @@ const initaialDetails={
       className="w-full pl-4 pr-10 py-1.5 rounded-lg border border-gray-300 shadow-sm focus:ring-2 focus:ring-blue-500 text-sm"
     />
 
-{loading && <p className="text-gray-500 text-xs mt-1">Loading...</p>}
 
 {suggestions.length > 0 && (
   <ul className="absolute z-50 left-0 right-0 bg-white border mt-40 ml-[89px] rounded-md shadow max-h-60  overflow-auto w-[500px]">
@@ -181,12 +182,43 @@ const initaialDetails={
               </div>
 
               <div className="flex items-end">
-                <button
-                  type="submit"
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-xl py-2 text-sm font-semibold transition duration-200 shadow hover:shadow-lg"
-                >
-                  🔍 Search
-                </button>
+              <button
+  type="submit"
+  disabled={loading}
+  className={`w-full flex items-center justify-center gap-2 ${
+    loading ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
+  } text-white rounded-xl py-2 text-sm font-semibold transition duration-200 shadow hover:shadow-lg`}
+>
+  {loading ? (
+    <>
+      <svg
+        className="animate-spin h-4 w-4 text-white"
+        xmlns="http://www.w3.org/2000/svg"
+        fill="none"
+        viewBox="0 0 24 24"
+      >
+        <circle
+          className="opacity-25"
+          cx="12"
+          cy="12"
+          r="10"
+          stroke="currentColor"
+          strokeWidth="4"
+        />
+        <path
+          className="opacity-75"
+          fill="currentColor"
+          d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 00-8 8z"
+        />
+      </svg>
+      Loading...
+    </>
+  ) : (
+    <>
+      🔍 Search
+    </>
+  )}
+</button>
               </div>
             </div>
           </form>
@@ -238,6 +270,7 @@ import BlogSection from '@/components/HomeComponents/BlogSection';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import server from '@/server/app';
+import toast from 'react-hot-toast';
   
   const popularPlaces = [
     { name: "Taj Mahal, Agra", minDays: 1 ,img:"/agra.webp"},

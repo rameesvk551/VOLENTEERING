@@ -18,6 +18,7 @@ const hotelRoutes = require("./routes/hotel");
 const flightRoutes = require("./routes/flight");
 const adminRoutes = require("./routes/admin");
 const messageRoutes = require("./routes/message");
+const tripPlaningRoutes = require("./routes/tripPlanning")
 const publicRoutes = require("./routes/public");
 const { app,server,io } = require("./lib/socket.io");
 
@@ -39,7 +40,7 @@ app.use("/api/v1/blog", blogRoutes);
 app.use("/api/v1/hotel", hotelRoutes);
 app.use("/api/v1/flight", flightRoutes);
 app.use("/api/v1/payment", paymentRoutes);
-
+app.use("/api/v1/trip-planning",tripPlaningRoutes);
 app.use(errorHandler);
 
 dbConnect();
