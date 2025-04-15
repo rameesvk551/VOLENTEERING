@@ -5,7 +5,7 @@ const { getAttractions } = require("../controller/tripPlanning")
 const app=express()
 const router=express.Router()
 
-router.get("/get-attractions",getAttractions)
+router.get("/get-attractions/:place",getAttractions)
 
 
 module.exports=router

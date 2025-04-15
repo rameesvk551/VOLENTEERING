@@ -6,7 +6,7 @@ exports.getAttractions = async (req, res) => {
     console.log("Fetching attractions...");
 
     // Optionally get searched place from query parameter (e.g. /api/attractions?place=india)
-    const searchedPlace = req.query.place || "rajasthan";
+    const searchedPlace = req.params.place || "kerala";
 
     if (!searchedPlace) {
       return res.status(400).json({ error: "No searched place provided." });
@@ -15,7 +15,7 @@ exports.getAttractions = async (req, res) => {
     const response = await axios.get("https://api.foursquare.com/v3/places/search", {
       params: {
         near: searchedPlace,
-        limit: 10,
+        limit: 30,
         fields: "fsq_id,name,categories,location,geocodes",
       },
       headers: {
@@ -23,10 +23,12 @@ exports.getAttractions = async (req, res) => {
       },
     });
 
-    // Optional: log entire response for debugging
-    console.log("Response received from Foursquare:");
-    console.log(JSON.stringify(response.data.results, null, 2));
+    // Check if attractions are found
+    if (!response.data.results || response.data.results.length === 0) {
+      return res.status(404).json({ message: "No attractions found." });
+    }
 
+    // Process and map the results from Foursquare API
     const attractions = response.data.results.map((place) => ({
       id: place.fsq_id,
       name: place.name,
@@ -41,6 +43,7 @@ exports.getAttractions = async (req, res) => {
       "Error fetching attractions:",
       error.response?.data || error.message
     );
-    res.status(500).json({ error: "Failed to fetch attractions." });
+
+    res.status(400).json({ error: "Failed to fetch attractions." });
   }
 };
