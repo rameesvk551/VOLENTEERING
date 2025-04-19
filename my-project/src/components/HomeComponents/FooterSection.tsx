@@ -1,5 +1,4 @@
-
-import React from "react";
+import React, { useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faFacebook,
@@ -8,75 +7,112 @@ import {
   faLinkedin,
   faYoutube,
 } from "@fortawesome/free-brands-svg-icons";
-import { Link } from "react-router-dom";
+import { Dialog } from "@headlessui/react";
+import { X } from "lucide-react";
 
 const FooterSection = () => {
+  const [openModal, setOpenModal] = useState<null | "about" | "contact" | "terms" | "privacy">(null);
+
+  const closeModal = () => setOpenModal(null);
+
+  const renderModalContent = () => {
+    switch (openModal) {
+      case "about":
+        return (
+          <>
+            <h2 className="text-xl font-semibold mb-4">About Us</h2>
+            <p className="text-gray-700">
+              RAIH is a platform focused on connecting travelers and hosts across the globe through meaningful experiences.
+            </p>
+          </>
+        );
+      case "contact":
+        return (
+          <>
+            <h2 className="text-xl font-semibold mb-4">Contact Us</h2>
+            <p className="text-gray-700">
+              You can reach us at <a href="mailto:support@raih.com" className="text-blue-600">support@raih.com</a>
+            </p>
+          </>
+        );
+      case "terms":
+        return (
+          <>
+            <h2 className="text-xl font-semibold mb-4">Terms of Service</h2>
+            <p className="text-gray-700">
+              By using our platform, you agree to our terms and conditions regarding service, content, and community behavior.
+            </p>
+          </>
+        );
+      case "privacy":
+        return (
+          <>
+            <h2 className="text-xl font-semibold mb-4">Privacy Policy</h2>
+            <p className="text-gray-700">
+              We respect your privacy and protect your data. We never sell your personal info.
+            </p>
+          </>
+        );
+      default:
+        return null;
+    }
+  };
+
   return (
-    <footer className="border-t border-gray-200 py-20">
-      <div className="max-w-4xl mx-auto px-6 sm:px-8">
-        <div className="flex flex-col md:flex-row justify-between items-center">
-          <div className="mb-4">
-            <Link to="/" className="text-xl font-bold" >
-             RAIH
-            </Link>
+    <>
+      <footer className="border-t border-gray-200 py-20">
+        <div className="max-w-4xl mx-auto px-6 sm:px-8">
+          <div className="flex flex-col md:flex-row justify-between items-center">
+            <div className="mb-4">
+              <span className="text-xl font-bold">RAIH</span>
+            </div>
+            <nav className="mb-4">
+              <ul className="flex space-x-6 text-gray-600">
+                <li>
+                  <button onClick={() => setOpenModal("about")} className="hover:text-black">About Us</button>
+                </li>
+                <li>
+                  <button onClick={() => setOpenModal("contact")} className="hover:text-black">Contact Us</button>
+                </li>
+                <li>
+                  <button onClick={() => setOpenModal("terms")} className="hover:text-black">Terms</button>
+                </li>
+                <li>
+                  <button onClick={() => setOpenModal("privacy")} className="hover:text-black">Privacy</button>
+                </li>
+              </ul>
+            </nav>
+            <div className="flex space-x-4 mb-4">
+              {[faFacebook, faInstagram, faTwitter, faLinkedin, faYoutube].map((icon, idx) => (
+                <a key={idx} href="#" className="hover:text-primary-600">
+                  <FontAwesomeIcon icon={icon} className="h-6 w-6" />
+                </a>
+              ))}
+            </div>
           </div>
-          <nav className="mb-4">
-            <ul className="flex space-x-6">
-              <li>
-                <Link to="/about">About Us</Link>
-              </li>
-              <li>
-                <Link to="/contact">Contact Us</Link>
-              </li>
-              <li>
-                <Link to="/faq">FAQ</Link>
-              </li>
-              <li>
-                <Link to="/terms">Terms</Link>
-              </li>
-              <li>
-                <Link to="/privacy">Privacy</Link>
-              </li>
-            </ul>
-          </nav>
-          <div className="flex space-x-4 mb-4">
-            <a
-              href="#"
-              aria-label="Facebook"
-              className="hover:text-primary-600"
-            >
-              <FontAwesomeIcon icon={faFacebook} className="h-6 w-6" />
-            </a>
-            <a
-              href="#"
-              aria-label="Instagram"
-              className="hover:text-primary-600"
-            >
-              <FontAwesomeIcon icon={faInstagram} className="h-6 w-6" />
-            </a>
-            <a href="#" aria-label="Twitter" className="hover:text-primary-600">
-              <FontAwesomeIcon icon={faTwitter} className="h-6 w-6" />
-            </a>
-            <a
-              href="#"
-              aria-label="Linkedin"
-              className="hover:text-primary-600"
-            >
-              <FontAwesomeIcon icon={faLinkedin} className="h-6 w-6" />
-            </a>
-            <a href="#" aria-label="Youtube" className="hover:text-primary-600">
-              <FontAwesomeIcon icon={faYoutube} className="h-6 w-6" />
-            </a>
+          <div className="mt-8 text-center text-sm text-gray-500 flex justify-center space-x-4">
+            <span>© Raih. All rights reserved.</span>
+            <button onClick={() => setOpenModal("privacy")} className="hover:text-black">Privacy Policy</button>
+            <button onClick={() => setOpenModal("terms")} className="hover:text-black">Terms of Service</button>
           </div>
         </div>
-        <div className="mt-8 text-center text-sm text-gray-500 flex justify-center space-x-4">
-          <span>© Raih. All rights reserved.</span>
-          <Link to="/privacy">Privacy Policy</Link>
-          <Link to="/terms">Terms of Service</Link>
-          <Link to="/cookies">Cookie Policy</Link>
+      </footer>
+
+      {/* Modal */}
+      <Dialog open={!!openModal} onClose={closeModal} className="fixed z-50 inset-0 overflow-y-auto">
+        <div className="flex items-center justify-center min-h-screen px-4">
+          {/* Custom Overlay */}
+          <div className="fixed inset-0 bg-black bg-opacity-30" onClick={closeModal} />
+
+          <div className="relative bg-white rounded-lg shadow-lg max-w-md w-full p-6 z-50">
+            <button onClick={closeModal} className="absolute top-2 right-2 text-gray-500 hover:text-gray-800">
+              <X size={20} />
+            </button>
+            {renderModalContent()}
+          </div>
         </div>
-      </div>
-    </footer>
+      </Dialog>
+    </>
   );
 };
 

@@ -73,7 +73,7 @@ const toggleMapView=()=>{
     if (destination) {
       setNextDestination(destination);
       setShowNextDestination(true);
-      setInput("");
+      setInput(destination);
       setSelectedPlace(null);
     }
   };
@@ -145,15 +145,15 @@ const toggleFilter=()=>{
   return (
     <div>
      {/**header */}
-     <div className="w-full flex items-center justify-between gap-4 px-4 py-2 bg-white border rounded-lg shadow-sm">
+     <div className="w-full flex flex-col md:flex-row md:items-center md:justify-between gap-4 px-4 py-3 bg-white border rounded-lg shadow-sm">
 
 {/* Left Side - Filters & Search */}
-<div className="flex items-center gap-3 flex-grow">
+<div className="flex flex-col sm:flex-row flex-grow items-stretch md:items-center gap-3 w-full">
   
   {/* Filter Button */}
   <button
     onClick={toggleFilter}
-    className={`px-4 py-2 rounded-lg text-sm font-medium transition duration-200 border shadow-sm ${
+    className={`px-4 py-2 rounded-lg text-sm font-medium transition duration-200 border shadow-sm w-full sm:w-auto ${
       showFilters
         ? "bg-blue-600 text-white border-blue-600 hover:bg-blue-700"
         : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
@@ -169,11 +169,10 @@ const toggleFilter=()=>{
       type="text"
       placeholder="Search for a place"
       onChange={(e) => setInput(e.target.value)}
-      className="w-full pl-4 pr-10 py-1.5 rounded-lg border border-gray-300 shadow-sm focus:ring-2 focus:ring-blue-500 text-sm"
+      className="w-full pl-4 pr-10 py-2 rounded-lg border border-gray-300 shadow-sm focus:ring-2 focus:ring-blue-500 text-sm"
     />
     <AiOutlineSearch className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-    
-   
+
     {suggestions.length > 0 && (
       <ul className="absolute z-50 left-0 right-0 bg-white border mt-2 rounded-md shadow max-h-60 overflow-auto">
         {suggestions.map((place) => (
@@ -189,49 +188,42 @@ const toggleFilter=()=>{
     )}
   </div>
 
+  {/* Host in Destination Button */}
   <button
-  onClick={hostInMyNextDestination}
-  className={`px-4 py-2 rounded-lg text-sm font-medium transition duration-200 border shadow-sm ${
-    showNextDestination
-      ? "bg-blue-600 text-white border-blue-600 hover:bg-blue-700"
-      : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
-  }`}
->
-  🌍 Host In My Destination
-</button>
-<button
-  onClick={toggleMapView}
-  className={`px-4 py-2 rounded-lg text-sm font-medium transition duration-200 border shadow-sm ${
-    showMap
-      ? "bg-blue-600 text-white border-blue-600 hover:bg-blue-700"
-      : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
-  }`}
->
- Map View
-</button>
-
-
-
-
-
-</div>
-
-{/* View Icons */}
-<div className="flex items-center gap-2">
-  <button className="p-2 hover:bg-gray-100 rounded-md transition">
-    <CiBoxList size={22} />
+    onClick={hostInMyNextDestination}
+    className={`px-4 py-2 rounded-lg text-sm font-medium transition duration-200 border shadow-sm w-full sm:w-auto ${
+      showNextDestination
+        ? "bg-blue-600 text-white border-blue-600 hover:bg-blue-700"
+        : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
+    }`}
+  >
+    🌍 Host In My Destination
   </button>
-  <button className="p-2 hover:bg-gray-100 rounded-md transition">
-    <CiBoxes size={22} />
+
+  {/* Map View Button */}
+  <button
+    onClick={toggleMapView}
+    className={`px-4 py-2 rounded-lg text-sm font-medium transition duration-200 border shadow-sm w-full sm:w-auto ${
+      showMap
+        ? "bg-blue-600 text-white border-blue-600 hover:bg-blue-700"
+        : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
+    }`}
+  >
+    🗺️ Map View
   </button>
 </div>
+
+
 </div>
 
-<div className="flex flex-row">
+
+<div className="flex flex-col md:flex-row w-full">
+
 {showFilters ? <Filters filters={filters} setFilters={setFilters} /> : null}
 {showMap ? <MapComponent isFilterComponentOpen={showFilters} locations={hostsForMap}/>:<></> }
 
-    {<div className={` ${showMap  ? "w-1/2": "w-full"}  flex flex-col gap-y-22  gap-2 px-2 pt-3`}>
+    {<div className={`w-full ${showMap ? "md:w-1/2" : "w-full"} flex flex-col gap-y-4 gap-2 px-2 pt-3`}>
+
     {error ? (
   <div className="space-y-4 animate-pulse">
     {Array.from({ length: 2 }).map((_, i) => (
@@ -248,25 +240,29 @@ const toggleFilter=()=>{
 ) : isLoading ? (
     
 <div className="space-y-4 animate-pulse">
-  {Array.from({ length: 4 }).map((_, i) => (
-    <div key={i} className="flex items-center space-x-4 p-4 bg-white rounded-xl shadow-sm">
-      <div className="w-16 h-16 bg-gray-300 rounded-full" />
-      <div className="flex-1 space-y-2">
-        <div className="w-1/3 h-4 bg-gray-300 rounded" />
-        <div className="w-1/2 h-4 bg-gray-200 rounded" />
-        <div className="w-1/4 h-3 bg-gray-200 rounded" />
+{Array.from({ length: 4 }).map((_, i) => (
+      <div key={i} className="flex items-center space-x-4 p-4 bg-white border border-gray-100 rounded-xl shadow-sm">
+        <div className="w-16 h-16 bg-gray-300 rounded-full" />
+        <div className="flex-1 space-y-2">
+          <div className="w-1/3 h-4 bg-gray-300 rounded" />
+          <div className="w-1/2 h-4 bg-gray-200 rounded" />
+          <div className="w-1/4 h-3 bg-gray-200 rounded" />
+        </div>
       </div>
-    </div>
-  ))}
-</div>
-
-    ):(
+    ))}
+  </div>
+) : data?.hosts.length < 1 ? (
+  <div className="text-center py-10">
+    <h1 className="text-xl font-medium text-gray-600">No hosts found 🕵️</h1>
+    <p className="text-sm text-gray-400">Try adjusting your filters or check back later.</p>
+  </div>
+) :(
       data?.hosts.map((host:Host) => (
         <HostCard key={host._id} host={host} />
       ))
     )}
-       
-<div className="flex justify-center mt-5 gap-3">
+
+    {data?.hosts.length >2 ? (<div className="flex justify-center mt-5 gap-3">
       <button
         disabled={page === 1}
         onClick={() => setPage(page - 1)}
@@ -280,7 +276,9 @@ const toggleFilter=()=>{
       >
         Next
       </button>
-    </div>
+    </div>):(<></>)}
+       
+
          
         </div>}
 </div>
@@ -328,87 +326,98 @@ const Filters = ({ filters, setFilters }: Props) => {
   };
 
   return (
-    <div className="w-1/4 h-full px-4 py-5 my-4 mx-2 border border-gray-300 rounded-lg shadow-sm bg-white overflow-y-auto">
-      <h3 className="text-xl font-semibold mb-3">Filter Hosts</h3>
+<div
+  className="
+    w-full md:w-1/3 lg:w-1/4 
+    h-full max-h-[90vh] 
+    px-4 py-5 my-4 mx-2 
+    border border-gray-300 
+    rounded-lg shadow-sm 
+    bg-white overflow-y-auto 
+    transition-all duration-300
+  "
+>
+  <h3 className="text-xl font-semibold mb-3">Filter Hosts</h3>
 
-      {/* Host Type */}
-      <div className="mb-5">
-        <h4 className="text-md font-bold mb-2">Host Type</h4>
-        <div className="grid grid-cols-2 gap-2">
-          {HOST_TYPES.map(type => (
-            <div
-              key={type}
-              className={`px-3 py-2 text-sm text-center rounded-md border transition cursor-pointer ${
-                filters.hostTypes.includes(type)
-                  ? "bg-black text-white border-black"
-                  : "bg-gray-100 hover:bg-gray-200"
-              }`}
-              onClick={() => handleHostTypeClick(type)}
-            >
-              {type}
-            </div>
-          ))}
+  {/* Host Type */}
+  <div className="mb-5">
+    <h4 className="text-md font-bold mb-2">Host Type</h4>
+    <div className="grid grid-cols-2 gap-2">
+      {HOST_TYPES.map(type => (
+        <div
+          key={type}
+          className={`px-3 py-2 text-sm text-center rounded-md border transition cursor-pointer ${
+            filters.hostTypes.includes(type)
+              ? "bg-black text-white border-black"
+              : "bg-gray-100 hover:bg-gray-200"
+          }`}
+          onClick={() => handleHostTypeClick(type)}
+        >
+          {type}
         </div>
-      </div>
-
-      {/* Host Welcomes */}
-      <div className="mb-5">
-        <h4 className="text-md font-bold mb-2">Host Welcomes</h4>
-        <div className="grid grid-cols-3 gap-2">
-          {HOST_WELCOMES.map(type => (
-            <div
-              key={type}
-              className={`px-3 py-2 text-xs text-center rounded-md border transition cursor-pointer ${
-                filters.hostWelcomes.includes(type)
-                  ? "bg-black text-white border-black"
-                  : "bg-gray-100 hover:bg-gray-200"
-              }`}
-              onClick={() => handleWelcomeClick(type)}
-            >
-              {type}
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Number of Workawayers Accepted */}
-      <div className="mb-5">
-        <h4 className="text-md font-bold mb-2">Number of Workawayers Accepted</h4>
-        <div className="flex flex-col gap-2">
-          {WORKAWAYERS_OPTIONS.map(value => (
-            <label
-              key={value}
-              className="flex items-center gap-2 text-sm cursor-pointer hover:text-blue-600"
-            >
-              <input
-                type="radio"
-                name="quantity"
-                value={value}
-                checked={filters.numberOfWorkawayers === value}
-                onChange={() => handleRadioChange(value)}
-              />
-              {value === "any"
-                ? "Any"
-                : value === "more"
-                ? "More than two"
-                : value}
-            </label>
-          ))}
-        </div>
-      </div>
-
-      {/* Checkboxes (Optional UI only) */}
-      <div className="mb-5 flex flex-row gap-2">
-        <label className="flex items-center gap-2 text-sm cursor-pointer">
-          <input type="checkbox" name="newHost" />
-          New Host
-        </label>
-        <label className="flex items-center gap-2 text-sm cursor-pointer">
-          <input type="checkbox" name="recentlyUpdated" />
-          Recently Updated
-        </label>
-      </div>
+      ))}
     </div>
+  </div>
+
+  {/* Host Welcomes */}
+  <div className="mb-5">
+    <h4 className="text-md font-bold mb-2">Host Welcomes</h4>
+    <div className="grid grid-cols-3 gap-2">
+      {HOST_WELCOMES.map(type => (
+        <div
+          key={type}
+          className={`px-3 py-2 text-xs text-center rounded-md border transition cursor-pointer ${
+            filters.hostWelcomes.includes(type)
+              ? "bg-black text-white border-black"
+              : "bg-gray-100 hover:bg-gray-200"
+          }`}
+          onClick={() => handleWelcomeClick(type)}
+        >
+          {type}
+        </div>
+      ))}
+    </div>
+  </div>
+
+  {/* Number of Workawayers Accepted */}
+  <div className="mb-5">
+    <h4 className="text-md font-bold mb-2">Number of Workawayers Accepted</h4>
+    <div className="flex flex-col gap-2">
+      {WORKAWAYERS_OPTIONS.map(value => (
+        <label
+          key={value}
+          className="flex items-center gap-2 text-sm cursor-pointer hover:text-blue-600"
+        >
+          <input
+            type="radio"
+            name="quantity"
+            value={value}
+            checked={filters.numberOfWorkawayers === value}
+            onChange={() => handleRadioChange(value)}
+          />
+          {value === "any"
+            ? "Any"
+            : value === "more"
+            ? "More than two"
+            : value}
+        </label>
+      ))}
+    </div>
+  </div>
+
+  {/* Checkboxes */}
+  <div className="mb-5 flex flex-col sm:flex-row gap-2">
+    <label className="flex items-center gap-2 text-sm cursor-pointer">
+      <input type="checkbox" name="newHost" />
+      New Host
+    </label>
+    <label className="flex items-center gap-2 text-sm cursor-pointer">
+      <input type="checkbox" name="recentlyUpdated" />
+      Recently Updated
+    </label>
+  </div>
+</div>
+
   );
 };
 
@@ -435,19 +444,29 @@ const MapComponent = ({
 console.log("lllllllllllllllllloac",locations);
 
   return (
-    <div className={`${isFilterComponentOpen ? "w-3/4" : "w-1/2"} h-[90vh] pt-3`}>
-      <MapContainer center={[defaultLat, defaultLng]} zoom={3} style={{ height: "100%", width: "100%" }}>
-        <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-        {locations.map((loc) => (
-          <Marker
-            key={loc.id}
-            position={[loc.lat ?? defaultLat, loc.lng ?? defaultLng]} // Fallback to defaultLat and defaultLng
-          >
-            <Popup>{loc.desc}</Popup>
-          </Marker>
-        ))}
-      </MapContainer>
-    </div>
+    <div
+    className={`
+      ${isFilterComponentOpen ? "w-full md:w-3/4" : "w-full md:w-1/2"} 
+      h-[90vh] pt-3 transition-all duration-300
+    `}
+  >
+    <MapContainer
+      center={[defaultLat, defaultLng]}
+      zoom={3}
+      style={{ height: "100%", width: "100%" }}
+    >
+      <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+      {locations.map((loc) => (
+        <Marker
+          key={loc.id}
+          position={[loc.lat ?? defaultLat, loc.lng ?? defaultLng]}
+        >
+          <Popup>{loc.desc}</Popup>
+        </Marker>
+      ))}
+    </MapContainer>
+  </div>
+  
   );
 };
 

@@ -30,6 +30,7 @@ console.log("login form submitted",loginData);
 axios.post(`${server}/user/login`,loginData,{withCredentials:true}).then((res)=>{
    toast.success("Logged in Successfully")
     navigate(`/`)
+    location.reload()
 
     
 }).catch((error)=>{

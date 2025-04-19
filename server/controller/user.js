@@ -5,6 +5,7 @@ const CustomError = require("../utils/customError"); // Adjust path based on you
 const mongoose =require("mongoose")
 const cloudinary = require("../config/cloudineryCofig");
 const Host = require("../model/host");
+const  Review  = require("../model/review");
 
 exports.userSignup= async(req,res,next)=>{
    
@@ -61,8 +62,8 @@ exports.userLogin = async(req,res,next)=>{
     if (!user) return next(new CustomError("User does not exist", 404));
   const isPasswordMatch=await bcrypt.compare(password,user.password)
   if (!isPasswordMatch) return next(new CustomError("Incorrect password", 401));
-
-               
+user.lastLogin=Date.now()
+    await user.save()           
           const token=  jwt.sign({_id:user._id,email:user.email},process.env.JWT_SECRET,{expiresIn:"7d"})
 
           res.cookie("userToken",token,{
@@ -87,8 +88,10 @@ exports.userLogin = async(req,res,next)=>{
 
 
 exports.addDetails = async (req, res) => {
+
+ 
   try {
-    const userId = req.user.id;
+    const userId = req.params.id;
 
     const updateData = {
       ...req.body,
@@ -100,6 +103,8 @@ exports.addDetails = async (req, res) => {
       { $set: updateData },
       { new: true, runValidators: true }
     );
+    console.log('uuuuuuupdated User',u);
+    
 
     res.status(200).json({
       message: "User updated successfully",
@@ -196,25 +201,67 @@ exports.updateProfile = async (req, res) => {
     }
   };
 
-  exports.addReview= async (req, res) => {
+  exports.addReview = async (req, res) => {
     try {
-   console.log('req',req.body);
-   
-      const { rating, comment,hostId } = req.body;
-  const reviewerName=req.user.firstName
-   const reviewerProfile=req.user.profileImage
-      const host = await Host.findById(hostId);
+      const { rating, comment, hostId } = req.body;
   
+      const reviewerName = req.user.firstName;
+      const reviewerProfile = req.user.profileImage;
+      const reviewerId = req.user.id;
+  
+      // Validate host
+      const host = await Host.findById(hostId);
       if (!host) {
         return res.status(404).json({ message: 'Host not found!' });
       }
-      host.reviews.push({ rating, comment,reviewerName,reviewerProfile});
-  console.log(host);
   
+      // Create and save review
+      const newReview = new Review({
+        rating,
+        comment,
+        reviewerName,
+        reviewerProfile,
+        reviewerId,
+        host: hostId,
+      });
+      await newReview.save();
+  
+      // Push review to host
+      host.reviews.push(newReview._id);
       await host.save();
   
-      res.status(200).json({ message: 'Review added successfully!'});
+      // Optional: Add review reference to User if needed
+      await User.findByIdAndUpdate(reviewerId, {
+        $push: { reviews: newReview._id },
+      });
+  
+      res.status(200).json({ message: 'Review added successfully!' });
     } catch (err) {
       console.error(err);
       res.status(500).json({ message: 'Server error' });
-    }}
+    }
+  };
+  exports.getUserReviews = async (req, res) => {
+    try {
+      const userId = req.user.id; 
+  
+      // Fetch user with populated reviews
+      const user = await User.findById(userId).populate({
+        path: 'reviews',
+        populate: { path: 'host', select: 'name location' } // Optional: populate host info in each review
+      });
+  console.log("rrrrrrrrreviews",user);
+  
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+  
+      res.status(200).json({
+        reviews: user.reviews,
+      });
+    } catch (err) {
+      console.error('Error fetching user reviews:', err);
+      res.status(500).json({ message: 'Server error' });
+    }
+  };
+    

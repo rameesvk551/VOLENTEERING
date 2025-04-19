@@ -59,7 +59,7 @@ const App = () => {
           <Route path="/trip-planning" element={<PlanYourTrip />} />
           <Route path="/user/profile/:id" element={<UserProfilePage />} />
           <Route path="/user/membership" element={<MemberShipPlanPage />} />
-          <Route path="/message" element={<Messages />} />
+          <Route path="/message/:userId" element={<Messages />} />
           <Route path="/volenteer/profile/:id" element={<VolenteerUserProfilePage />} />
         </Route>
 

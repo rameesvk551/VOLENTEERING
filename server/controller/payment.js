@@ -45,9 +45,6 @@ exports.verifyPayment= async (req, res) => {
 
  
 
-    // ✅ Find User & Update Payment History
-    console.log("user",req.user.id);
-    
     const userId = req.user.id; 
     await User.findByIdAndUpdate(userId, {
       $push: {

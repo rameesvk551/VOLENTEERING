@@ -22,37 +22,55 @@ const HostCard: React.FC<HostCardProps> = ({ host }) => {
   const country = extractPlace[extractPlace?.length - 1]; 
   return (
     <div
-      key={host?._id}
-      className={`w-full flex flex-col gap-8 items-center rounded md:flex-row border border-black`}
+    key={host?._id}
+    className="w-full flex flex-col sm:flex-row gap-6 p-4 bg-white rounded-lg border border-gray-200 shadow-sm"
+  >
+    {/* Image */}
+    <Link
+      to={`/host-details/${host._id}`}
+      className="w-full sm:w-1/2 h-[200px] sm:h-[200px] overflow-hidden rounded-lg"
     >
-      <Link to={`/host-details/${host._id}`} className='w-full h-auto md:h-64 md:w-2/4 '>
-      <img src={host?.images?.[0]?.url} alt={host?.title} className='object-cover w-full h-full rounded' />
-
-      </Link>
-
-      <div className='w-full md:w-2/4 flex flex-col gap-3'>
-        <div className='flex gap-2 mt-2'>
-          <span className='text-sm text-gray-600 flex gap-1 items-center justify-center' ><CiLocationOn />{country}</span>
-          <span className='text-sm text-rose-600 font-semibold'>{projectNames[0]}</span>
+      <img
+        src={host?.images?.[0]?.url}
+        alt={host?.title}
+        className="w-full h-full object-cover transition-transform duration-200 hover:scale-105"
+      />
+    </Link>
+  
+    {/* Content */}
+    <div className="w-full sm:w-1/2 flex flex-col justify-between">
+      <div>
+        <div className="flex flex-wrap items-center gap-2 mb-2 text-sm text-gray-600">
+          <CiLocationOn className="text-gray-400" />
+          <span>{country}</span>
+          <span className="ml-auto sm:ml-0 text-rose-600 font-semibold">
+            {projectNames[0]}
+          </span>
         </div>
-
-        <h6 className='text-xl 2xl:text-3xl font-semibold text-black dark:text-white'>
-         volenteer in a off grid cplot doei fg4iv
-        </h6>
-        <div className="flex-1 overflow-hidden text-gray-600 dark:text-slate-500 text-sm text-justify line-clamp-4">
-  <Markdown options={{ wrapper: "article" }}>{host?.description}</Markdown>
-</div>
-
-
-        <Link to={`/`} className='flex items-center  text-black dark:text-white'>
-        <Button
-                    label='Contact'
-                    icon={<GrContact size={15} />}
-                    styles=' flex flex-row-reverse gap-1 bg-blue-400  dark:border text-white px-2 py-1 mb-2 rounded-full'
-                  />
+  
+        <h2 className="text-lg sm:text-xl font-bold text-gray-800 mb-2">
+          Volunteer in an off‑grid community
+        </h2>
+  
+        <div className="text-gray-600 text-sm text-justify line-clamp-3 sm:line-clamp-4 mb-4">
+          <Markdown options={{ wrapper: 'article' }}>
+            {host?.description}
+          </Markdown>
+        </div>
+      </div>
+  
+      <div className="flex justify-end">
+        <Link to={`/host-details/${host._id}`} className="w-full sm:w-auto">
+          <Button
+            label="Contact"
+            icon={<GrContact size={15} />}
+            styles="w-full sm:w-auto flex items-center justify-center gap-2 bg-blue-500 hover:bg-blue-600 text-white py-2 rounded-full transition"
+          />
         </Link>
       </div>
     </div>
+  </div>
+  
   );
 };
 

@@ -40,13 +40,7 @@ const hostSchema = new mongoose.Schema(
       addresstype: { type: String },
       licence: { type: String },
     },
-    reviews: [
-      {
-        rating:{ type: Number},
-        comment:{ type: String},
-        reviewerName:{ type: String},
-        reviewerProfile:{ type: String},
-      },],
+    reviews: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Review' }],
     description: { type: String,  },
     selectedHelpTypes: { type: [String], default: [] },
     allowed: { type: [String], default: [] },

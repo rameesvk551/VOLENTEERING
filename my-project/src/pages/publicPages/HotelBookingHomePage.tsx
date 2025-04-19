@@ -37,6 +37,8 @@ type AddressValues = {
   addresstype: string;
   licence: string;
 };
+const today = new Date().toISOString().split("T")[0];
+
 // Fetch suggestions based on user input
 useEffect(() => {
   if (input.length < 3) {
@@ -70,7 +72,12 @@ const initaialDetails={
   fromDate,
   toDate,
   guests
+
+
 }
+
+
+
   const navigate = useNavigate();
 
   const FetchHotels = async () => {
@@ -98,6 +105,7 @@ setLoading(true)
         toast.error(response.data.message)
       }
     } catch (err) {
+      setLoading(false)
       console.error("FetchHotels error:", err);
       alert("Failed to fetch hotels.");
     }
@@ -148,25 +156,36 @@ setLoading(true)
 
             {/* Inputs */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4">
-              <div className="flex flex-col">
-                <label className="text-xs text-gray-500 mb-1">Check-in</label>
-                <input
-                  type="date"
-                  value={fromDate}
-                  onChange={(e) => setFromDate(e.target.value)}
-                  className="bg-white border border-gray-200 rounded-xl px-3 py-2 shadow-sm focus:ring-2 focus:ring-blue-400 focus:outline-none"
-                />
-              </div>
+        
 
-              <div className="flex flex-col">
-                <label className="text-xs text-gray-500 mb-1">Check-out</label>
-                <input
-                  type="date"
-                  value={toDate}
-                  onChange={(e) => setToDate(e.target.value)}
-                  className="bg-white border border-gray-200 rounded-xl px-3 py-2 shadow-sm focus:ring-2 focus:ring-blue-400 focus:outline-none"
-                />
-              </div>
+            <div className="flex flex-col">
+  <label className="text-xs text-gray-500 mb-1">Check-in</label>
+  <input
+    type="date"
+    value={fromDate}
+    min={today}
+    onChange={(e) => {
+      setFromDate(e.target.value);
+      if (toDate && e.target.value >= toDate) {
+        setToDate(""); // reset invalid toDate
+      }
+    }}
+    className="bg-white border border-gray-200 rounded-xl px-3 py-2 shadow-sm focus:ring-2 focus:ring-blue-400 focus:outline-none"
+  />
+</div>
+
+<div className="flex flex-col">
+  <label className="text-xs text-gray-500 mb-1">Check-out</label>
+  <input
+    type="date"
+    value={toDate}
+    min={fromDate ? new Date(new Date(fromDate).getTime() + 86400000).toISOString().split("T")[0] : today}
+    onChange={(e) => setToDate(e.target.value)}
+    disabled={!fromDate}
+    className="bg-white border border-gray-200 rounded-xl px-3 py-2 shadow-sm focus:ring-2 focus:ring-blue-400 focus:outline-none disabled:opacity-50"
+  />
+</div>
+
 
               <div className="flex flex-col col-span-1">
                 <label className="text-xs text-gray-500 mb-1">Guests</label>

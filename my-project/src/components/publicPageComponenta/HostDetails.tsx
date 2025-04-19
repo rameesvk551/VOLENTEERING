@@ -24,6 +24,8 @@ import MapComponent from "../placeAutoCompleteAndMap/MapComponent";
 import useAddReview from "@/hooks/UseAddReview";
 import { useSelector } from "react-redux";
 import { RootState } from "@/redux/store";
+import HostDetailsScelton from "./HostDetailsScelton";
+import HostDetailsErrorPage from "./HostDetailsErrorPage";
 
 const HostDetails = () => {
   const { id } = useParams<{ id: string }>();
@@ -34,6 +36,9 @@ const HostDetails = () => {
   const [showReviewModal, setShowReviewModal] = useState(false);
   const { volenteerData } = useSelector((state: RootState) => state.volenteer);
   const navigate = useNavigate();
+
+
+
 
   const tabs = [
     { id: 1, label: "OVERVIEW" },
@@ -65,8 +70,8 @@ console.log("hhhhost last active ",lastActive);
     }
   }, [id]);
 
-  if (loading) return <div className="p-8">Loading...</div>;
-  if (error) return <div className="p-8 text-red-500">{error}</div>;
+  if (loading) return  <HostDetailsScelton/> 
+  if (error) return <HostDetailsErrorPage error={error}/>
  
   const latiitude=host.address.lat
   const longitude=host.address.lon

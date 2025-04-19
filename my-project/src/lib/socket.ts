@@ -32,8 +32,11 @@ export const connectSocket = (userId: string) => {
   socket.on("newMessage", (message) => {
     const currentUserId = store.getState().volenteer.volenteerData.user?._id;
     console.log("📩 New message received:", message);
-    if(message.senderId ! === currentUserId)
+    if(message.senderId ! == currentUserId)
+      console.log("dddddddddddisp");
+      
     store.dispatch(addMessage(message));
+    console.log("dddddddddddispcccccccched");
   });
 };
 

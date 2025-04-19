@@ -54,10 +54,11 @@ const navigate= useNavigate()
     <div className='flex w-full h-[100vh]'>
       {/* LEFT */}
       <div className='hidden md:flex flex-col gap-y-4 w-1/3 h-full bg-black items-center justify-center'>
-  <h5 className="text-3xl font-bold tracking-widest text-gray-900 uppercase">
+  <h5 className="text-3xl font-bold tracking-widest justify-center items-center text-gray-900 uppercase">
     <span className="bg-gradient-to-r from-blue-500 to-green-500 text-transparent bg-clip-text">RAIH</span>
   </h5>
-  <span className='text-xl font-semibold text-white'>Welcome to Raih — where your journey begins ✨</span>
+  <span className='text-xl font-semibold items-center text-white'>Welcome to Raih — where your journey begins </span>
+<span>✨</span>
 </div>
 
 
@@ -156,22 +157,8 @@ const navigate= useNavigate()
                   
 
                   <div className='flex items-center justify-between py-4'>
-                    <label
-                      className='flex items-center gap-1 text-base text-black dark:text-gray-500 cursor-pointer'
-                      htmlFor='imgUpload'
-                    >
-                      <input
-                        type='file'
-                        
-                        
-                        className='hidden'
-                        id='imgUpload'
-                        data-max-size='5120'
-                        accept='.jpg, .png, .jpeg'
-                      />
-                      <BiImages />
-                      <span>Picture</span>
-                    </label>
+                 
+                    
                   </div>
                 </div>
 

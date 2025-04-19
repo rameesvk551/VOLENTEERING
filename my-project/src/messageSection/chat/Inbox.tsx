@@ -144,7 +144,7 @@ const Inbox: React.FC = () => {
       {/* User Info Sidebar */}
       {userInfoOpen && (
         <div className="w-1/4">
-          <UserInfo handleTogleInfo={handleTogleInfo} />
+          <UserInfo handleTogleInfo={handleTogleInfo} selectedUser={selectedUser} />
         </div>
       )}
     </>

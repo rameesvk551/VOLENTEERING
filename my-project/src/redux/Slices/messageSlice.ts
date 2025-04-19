@@ -36,7 +36,7 @@ const messageSlice = createSlice({
   reducers: {
     addMessage(state, action: PayloadAction<Message>) {
       state.messages.push(action.payload);
-      console.log(state.messages);
+      console.log("messagessssssssssss",state.messages);
       
     },
     setSelectedUser: (state, action: PayloadAction<User>) => {

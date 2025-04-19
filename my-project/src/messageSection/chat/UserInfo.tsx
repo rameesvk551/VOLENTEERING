@@ -4,12 +4,18 @@ import { CiMenuKebab } from 'react-icons/ci';
 import { IoIosVideocam } from 'react-icons/io';
 import { IoCloseSharp } from 'react-icons/io5';
 import { TbDeviceMobileMessage } from 'react-icons/tb';
-
+interface User {
+    _id: string;
+    firstName: string;
+    profileImage?: string;
+    // Add any more fields as needed
+  }
 interface UserInfoProps {
     handleTogleInfo: () => void;
+    selectedUser:User
   }
   
-  const UserInfo: React.FC<UserInfoProps> = ({ handleTogleInfo }) => {
+  const UserInfo: React.FC<UserInfoProps> = ({ handleTogleInfo ,selectedUser}) => {
   return (
     <div className='border-1 flex flex-col h-full border-gray-200'>
     <div className="sticky border-b border-gray-300  flex flex-row items-center justify-between w-full px-6 py-7.5">
@@ -17,12 +23,11 @@ interface UserInfoProps {
         <button onClick={handleTogleInfo}><IoCloseSharp  /></button>
     </div>
     <div className='mx-auto  my-8'>
-        <img src="https://images.pexels.com/photos/1704488/pexels-photo-1704488.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1" alt=""
-        className='w-44 h-44 rounded-lg object-cover object-center' />
+        <img src={selectedUser?.profileImage}    className='w-44 h-44 rounded-lg object-cover object-center' />
     </div>
     <div className="px-6 space-y-1">
         <div className="text-black text-xl font-medium">
-            Mao Zedong
+            {selectedUser?.firstName}
         </div>
         <span className='text-gray-500 text-md'>Traveller</span>
     </div>

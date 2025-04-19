@@ -1,13 +1,7 @@
-const multer = require("multer"); 
-const path = require("path");
+const multer = require("multer");
 
-const storage = multer.diskStorage({
-  filename: (req, file, cb) => {
-    cb(null, Date.now() + path.extname(file.originalname)); // Unique filename
-  },
-});
+const storage = multer.memoryStorage(); // 👈 Important: Keep image in memory
 
 const upload = multer({ storage });
 
-// ✅ Correct Export:
 module.exports = upload;

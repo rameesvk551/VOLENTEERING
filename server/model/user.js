@@ -10,6 +10,10 @@ const userSchema = new mongoose.Schema({
   role: { type: String, enum: ["volunteer", "host", "admin","user"], default: "user" },
   profileImage: { type: String, default: "" },
   skills: [{ type: String }], 
+  lastLogin: {
+    type: Date,
+    default: Date.now,
+  },
   activities: [{ type: String }],
   status: { type: String, default: "inactive", enum: ["active", "inactive"] },
   membershipStartDate: { type: Date },
@@ -32,15 +36,17 @@ const userSchema = new mongoose.Schema({
 birthDate:{type:String},
 payments: [
   {
-    orderId: { type: String, required: true },
-    paymentId: { type: String, required: true },
-    amount: { type: Number, required: true },
+    orderId: { type: String},
+    paymentId: { type: String },
+    amount: { type: Number },
     status: { type: String, enum: ["Paid", "Failed"], default: "Paid" },
     method: { type: String },
     createdAt: { type: Date, default: Date.now },
   },
   {lastActive: Date},
 ],
+reviews: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Review' }],
+
   verified: { type: Boolean, default: false }, 
   createdAt: { type: Date, default: Date.now, immutable: true } 
 });

@@ -5,7 +5,7 @@ const axios = require("axios");
 exports.getHotels = async (req, res) => {
   try {
     const { checkin, checkout } = req.body;
-    const destinationCode = "MAD";
+    const destinationCode = "PMI";
 
     if (!checkin || !checkout) {
       return res.status(400).json({

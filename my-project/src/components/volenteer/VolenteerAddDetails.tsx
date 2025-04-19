@@ -31,7 +31,7 @@ const AddVolunteerDetail = () => {
   const [skillInput, setSkillInput] = useState("");
   const [interestInput, setInterestInput] = useState("");
   const [birthDate, setBirthDate] = useState("");
-
+const [loading,setLoading]=useState(false)
   const handleAddItem = (type: "skill" | "interest") => {
     const value = type === "skill" ? skillInput : interestInput;
     if (value.trim()) {
@@ -48,6 +48,7 @@ const AddVolunteerDetail = () => {
   };
 
   const onSubmit = async (data: VolunteerFormData) => {
+    setLoading(true)
     const fullData = {
       ...data,
       skills,
@@ -59,18 +60,20 @@ const AddVolunteerDetail = () => {
       });
       if (res.data.success) {
         toast.success("details added succesfully")
+        setLoading(false)
         navigate(`/user/membership`);
       }
     } catch (err) {
-      console.error("Error submitting form", err);
+      setLoading(false)
+      toast.error("something went wrong");
     }
   };
 
   return (
-    <div className="flex w-full  bg-gradient-to-br from-gray-900 to-black text-white">
+    <div className="flex w-full h-[100vh] bg-gradient-to-br from-gray-900 to-black text-white">
  
       {/* Sidebar */}
-      <div className="hidden md:flex fixed left-0 flex-col gap-y-6 w-1/3 h-[88.5vh]  bg-black items-center justify-center px-6 z-10">
+      <div className="hidden md:flex fixed left-0 flex-col gap-y-6 w-1/3 h-[100vh]  bg-black items-center justify-center px-6 z-10">
         <h5 className="text-4xl font-bold tracking-widest text-gray-900 uppercase">
           <span className="bg-gradient-to-r from-blue-500 to-green-500 text-transparent bg-clip-text">RAIH</span>
         </h5>
@@ -78,7 +81,7 @@ const AddVolunteerDetail = () => {
           Welcome to Raih — where your journey begins ✨
         </p>
       </div>
-      <div className="flex w-full md:w-2/3 md:ml-[33.33%] h-[88.5vh] px-6 md:px-12 lg:px-20 py-10 overflow-y-auto">
+      <div className="flex w-full md:w-2/3 md:ml-[33.33%] h-[100vh] px-6 md:px-12 lg:px-20 py-10 overflow-y-auto">
 
         <form
           onSubmit={handleSubmit(onSubmit)}
@@ -192,13 +195,43 @@ const AddVolunteerDetail = () => {
             </div>
 
             <div className="mt-8">
-              <button
-                type="submit"
-                className="w-full bg-[#b4cb3c] text-black font-semibold py-3 rounded-lg hover:bg-green-500 transition"
-              >
-                Submit Details
-              </button>
-            </div>
+  <button
+    type="submit"
+    className={`w-full text-black font-semibold py-3 rounded-lg transition flex items-center justify-center ${
+      loading ? "bg-green-400 cursor-not-allowed" : "bg-[#b4cb3c] hover:bg-green-500"
+    }`}
+    disabled={loading}
+  >
+    {loading ? (
+      <>
+        <svg
+          className="animate-spin h-5 w-5 mr-3 text-black"
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+        >
+          <circle
+            className="opacity-25"
+            cx="12"
+            cy="12"
+            r="10"
+            stroke="currentColor"
+            strokeWidth="4"
+          ></circle>
+          <path
+            className="opacity-75"
+            fill="currentColor"
+            d="M4 12a8 8 0 018-8v8z"
+          ></path>
+        </svg>
+        Submitting...
+      </>
+    ) : (
+      "Submit Details"
+    )}
+  </button>
+</div>
+
           </div>
         </form>
       </div>

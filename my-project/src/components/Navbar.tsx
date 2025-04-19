@@ -6,6 +6,7 @@ import { FaTaxi } from "react-icons/fa6";
 import { Link, useNavigate } from "react-router-dom";
 import { RootState } from "../redux/store";
 import { useSelector } from "react-redux";
+import { BiMessageMinus } from "react-icons/bi";
 
 const Navbar = () => {
   const [showProfileMenu, setShowProfileMenu] = useState(false);
@@ -14,17 +15,23 @@ const Navbar = () => {
 const navigate=useNavigate()
   const menuItems = [
     { id: 1, icon: <MdOutlineFlight size={22} className="text-black" />, text: "Flight", route: "/flights" },
-    { id: 2, icon: <FaTaxi size={22} className="text-black" />, text: "Car Rental", route: "/car-rental" },
-    { id: 3, icon: <MdHotel size={22} className="text-black" />, text: "Stay", route: "/hotels" },
-    { id: 4, icon: <FaEnvelope size={22} className="text-black" />, text: "Volunteering", route: "/volunteering-oppertunities" },
-    { id: 5, icon: <MdOutlineFlight size={22} className="text-black" />, text: "Tours", route: "/tours" },
-    { id: 6, icon: <FaTaxi size={22} className="text-black" />, text: "Plan Your Trip", route: "/trip-planning" },
-    { id: 7, icon: <FaEnvelope size={22} className="text-black" />, text: "Contact", route: "/contact" },
+    { id: 2, icon: <MdHotel size={22} className="text-black" />, text: "Stay", route: "/hotels" },
+    { id: 3, icon: <FaEnvelope size={22} className="text-black" />, text: "Volunteering", route: "/volunteering-oppertunities" },
+    { id: 4, icon: <FaTaxi size={22} className="text-black" />, text: "Plan Your Trip", route: "/trip-planning" },
+    { id: 5, icon: <FaEnvelope size={22} className="text-black" />, text: "Contact", route: "/contact" },
   ];
+
 
   const { volenteerData, isAuthenticated } = useSelector((state: RootState) => state.volenteer);
   const  userId=volenteerData?.user?._id
+
+  const goToTheMessage=()=>{
+    navigate(`/message/${userId}`)
+  }
+
 const goToProfile=()=>{
+
+
   setShowProfileMenu(false)
   if(volenteerData.user?.role==="volunteer"){
     navigate(`/volenteer/profile/${userId}`)
@@ -73,6 +80,16 @@ const goToProfile=()=>{
           </button>
 
           {isAuthenticated ? (
+       
+<>
+<button
+            onClick={goToTheMessage}
+            className="flex items-center justify-center p-2 rounded-full border border-blue-500 text-blue-500 hover:bg-blue-500 hover:text-white transition-all shadow-md"
+          >
+           <BiMessageMinus size={20} />
+
+          </button>
+
             <div className="relative">
               <img
                 src={"/default-avatar.png"}
@@ -96,7 +113,7 @@ const goToProfile=()=>{
                   </button>
                 </div>
               )}
-            </div>
+            </div></>
           ) : (
             <button className="px-6 py-2 rounded-full bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-all shadow-md">
               Sign In

@@ -14,6 +14,7 @@ exports.isAuthenticated=async(req,res,next)=>{
         const decoded=jwt.verify(userToken,process.env.JWT_SECRET)
       
         req.user=await User.findById(decoded._id)
+        
         if (!req.user) {
             return next(new CustomError("User not found", 404));
         }

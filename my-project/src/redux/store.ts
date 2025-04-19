@@ -5,7 +5,7 @@ import hostReducer from "./Slices/hostSlice";
 import volenteerReducer from "./Slices/userSlice";
 import messageReducer from "./Slices/messageSlice";
 import attractionsReducer from "./Slices/attraction";
-
+import hotelBookingReducer from './Slices/hotelBookingSlice'
 
 export const store = configureStore({
     reducer: {
@@ -14,7 +14,8 @@ export const store = configureStore({
         host:hostReducer,
         volenteer:volenteerReducer,
         message: messageReducer,
-    attractions:attractionsReducer
+    attractions:attractionsReducer,
+    hotelBooking:hotelBookingReducer
 
     },
 });

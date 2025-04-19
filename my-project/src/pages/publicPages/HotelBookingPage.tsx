@@ -9,8 +9,16 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { MapContainer, Marker, Popup, TileLayer } from "react-leaflet";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
+import { RootState } from "@/redux/store";
+import toast from "react-hot-toast";
+import server from "@/server/app";
+import axios from "axios";
+import HotelCardSkeleton from "./HotelCardSkeleton";
 const HotelBookingPage = () => {
+  const today = new Date().toISOString().split("T")[0];
+
   const location = useLocation();
   const hotels = location.state?.hotels || [];
   const initaialDetails=location.state?.initaialDetails || [];
@@ -30,6 +38,7 @@ const HotelBookingPage = () => {
   const [filters, setFilters] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [isFilterComponentOpen, setIsFilterComponentOpen] =useState<boolean>(false);
+  const [isLoading,setIsLoading] =useState<boolean>(false);
   useEffect(() => {
     console.log("Filters changed: ", filters);
   }, [filters]);
@@ -127,6 +136,8 @@ const filteredProperties = hotels
     }
   };
 
+
+ 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white relative overflow-hidden">
       <Header
@@ -135,6 +146,7 @@ const filteredProperties = hotels
         setIsFilterComponentOpen={setIsFilterComponentOpen}
         filters={filters}
         setFilters={setFilters}
+        setIsLoading={setIsLoading}
       />
 
       {/* Content */}
@@ -160,7 +172,8 @@ const filteredProperties = hotels
               isFilterComponentOpen ? "md:w-3/4" : "md:w-1/2"
             } w-full h-full overflow-y-auto px-4 py-2`}
           >
-            <div className="flex flex-col gap-2">
+          {isLoading ? ( [...Array(3)].map((_, i) => <HotelCardSkeleton key={i} />) ): (
+              <div className="flex flex-col gap-2">
               {filteredProperties &&
                 filteredProperties.map((property) => (
                   <HotelCard key={property.id} {...property} />
@@ -215,6 +228,7 @@ const filteredProperties = hotels
                 </div>
               </div>
             </div>
+          )}
           </div>
         </div>
       </div>
@@ -223,8 +237,24 @@ const filteredProperties = hotels
 };
 
 export default HotelBookingPage;
+type AddressValues = {
+  place_id: number;
+  display_name: string;
+  lat: string;
+  lon: string;
+  boundingbox: [string, string, string, string];
+  class: string;
+  type: string;
+  importance: number;
+  name: string;
+  osm_id: number;
+  osm_type: string;
+  place_rank: number;
+  addresstype: string;
+  licence: string;
+};
 type initaialDetails = {
-  search: string;
+  selectedPlace:AddressValues
   fromDate: string;
   toDate: string;
   guests: number
@@ -233,21 +263,103 @@ const Header = ({
   initaialDetails,
   setIsFilterComponentOpen,
   setFilters,
+  setIsLoading,
   filters,
 }: {
-  initaialDetails:initaialDetails
+  initaialDetails: initaialDetails;
   isFilterComponentOpen: boolean;
   setIsFilterComponentOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  setIsLoading: React.Dispatch<React.SetStateAction<boolean>>;
+  
+
   filters: string[];
   setFilters: React.Dispatch<React.SetStateAction<string[]>>;
 }) => {
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
+  const [hotels, setHotels] = useState([]);
+  const [input, setInput] = useState("");
+  const [guests, setGuests] = useState(1);
+  const [suggestions, setSuggestions] = useState<AddressValues[]>([]);
+  const [selectedPlace, setSelectedPlace] = useState<AddressValues | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
+
+  const navigate = useNavigate();
+
+  const today = new Date().toISOString().split("T")[0];
+
+  useEffect(() => {
+    setFromDate(initaialDetails.fromDate);
+    setToDate(initaialDetails.toDate);
+    setSelectedPlace(initaialDetails.selectedPlace)
+  }, [initaialDetails.fromDate, initaialDetails.toDate,initaialDetails.selectedPlace]);
+
+  useEffect(() => {
+    if (input.length < 3) {
+      setSuggestions([]);
+      return;
+    }
+
+    const fetchSuggestions = async () => {
+      setIsLoading(true)
+      try {
+        const response = await axios.get(`${server}/host/places?input=${input}`);
+   
+        setSuggestions(response.data || []);
+        setIsLoading(false)
+      } catch (error) {
+        setIsLoading(false)
+        console.error("Error fetching suggestions:", error);
+      }
+    };
+
+    const timeoutId = setTimeout(fetchSuggestions, 300);
+    return () => clearTimeout(timeoutId);
+  }, [input]);
+
+  const handleSelect = (place: AddressValues) => {
+    setInput(place.display_name);
+    setSelectedPlace(place);
+    setSuggestions([]);
+  };
+
+  const FetchHotels = async () => {
+    if (!selectedPlace || !fromDate || !toDate) {
+      alert("Please fill in all fields");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await axios.post(`${server}/hotel/get-hotels`, {
+        destination: selectedPlace,
+        checkin: fromDate,
+        checkout: toDate,
+        guests,
+      });
+
+      setLoading(false);
+      if (response.data.success) {
+        setHotels(response.data.hotels);
+        navigate("/search-hotels", {
+          state: { hotels: response.data.hotels, initaialDetails },
+        });
+      } else {
+        toast.error(response.data.message);
+      }
+    } catch (err) {
+      setLoading(false);
+      console.error("FetchHotels error:", err);
+      alert("Failed to fetch hotels.");
+    }
+  };
+
   const inputStyles =
-    "bg-white border border-gray-300 rounded-2xl px-4 py-2 shadow-sm focus:ring-2 focus:ring-blue-400 focus:outline-none transition duration-200 text-sm";
+    "bg-white border border-gray-300 rounded-2xl px-4 py-2 shadow-sm focus:ring-2 focus:ring-blue-400 focus:outline-none transition duration-200 text-sm w-full";
+
   const buttonStyles =
     "bg-white border border-gray-300 rounded-2xl px-5 py-2 font-medium text-sm shadow-sm hover:bg-gray-100 focus:ring-2 focus:ring-blue-400 focus:outline-none transition duration-200";
-  useEffect(() => {
-    console.log("Filters updated:", filters);
-  }, [filters]);
 
   const starOptions = [
     { label: "2 Star", value: "2" },
@@ -269,14 +381,13 @@ const Header = ({
     { label: "4 stars & up", value: "4+" },
     { label: "3 stars & up", value: "3+" },
   ];
-  
-  
-  
   return (
-    <div className="w-full px-6 py-4 fixed top-0 left-0  z-50">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        {/* Left Actions */}
-        <div className="flex flex-wrap items-center gap-2">
+    <div className="w-full px-4 md:px-6 py-4 fixed top-0 left-0 bg-white z-50 shadow-sm">
+      <div className="flex flex-col gap-4 md:flex-row md:items-center justify-between flex-wrap">
+  
+        {/* Left Side Inputs */}
+        <div className="flex flex-col sm:flex-row flex-wrap gap-3 w-full md:w-auto items-start sm:items-center">
+  
           {/* Filter Button */}
           <button
             className={buttonStyles}
@@ -284,92 +395,118 @@ const Header = ({
           >
             Filter
           </button>
-
-          {/* Location Input with Icon */}
-          <div className="relative">
+  
+          {/* Location Input */}
+          <div className="relative w-full sm:w-64 md:w-72">
             <input
+              value={input}
               type="text"
-              placeholder={initaialDetails.search}
-              defaultValue={initaialDetails.search}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder={initaialDetails.selectedPlace.display_name}
+              defaultValue={initaialDetails.selectedPlace.display_name}
               className={inputStyles}
             />
-            <AiOutlineSearch className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 text-lg" />
+            <AiOutlineSearch
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-blue-500  text-lg cursor-pointer"
+              onClick={FetchHotels}
+            
+            />
+            {suggestions.length > 0 && (
+              <ul className="absolute z-50 left-0 right-0 bg-white border mt-1 rounded-md shadow max-h-60 overflow-auto text-sm">
+                {suggestions.map((place) => (
+                  <li
+                    key={place.place_id}
+                    className="cursor-pointer px-3 py-2 hover:bg-gray-100"
+                    onClick={() => handleSelect(place)}
+                  >
+                    {place.display_name}
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
-
-          {/* Date Range */}
-          <div className="flex items-center gap-2">
-            <input type="date" className={inputStyles}  placeholder={initaialDetails.fromDate}
-              defaultValue={initaialDetails.fromDate}/>
-            <span className="text-gray-500 text-sm font-semibold">to</span>
-            <input type="date" className={inputStyles} placeholder={initaialDetails.toDate}
-              defaultValue={initaialDetails.toDate} />
+  
+          {/* Dates */}
+          <div className="flex flex-col sm:flex-row gap-2 items-start sm:items-center w-full sm:w-auto">
+            <input
+              type="date"
+              className={inputStyles}
+              defaultValue={initaialDetails.fromDate}
+              value={fromDate}
+              min={today}
+              onChange={(e) => {
+                setFromDate(e.target.value);
+                if (toDate && e.target.value >= toDate) {
+                  setToDate("");
+                }
+              }}
+            />
+            <span className="text-gray-500 text-sm font-semibold self-center">to</span>
+            <input
+              type="date"
+              className={inputStyles}
+              defaultValue={initaialDetails.toDate}
+              value={toDate}
+              min={
+                fromDate
+                  ? new Date(new Date(fromDate).getTime() + 86400000).toISOString().split("T")[0]
+                  : today
+              }
+              onChange={(e) => setToDate(e.target.value)}
+              disabled={!fromDate}
+            />
           </div>
-
-          <button
-            className={buttonStyles}
-            onClick={() =>
-              setFilters((prev) =>
-                prev.includes("Nearest")
-                  ? prev.filter((f) => f !== "Nearest")
-                  : [...prev, "Nearest"]
-              )
-            }
-          >
-            Nearest to me
-          </button>
         </div>
-
-        {/* Right Actions (Dropdowns) */}
-        <div className="flex flex-wrap items-center gap-1">
-        <MyDropdown
-  dropdownItems={starOptions}
-  name="Star"
-  onSelect={(item) => {
-    setFilters((prev) => {
-      const updated = prev.filter((f) => !["2", "3", "4", "5"].includes(f));
-      return [...updated, item.value];
-    });
-  }}
-/>
-
-<MyDropdown
-  dropdownItems={ratingOptions}
-  name="Rating"
-  onSelect={(item) => {
-    setFilters((prev) => {
-      const updated = prev.filter((f) => !["3+", "4+", "5+"].includes(f));
-      return [...updated, item.value];
-    });
-  }}
-/>
-
-<MyDropdown
-  dropdownItems={sortOptions}
-  name="Sort"
-  onSelect={(item) => {
-    setFilters((prev) => {
-      const updated = prev.filter((f) =>
-        ![
-          "latest",
-          "newest",
-          "price_asc",
-          "price_desc",
-          "rating_high",
-          "rating_low",
-          "top_reviewed",
-        ].includes(f)
-      );
-      return [...updated, item.value];
-    });
-  }}
-/>
-
-
+  
+        {/* Right Side Dropdowns */}
+        <div className="flex flex-wrap gap-2 w-full md:w-auto justify-start md:justify-end">
+          <MyDropdown
+            dropdownItems={starOptions}
+            name="Star"
+            onSelect={(item) => {
+              setFilters((prev) => {
+                const updated = prev.filter((f) => !["2", "3", "4", "5"].includes(f));
+                return [...updated, item.value];
+              });
+            }}
+          />
+          <MyDropdown
+            dropdownItems={ratingOptions}
+            name="Rating"
+            onSelect={(item) => {
+              setFilters((prev) => {
+                const updated = prev.filter((f) => !["3+", "4+", "5+"].includes(f));
+                return [...updated, item.value];
+              });
+            }}
+          />
+          <MyDropdown
+            dropdownItems={sortOptions}
+            name="Sort"
+            onSelect={(item) => {
+              setFilters((prev) => {
+                const updated = prev.filter((f) =>
+                  ![
+                    "latest",
+                    "newest",
+                    "price_asc",
+                    "price_desc",
+                    "rating_high",
+                    "rating_low",
+                    "top_reviewed",
+                  ].includes(f)
+                );
+                return [...updated, item.value];
+              });
+            }}
+          />
         </div>
       </div>
     </div>
   );
+  
 };
+
 
 type DropdownItem = { label: string; value: string };
 
