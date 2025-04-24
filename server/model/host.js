@@ -41,6 +41,7 @@ const hostSchema = new mongoose.Schema(
       licence: { type: String },
     },
     reviews: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Review' }],
+    heading:{type:String},
     description: { type: String,  },
     selectedHelpTypes: { type: [String], default: [] },
     allowed: { type: [String], default: [] },

@@ -31,6 +31,7 @@ import HotelBookingHomePage from './pages/publicPages/HotelBookingHomePage';
 import FlightPage from './pages/publicPages/FlightPage';
 import VolenteerUserProfilePage from './pages/user/VolenteerUserProfilePage';
 import KycPage from './pages/user/KycPage';
+import NoFooter from './layouts/NoFooter';
 
 const App = () => {
   const dispatch = useDispatch<AppDispatch>();
@@ -59,7 +60,7 @@ const App = () => {
           <Route path="/trip-planning" element={<PlanYourTrip />} />
           <Route path="/user/profile/:id" element={<UserProfilePage />} />
           <Route path="/user/membership" element={<MemberShipPlanPage />} />
-          <Route path="/message/:userId" element={<Messages />} />
+        
           <Route path="/volenteer/profile/:id" element={<VolenteerUserProfilePage />} />
         </Route>
 
@@ -84,6 +85,9 @@ const App = () => {
           {/* Volenteer */}
           <Route path="/volenteer/add-details/:id" element={<VolenteerAddDetails />} />
           <Route path="/volenteer/kyc" element={<KycPage />} />
+        </Route>
+        <Route element={<NoFooter />}>
+        <Route path="/message/" element={<Messages />} />
         </Route>
       </Routes>
     </BrowserRouter>

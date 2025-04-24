@@ -1,6 +1,7 @@
   type Host = {
     _id: string;
     email: string;
+    heading:string,
     title: string;
     about: string;
     phone: string;

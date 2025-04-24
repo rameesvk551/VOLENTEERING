@@ -9,9 +9,10 @@ const BASE_URL = import.meta.env.VITE_SERVER_URL;
 let socket: Socket | null = null;
 export const connectSocket = (userId: string) => {
   if (socket) return;
+console.log('uuuuuuuuuuuuuuuuuuuusssssssss',userId);
 
   socket = io(BASE_URL, {
-    query: { userId },
+    auth: { userId },
     withCredentials: true,
   });
 

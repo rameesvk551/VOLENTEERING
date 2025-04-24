@@ -36,7 +36,12 @@ const HostDetails = () => {
   const [showReviewModal, setShowReviewModal] = useState(false);
   const { volenteerData } = useSelector((state: RootState) => state.volenteer);
   const navigate = useNavigate();
-
+  const calculateAverageRating = (reviews = []) => {
+    if (reviews.length === 0) return "0.0";
+    const total = reviews.reduce((sum, review) => sum + (review.rating || 0), 0);
+    return (total / reviews.length).toFixed(1);
+  };
+  
 
 
 
@@ -117,9 +122,7 @@ console.log("hhhhost last active ",lastActive);
         {/* LEFT */}
         <div className="lg:w-2/3 space-y-4">
           <h1 className="text-lg font-bold text-[#0a3f5f] leading-relaxed">
-            Be part of our family, share, improve and leave an impact on us
-            for generations to come in Gerbstedt, Germany
-          </h1>
+          {host?.heading ||"  Be part of our family, share, improve and leave an impact on us  for generations to come in Gerbstedt, Germany"}          </h1>
 
           <div className="flex flex-wrap justify-between text-sm text-gray-700">
             <div className="flex gap-4">
@@ -133,7 +136,10 @@ console.log("hhhhost last active ",lastActive);
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <span>4.5 ({host?.reviews.length})</span>
+            <span>
+  {calculateAverageRating(host?.reviews)} ({host?.reviews?.length || 0})
+</span>
+
               <span className="flex items-center gap-1">
                 <MdOutlineVerifiedUser />
                 Verified Host

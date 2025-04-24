@@ -123,7 +123,7 @@ const toggleFilter=()=>{
   } = useQuery<FilteredHostsResponse, Error, FilteredHostsResponse, [string, FiltersType, string, number]>({
     queryKey: ["fetchHosts", filters, place, page],
     queryFn: fetchHosts,
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 5 * 60 * 1000, 
    
   });
 
@@ -262,21 +262,47 @@ const toggleFilter=()=>{
       ))
     )}
 
-    {data?.hosts.length >2 ? (<div className="flex justify-center mt-5 gap-3">
+{data?.totalPages > 1 && (
+  <div className="flex justify-center mt-6 items-center gap-2">
+    {/* Previous button */}
+    <button
+      disabled={page === 1}
+      onClick={() => setPage(page - 1)}
+      className={`px-4 py-2 rounded ${
+        page === 1 ? "bg-gray-300 cursor-not-allowed" : "bg-gray-200 hover:bg-gray-300"
+      }`}
+    >
+      Previous
+    </button>
+
+    {/* Page numbers */}
+    {Array.from({ length: data.totalPages }, (_, i) => i + 1).map((pageNum) => (
       <button
-        disabled={page === 1}
-        onClick={() => setPage(page - 1)}
-        className="px-4 py-2 bg-gray-200 rounded"
+        key={pageNum}
+        onClick={() => setPage(pageNum)}
+        className={`px-4 py-2 rounded font-medium ${
+          pageNum === page
+            ? "bg-blue-600 text-white"
+            : "bg-gray-100 hover:bg-gray-200"
+        }`}
       >
-        Previous
+        {pageNum}
       </button>
-      <button
-        onClick={() => setPage(page + 1)}
-        className="px-4 py-2 bg-gray-200 rounded"
-      >
-        Next
-      </button>
-    </div>):(<></>)}
+    ))}
+
+    {/* Next button */}
+    <button
+      disabled={page === data.totalPages}
+      onClick={() => setPage(page + 1)}
+      className={`px-4 py-2 rounded ${
+        page === data.totalPages ? "bg-gray-300 cursor-not-allowed" : "bg-gray-200 hover:bg-gray-300"
+      }`}
+    >
+      Next
+    </button>
+  </div>
+)}
+
        
 
          
@@ -296,12 +322,12 @@ interface Props {
   setFilters: (filters: FiltersType) => void;
 }
 
-const HOST_TYPES = [
-  "Family", "Hostel", "Individual", "Community", 
-  "School", "Farmstay", "Sustainable Project", "Others"
+const  HELP_TYPES = [
+  "Cooking", "Art", "Teaching", "Gardening", 
+  "Help with Computer", "Language Practice", "Animal Care", "Others"
 ];
 
-const HOST_WELCOMES = ["Families", "Nomads", "Camper Van"];
+const HOST_WELCOMES = ["Families", "DIgital Nomad", "Campers"];
 const WORKAWAYERS_OPTIONS = ["any", "1", "2", "more"];
 
 const Filters = ({ filters, setFilters }: Props) => {
@@ -335,6 +361,7 @@ const Filters = ({ filters, setFilters }: Props) => {
     rounded-lg shadow-sm 
     bg-white overflow-y-auto 
     transition-all duration-300
+    sticky top-[0px]
   "
 >
   <h3 className="text-xl font-semibold mb-3">Filter Hosts</h3>
@@ -343,7 +370,7 @@ const Filters = ({ filters, setFilters }: Props) => {
   <div className="mb-5">
     <h4 className="text-md font-bold mb-2">Host Type</h4>
     <div className="grid grid-cols-2 gap-2">
-      {HOST_TYPES.map(type => (
+      {HELP_TYPES.map(type => (
         <div
           key={type}
           className={`px-3 py-2 text-sm text-center rounded-md border transition cursor-pointer ${
@@ -441,12 +468,12 @@ const MapComponent = ({
 }) => {
   const defaultLat = 40.7128; // Default latitude (New York)
   const defaultLng = -74.006; 
-console.log("lllllllllllllllllloac",locations);
+
 
   return (
     <div
     className={`
-      ${isFilterComponentOpen ? "w-full md:w-3/4" : "w-full md:w-1/2"} 
+      ${isFilterComponentOpen ? "w-full md:w-3/4" : "w-full md:w-1/2   sticky top-[0px]"} 
       h-[90vh] pt-3 transition-all duration-300
     `}
   >

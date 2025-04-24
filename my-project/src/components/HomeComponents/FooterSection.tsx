@@ -83,12 +83,25 @@ const FooterSection = () => {
               </ul>
             </nav>
             <div className="flex space-x-4 mb-4">
-              {[faFacebook, faInstagram, faTwitter, faLinkedin, faYoutube].map((icon, idx) => (
-                <a key={idx} href="#" className="hover:text-primary-600">
-                  <FontAwesomeIcon icon={icon} className="h-6 w-6" />
-                </a>
-              ))}
-            </div>
+  {[
+    { icon: faFacebook, url: "https://facebook.com/yourpage" },
+    { icon: faInstagram, url: "https://instagram.com/yourpage" },
+    { icon: faTwitter, url: "https://twitter.com/yourpage" },
+    { icon: faLinkedin, url: "https://linkedin.com/in/yourpage" },
+    { icon: faYoutube, url: "https://youtube.com/yourchannel" },
+  ].map((item, idx) => (
+    <a
+      key={idx}
+      href={item.url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="hover:text-primary-600 transition-transform hover:scale-110"
+    >
+      <FontAwesomeIcon icon={item.icon} className="h-6 w-6" />
+    </a>
+  ))}
+</div>
+
           </div>
           <div className="mt-8 text-center text-sm text-gray-500 flex justify-center space-x-4">
             <span>© Raih. All rights reserved.</span>

@@ -44,7 +44,36 @@ exports.isHost = async (req, res, next) => {
     }
 };
 
-
+exports.hostOrVolenteer = async (req, res, next) => {
+    try {
+      const { userToken, hostToken } = req.cookies;
+  
+      if (!userToken && !hostToken) {
+        return next(new CustomError("No JWT token provided", 400));
+      }
+  
+      if (userToken) {
+        const decoded = jwt.verify(userToken, process.env.JWT_SECRET);
+        const user = await User.findById(decoded._id);
+        if (!user) return next(new CustomError("User not found", 404));
+  
+        req.user = user;
+        return next();
+      }
+  
+      if (hostToken) {
+        const decoded = jwt.verify(hostToken, process.env.JWT_SECRET);
+        const host = await Host.findById(decoded._id);
+        if (!host) return next(new CustomError("Host not found", 404));
+  
+        req.hostName = host;
+        req.userType = "host";
+        return next();
+      }
+    } catch (err) {
+      return next(new CustomError("Invalid or expired token", 401));
+    }
+  };
 
 exports. isAdmin = async (req, res, next) => {
     try {

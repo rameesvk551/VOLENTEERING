@@ -1,33 +1,49 @@
 import React, { useEffect } from 'react'
-import {ChatList,Inbox,Profile} from '../../messageSection/chat/index'
+import {ChatList,Inbox} from '../../messageSection/chat/index'
 import { useSelector } from 'react-redux';
 import { useDispatch } from 'react-redux';
 import { loadVolenteer } from '@/redux/thunks/volenteerThunk';
 import { AppDispatch, RootState } from '@/redux/store';
 import { connectSocket } from '@/lib/socket';
+import { loadHost } from '@/redux/thunks/hostTunk';
 
 const Messages = () => {
-
+  const { hostData, loading, error } = useSelector((state: RootState) => state.host);
+  const user = useSelector((state: RootState) => state.volenteer.volenteerData);
+  
   const dispatch = useDispatch<AppDispatch>();
   useEffect(() => {
-    dispatch(loadVolenteer()).then((res: any) => {
-      console.log("ressss",res);
-      
-      const userId = res?.payload?.user?._id;
-      console.log("userIdddddddd",userId);
-      
-      if (userId) {
-        connectSocket(userId);
-      }
-    });
-    
+    if (!hostData?.host) {
+      dispatch(loadHost());
+      console.log("host data fetching...");
+    }
+  
+    if (!user?._id) {
+      dispatch(loadVolenteer());
+      console.log("volunteer data fetching...");
+    }
   }, []);
+  
+  
+  useEffect(() => {
+    const userId = user?.user?._id || hostData?.host?._id;
+  console.log("uuuuuuseriddddddd",user);
+  
+    if (userId) {
+      console.log("Connecting socket with userId:", userId);
+      connectSocket(userId);
+    }
+  }, [user, hostData]);
+  
+    
+      
 
-  const { volenteerData } = useSelector((state: RootState) => state.volenteer);
+console.log("hhhhhhhhhhhhhhhhhhost ",user);
+
 
 
   return (
-    <div className='h-screen overflow-hidden flex '>
+    <div className='h-[85vh] overflow-hidden flex '>
    
                 {/**chatlist */}
                 <ChatList/>  

@@ -748,7 +748,7 @@ const MapComponent = ({
                   </span>
                 </div>
                 <p className="text-sm font-semibold text-blue-600">
-                  €{loc.price}
+                  ₹{loc.price}
                 </p>
               </div>
             </Popup>

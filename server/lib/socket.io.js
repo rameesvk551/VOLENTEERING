@@ -17,11 +17,12 @@ const io = new Server(server, {
   return userSocketMap[userId];
 };
 //for storimg online users
-const userSocketMap={}// userId=key ,socketId=value
+const userSocketMap={}
 io.on("connection", (socket) => {
   console.log("✅ A user connected:", socket.id);
-  const userId=socket.handshake.query.userId
-  console.log("userIdddddddd",userId);
+  const userId = socket.handshake.auth.userId;
+  console.log("userId from socket:", userId);
+  
   
   if(userId)userSocketMap[userId]=socket.id
   console.log("Usercketmap",userSocketMap);

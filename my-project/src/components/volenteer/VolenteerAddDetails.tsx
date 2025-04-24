@@ -62,6 +62,7 @@ const [loading,setLoading]=useState(false)
         toast.success("details added succesfully")
         setLoading(false)
         navigate(`/user/membership`);
+        location.reload()
       }
     } catch (err) {
       setLoading(false)

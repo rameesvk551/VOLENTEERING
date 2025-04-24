@@ -22,7 +22,7 @@ type FilteredHostsResponse = {
 export const fetchHosts: QueryFunction<FilteredHostsResponse, [string, FiltersType, string, number]> = async ({ queryKey }) => {
   const [, filters, place, page] = queryKey;
   const params = new URLSearchParams();
-console.log("ppppppppplace in filter",place);
+console.log("ppppppppplace in filter",place,filters);
 
   if (filters.hostTypes.length > 0) {
     params.append("hostTypes", filters.hostTypes.join(","));
@@ -41,7 +41,7 @@ console.log("ppppppppplace in filter",place);
   }
 
   params.append("page", page.toString());
-  params.append("limit", "10");
+  params.append("limit", "3");
 
   const response = await axios.get(`${server}/hosts?${params.toString()}`);
   return response.data;

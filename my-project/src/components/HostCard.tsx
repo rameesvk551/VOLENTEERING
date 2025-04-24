@@ -5,6 +5,9 @@ import { Link } from "react-router-dom";
 import Button from "./Button";
 import { GrContact } from "react-icons/gr";
 import { CiLocationOn } from "react-icons/ci";
+import { useSelector } from "react-redux";
+import { RootState } from "@/redux/store";
+import ContactHostButton from "./ContactHostButton";
 // Define the TypeScript interface for the post object
 
 interface HostCardProps {
@@ -14,6 +17,7 @@ interface HostCardProps {
 
 const HostCard: React.FC<HostCardProps> = ({ host }) => {
   
+ 
   const projectNames = host?.selectedHelpTypes?.slice(0, 2)
   const extractPlace = host?.address?.display_name
   ? host.address.display_name.split(',').map(part => part.trim())
@@ -49,7 +53,7 @@ const HostCard: React.FC<HostCardProps> = ({ host }) => {
         </div>
   
         <h2 className="text-lg sm:text-xl font-bold text-gray-800 mb-2">
-          Volunteer in an off‑grid community
+        {host?.heading || " Volunteer in an off‑grid community"} 
         </h2>
   
         <div className="text-gray-600 text-sm text-justify line-clamp-3 sm:line-clamp-4 mb-4">
@@ -59,15 +63,8 @@ const HostCard: React.FC<HostCardProps> = ({ host }) => {
         </div>
       </div>
   
-      <div className="flex justify-end">
-        <Link to={`/host-details/${host._id}`} className="w-full sm:w-auto">
-          <Button
-            label="Contact"
-            icon={<GrContact size={15} />}
-            styles="w-full sm:w-auto flex items-center justify-center gap-2 bg-blue-500 hover:bg-blue-600 text-white py-2 rounded-full transition"
-          />
-        </Link>
-      </div>
+ <ContactHostButton  hostId={host?._id}/>
+
     </div>
   </div>
   

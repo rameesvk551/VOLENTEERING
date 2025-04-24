@@ -1,12 +1,12 @@
 const express=require("express")
 const { getMessages, sendMessage, getUsersForSidebar } = require("../controller/message")
-const { isAuthenticated } = require("../middleware/auth")
+const { isAuthenticated, hostOrVolenteer } = require("../middleware/auth")
 
 const app=express()
 const router=express.Router()
 
-router.get("/messages/:id",isAuthenticated,getMessages)
-router.get("/get-all-users",isAuthenticated,getUsersForSidebar)
-router.post("/send-message/:id",isAuthenticated,sendMessage)
+router.get("/messages/:id",hostOrVolenteer,getMessages)
+router.get("/get-all-users",hostOrVolenteer,getUsersForSidebar)
+router.post("/send-message/:id",hostOrVolenteer,sendMessage)
 
 module.exports = router;

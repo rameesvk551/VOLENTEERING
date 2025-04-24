@@ -103,10 +103,9 @@ exports.addDetails = async (req, res) => {
       { $set: updateData },
       { new: true, runValidators: true }
     );
-    console.log('uuuuuuupdated User',u);
-    
-
+    console.log('uuuuuuupdated User');
     res.status(200).json({
+      success:true,
       message: "User updated successfully",
       user: updatedUser,
     });

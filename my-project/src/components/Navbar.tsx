@@ -1,18 +1,22 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { GiHamburgerMenu } from "react-icons/gi";
 import { FaHeart, FaTimes, FaEnvelope } from "react-icons/fa";
 import { MdHotel, MdOutlineFlight } from "react-icons/md";
 import { FaTaxi } from "react-icons/fa6";
 import { Link, useNavigate } from "react-router-dom";
-import { RootState } from "../redux/store";
+import { AppDispatch, RootState } from "../redux/store";
 import { useSelector } from "react-redux";
 import { BiMessageMinus } from "react-icons/bi";
+import { loadHost } from "@/redux/thunks/hostTunk";
+import { useDispatch } from "react-redux";
 
 const Navbar = () => {
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [showFavorites, setShowFavorites] = useState(false);
-const navigate=useNavigate()
+  const dropdownRef = useRef<HTMLDivElement | null>(null);
+  const navigate = useNavigate();
+
   const menuItems = [
     { id: 1, icon: <MdOutlineFlight size={22} className="text-black" />, text: "Flight", route: "/flights" },
     { id: 2, icon: <MdHotel size={22} className="text-black" />, text: "Stay", route: "/hotels" },
@@ -20,24 +24,42 @@ const navigate=useNavigate()
     { id: 4, icon: <FaTaxi size={22} className="text-black" />, text: "Plan Your Trip", route: "/trip-planning" },
     { id: 5, icon: <FaEnvelope size={22} className="text-black" />, text: "Contact", route: "/contact" },
   ];
+  const dispatch=useDispatch<AppDispatch>()
+  const { hostData, loading, error } = useSelector((state: RootState) => state.host);
 
+  useEffect(() => {
+    if (!hostData?.host) {
+      dispatch(loadHost());
+      console.log("host data fetching...");
+    }
+  }, [dispatch, hostData?.host]);
+  
+    
 
   const { volenteerData, isAuthenticated } = useSelector((state: RootState) => state.volenteer);
-  const  userId=volenteerData?.user?._id
-
-  const goToTheMessage=()=>{
-    navigate(`/message/${userId}`)
-  }
-
-const goToProfile=()=>{
 
 
-  setShowProfileMenu(false)
-  if(volenteerData.user?.role==="volunteer"){
-    navigate(`/volenteer/profile/${userId}`)
-  }else{navigate(`/user/profile/${userId}`)}
+  const goToTheMessage = () => {
+    navigate(`/message`);
+  };
+  const goToProfile = () => {
+    setShowProfileMenu(false);
+  
+    if (hostData?.host?._id) {
+      navigate(`/host/profile/${hostData.host._id}`);
+    } else if (volenteerData?.user?.role === "volunteer") {
+      navigate(`/volenteer/profile/${volenteerData.user._id}`);
+    } else {
+      navigate(`/user/profile/${volenteerData?.user?._id}`);
+    }
+  };
+  
 
-}
+  const logOutHandler = () => {
+    setShowProfileMenu(false);
+    // add logout logic here if needed
+  };
+
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
@@ -45,14 +67,21 @@ const goToProfile=()=>{
         setShowFavorites(false);
       }
     };
-   
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowProfileMenu(false);
+      }
+    };
 
     document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
+    document.addEventListener("mousedown", handleClickOutside);
+
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
   }, []);
-  const logOutHandler=()=>{
-    setShowProfileMenu(false)
-  }
 
   return (
     <div>
@@ -64,56 +93,60 @@ const goToProfile=()=>{
             className="cursor-pointer text-gray-700 hover:text-gray-900 transition"
             onClick={() => setIsOpen(true)}
           />
-        <Link to={"/"}>
-        <h5 className="text-3xl font-bold tracking-widest text-gray-900 uppercase cursor-default">
-            <span className="bg-gradient-to-r from-blue-500 to-green-500 text-transparent bg-clip-text">RAIH</span>
-          </h5></Link>
+          <Link to={"/"}>
+            <h5 className="text-3xl font-bold tracking-widest text-gray-900 uppercase cursor-default">
+              <span className="bg-gradient-to-r from-blue-500 to-green-500 text-transparent bg-clip-text">RAIH</span>
+            </h5>
+          </Link>
         </div>
 
         {/* Right side - Heart + Profile */}
         <div className="flex items-center gap-4 relative">
-          <button
-            onClick={() => setShowFavorites(true)}
-            className="flex items-center justify-center p-2 rounded-full border border-red-500 text-red-500 hover:bg-red-500 hover:text-white transition-all shadow-md"
-          >
-            <FaHeart size={20} />
-          </button>
+          {isAuthenticated || hostData ? (
+            <>
+              <button
+                onClick={goToTheMessage}
+                className="flex items-center justify-center p-2 rounded-full border border-blue-500 text-blue-500 hover:bg-blue-500 hover:text-white transition-all shadow-md"
+              >
+                <BiMessageMinus size={20} />
+              </button>
 
-          {isAuthenticated ? (
-       
-<>
-<button
-            onClick={goToTheMessage}
-            className="flex items-center justify-center p-2 rounded-full border border-blue-500 text-blue-500 hover:bg-blue-500 hover:text-white transition-all shadow-md"
-          >
-           <BiMessageMinus size={20} />
+              <div className="relative">
+                <img
+                  src={"/default-avatar.png"}
+                  alt="Profile"
+                  className="w-10 h-10 rounded-full cursor-pointer border-2 border-gray-300 hover:border-blue-500 transition-all"
+                  onClick={() => setShowProfileMenu((prev) => !prev)}
+                />
 
-          </button>
+                {showProfileMenu && (
+                  <div
+                    ref={dropdownRef}
+                    className="absolute right-0 top-12 w-60 bg-white rounded-lg shadow-xl border border-gray-200 z-50 overflow-hidden transition-all duration-300 transform scale-100 opacity-100"
+                  >
+                    <div className="px-5 py-4 text-gray-800 font-semibold text-center bg-gray-100">
+                    {hostData?.host?.firstName
+  ? `${hostData.host.firstName} (Host)`
+  : volenteerData?.user?.firstName || "Guest"}
 
-            <div className="relative">
-              <img
-                src={"/default-avatar.png"}
-                alt="Profile"
-                className="w-10 h-10 rounded-full cursor-pointer border-2 border-gray-300 hover:border-blue-500 transition-all"
-                onClick={() => setShowProfileMenu((prev) => !prev)}
-              />
-
-              {showProfileMenu && (
-                <div className="absolute right-0 top-12 w-60 bg-white rounded-lg shadow-xl border border-gray-200 z-50 overflow-hidden transition-all duration-300 transform scale-100 opacity-100">
-                  <div className="px-5 py-4 text-gray-800 font-semibold text-center bg-gray-100">
-                    {volenteerData?.user?.firstName || "Guest"}
+                    </div>
+                    <hr />
+                    <button
+                      className="w-full text-left px-5 py-3 text-gray-700 hover:bg-gray-100 transition-all"
+                      onClick={goToProfile}
+                    >
+                      Profile
+                    </button>
+                    <button
+                      className="w-full text-left px-5 py-3 text-red-500 hover:bg-gray-100 transition-all"
+                      onClick={logOutHandler}
+                    >
+                      Logout
+                    </button>
                   </div>
-                  <hr />
-                  <button className="w-full text-left px-5 py-3 text-gray-700 hover:bg-gray-100 transition-all"
-                  onClick={goToProfile}>
-                    Profile
-                  </button>
-                  <button className="w-full text-left px-5 py-3 text-red-500 hover:bg-gray-100 transition-all" onClick={logOutHandler}>
-                    Logout
-                  </button>
-                </div>
-              )}
-            </div></>
+                )}
+              </div>
+            </>
           ) : (
             <button className="px-6 py-2 rounded-full bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-all shadow-md">
               Sign In
@@ -151,45 +184,6 @@ const goToProfile=()=>{
           ))}
         </ul>
       </div>
-
-      {/* Right Sidebar - Favorite Hosts */}
-      <div
-        className={`fixed top-0 right-0 h-full w-80 bg-white border-l border-gray-200 shadow-xl transform ${
-          showFavorites ? "translate-x-0" : "translate-x-full"
-        } transition-transform duration-300 ease-in-out z-50`}
-      >
-        <div className="p-4 flex justify-between items-center border-b border-gray-200">
-          <h3 className="text-lg font-semibold">Favorited Hosts</h3>
-          <FaTimes
-            size={20}
-            className="cursor-pointer text-gray-600 hover:text-gray-900"
-            onClick={() => setShowFavorites(false)}
-          />
-        </div>
-
-        <div className="p-4 space-y-4 overflow-y-auto h-[calc(100%-60px)]">
-          {[1, 2, 3].map((id) => (
-            <div
-              key={id}
-              className="p-3 bg-blue-50 rounded-lg shadow hover:bg-blue-100 transition"
-            >
-              <h4 className="font-bold text-gray-800">Host #{id}</h4>
-              <p className="text-sm text-gray-600">Location: Sample Place</p>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Overlays */}
-      {(isOpen || showFavorites) && (
-        <div
-          className="fixed inset-0 bg-black bg-opacity-30 z-40"
-          onClick={() => {
-            setIsOpen(false);
-            setShowFavorites(false);
-          }}
-        ></div>
-      )}
     </div>
   );
 };

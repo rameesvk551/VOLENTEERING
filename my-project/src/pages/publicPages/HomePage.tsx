@@ -14,7 +14,7 @@ const HomePage = () => {
             <DiscoverSection />
             <BlogSection/>
             <CallToActionSection />
-            <FooterSection />
+       
     </div>
   )
 }

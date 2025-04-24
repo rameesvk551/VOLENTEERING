@@ -2,22 +2,25 @@ const User = require("../model/user")
 const Message = require("../model/message")
 const cloudinary = require("../config/cloudineryCofig");
 const { getReceiverSocketId,io} = require("../lib/socket.io");
-
-exports.getUsersForSidebar = async (req,res) => {
+const Host = require("../model/host")
+exports.getUsersForSidebar = async (req, res) => {
   try {
-    console.log("hhhhhhhhhhhhit");
-    
-   
-    const loggedUserId = req.user.id;
-    console.log("userrr",loggedUserId);
-    
-    
-    // Fetch all users except the logged-in user
-    const filteredUsers = await User.find({ _id: { $ne: loggedUserId } }).select("-password");
+    const loggedUserId = req.user ? req.user.id : req.hostName?.id;
+
+    console.log("Logged in user ID:", loggedUserId);
+
+    // Fetch all volunteers except the logged-in user
+    const volunteers = await User.find({ _id: { $ne: loggedUserId } }).select("-password");
+
+    // Fetch all hosts except the logged-in user
+    const hosts = await Host.find({ _id: { $ne: loggedUserId } }).select("-password");
+
+    // Combine both
+    const allUsers = [...volunteers, ...hosts];
 
     res.status(200).json({
       success: true,
-      users: filteredUsers,
+      users: allUsers,
     });
   } catch (error) {
     console.error("Error occurred in getUsersForSidebar:", error);
@@ -28,14 +31,14 @@ exports.getUsersForSidebar = async (req,res) => {
     });
   }
 };
-
-
 // getting all message between two users
 exports.getMessages=async (req,res)=>{
     try {
-        const senderId=req.user.id.toString();
+      const loggedUserId = req.user ? req.user.id : req.hostName?.id;
+   
+      
+        const senderId=loggedUserId
         const receverId=req.params.id
-        console.log(senderId,receverId,"ffffffffrrijrijgijibj");
         
         const allMessages=await Message.find({
             $or:[
@@ -45,7 +48,6 @@ exports.getMessages=async (req,res)=>{
         ]
 
         })
-console.log("aaaaaaaaaaaal meages ",allMessages);
 
         res.status(200).json({
           allmessagesBetweenThem:allMessages
@@ -67,11 +69,13 @@ exports.sendMessage=async (req,res)=>{
       
         const {image,content,}=req.body
      
-        
+        const loggedUserId = req.user ? req.user.id : req.hostName?.id;
+   
 const receverId=req.params.id
-const senderId = req.user.id.toString();
+console.log("rrrrrrecccccccved ,rec",receverId);
 
-console.log("recied",req.body,receverId);
+const senderId = loggedUserId
+
 
 let imageUrl =""
 
