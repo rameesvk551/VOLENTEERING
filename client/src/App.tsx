@@ -17,21 +17,22 @@ import {
   HostProfileEditPage, HostSignupPage
 } from './routes/hostRoutes';
 import {
-  BlogDetails, BlogListPage, HomePage, HostDetailsPage, HostListPage
+  HomePage, HostDetailsPage, HostListPage
 } from './routes/publicRoutes';
-import {
-  AdminAllHostPage, AdminAllVolenteersPage, AdminDashbordPage, CreateBlog
-} from './routes/adminRoutes';
-import AdminLoginPage from './pages/admin/AdminLoginPage';
+
+
 import Messages from './pages/messagesPage/Messages';
 import MemberShipPlanPage from './pages/user/MemberShipPlanPage';
 import PlanYourTrip from './pages/TravelPlanning/PlanYourTrip';
 import HotelBookingPage from './pages/publicPages/HotelBookingPage';
 import HotelBookingHomePage from './pages/publicPages/HotelBookingHomePage';
-import FlightPage from './pages/publicPages/FlightPage';
 import VolenteerUserProfilePage from './pages/user/VolenteerUserProfilePage';
-import KycPage from './pages/user/KycPage';
 import NoFooter from './layouts/NoFooter';
+import { loadHost } from './redux/thunks/hostTunk';
+import UserProtectedRoute from './routes/userProtectedRoutes';
+import HostProtectedRoute from './routes/hostProtectedRoutes';
+import HostRedirectRoute from './routes/RedirectionPage';
+import RedirectRoute from './routes/RedirectionPage';
 
 const App = () => {
   const dispatch = useDispatch<AppDispatch>();
@@ -39,6 +40,9 @@ const App = () => {
   useEffect(() => {
     dispatch(loadVolenteer());
   }, [dispatch]);
+    useEffect(() => {
+      dispatch(loadHost());
+    }, [dispatch]);
 
   return (
     <BrowserRouter>
@@ -51,43 +55,34 @@ const App = () => {
         {/* Routes with Navbar */}
         <Route element={<MainLayout />}>
           <Route path="/" element={<HomePage />} />
-          <Route path="/blogs" element={<BlogListPage />} />
-          <Route path="/blog/:id" element={<BlogDetails />} />
-          <Route path="/volunteering-oppertunities" element={<HostListPage />} />
+          <Route path="/volunteering-oppertunities" element={
+          <HostListPage />}
+           />
           <Route path="/host-details/:id" element={<HostDetailsPage />} />
           <Route path="/hotels" element={<HotelBookingHomePage />} />
-          <Route path="/flights" element={<FlightPage />} />
           <Route path="/trip-planning" element={<PlanYourTrip />} />
           <Route path="/user/profile/:id" element={<UserProfilePage />} />
-          <Route path="/user/membership" element={<MemberShipPlanPage />} />
-        
+          <Route path="/user/membership" element={<MemberShipPlanPage />} />      
           <Route path="/volenteer/profile/:id" element={<VolenteerUserProfilePage />} />
         </Route>
 
         {/* Routes without Navbar */}
         <Route element={<NoNavbarLayout />}>
           {/* User */}
-          <Route path="/user/login" element={<UserLoginPage />} />
-          <Route path="/user/signup" element={<UserSignupPage />} />
-          <Route path="/host/login" element={<HostLoginPage />} />
-          <Route path="/host/signup" element={<HostSignupPage />} />
-          <Route path="/host/add-details/:id" element={<HostAddDetailsPage />} />
-          <Route path="/host/preview/:id" element={<HostPreviewPage />} />
-          <Route path="/host/edit-profile/:id" element={<HostProfileEditPage />} />
+          <Route path="/user/login" element={<RedirectRoute><UserLoginPage /></RedirectRoute>} />
+          <Route path="/user/signup" element={<RedirectRoute><UserSignupPage /></RedirectRoute>} />
+          <Route path="/host/login" element={<RedirectRoute><HostLoginPage /></RedirectRoute>} />
+          <Route path="/host/signup" element={<RedirectRoute><HostLoginPage /></RedirectRoute>} />
+          <Route path="/host/add-details/:id" element={ <HostProtectedRoute><HostAddDetailsPage /></HostProtectedRoute>} />
+          <Route path="/host/preview/:id" element={ <HostProtectedRoute><HostPreviewPage /></HostProtectedRoute>} />
+          <Route path="/host/edit-profile/:id" element={ <HostProtectedRoute><HostProfileEditPage /></HostProtectedRoute>} />
           <Route path="/search-hotels" element={<HotelBookingPage />} />
-          {/* Admin */}
-          <Route path="/admin/login" element={<AdminLoginPage />} />
-          <Route path="/admin/dashboard" element={<AdminDashbordPage />} />
-          <Route path="/admin/dashboard/all-volenteers" element={<AdminAllVolenteersPage />} />
-          <Route path="/admin/dashboard/all-hosts" element={<AdminAllHostPage />} />
-          <Route path="/admin/dashboard/create-blog" element={<CreateBlog />} />
-
+     
           {/* Volenteer */}
-          <Route path="/volenteer/add-details/:id" element={<VolenteerAddDetails />} />
-          <Route path="/volenteer/kyc" element={<KycPage />} />
+          <Route path="/volenteer/add-details/:id" element={<UserProtectedRoute><VolenteerAddDetails /></UserProtectedRoute>} />
         </Route>
         <Route element={<NoFooter />}>
-        <Route path="/message/" element={<Messages />} />
+        <Route path="/message" element={<Messages />} />
         </Route>
       </Routes>
     </BrowserRouter>

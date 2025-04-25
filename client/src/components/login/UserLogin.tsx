@@ -116,7 +116,7 @@ axios.post(`${server}/user/login`,loginData,{withCredentials:true}).then((res)=>
             <div className='flex items-center justify-center text-gray-600 dark:text-gray-300'>
               <p>
                 Dont't have an account?{" "}
-                <Link to='/sign-up' className='text-rose-800 font-medium'>
+                <Link to='/user/signup' className='text-rose-800 font-medium'>
                   Sign up
                 </Link>
               </p>

@@ -307,3 +307,13 @@ console.log("eeeeeeeeeeeeditting",updates,id);
   }
 
 }
+
+exports.logoutHost=(req, res) => {
+  res.clearCookie('hostToken', {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict',
+  });
+
+  res.status(200).json({success:true, message: 'Logged out successfully' });
+}

@@ -264,3 +264,12 @@ exports.updateProfile = async (req, res) => {
     }
   };
     
+  exports.logoutUser=(req, res) => {
+    res.clearCookie('userToken', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production', // use true in production
+      sameSite: 'strict',
+    });
+  
+    res.status(200).json({success:true,  message: 'Logged out successfully' });
+  }

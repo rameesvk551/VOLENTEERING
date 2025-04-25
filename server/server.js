@@ -10,13 +10,9 @@ const updateLastActive = require("./middleware/updateLastActive");
 
 // Routes
 const userRoutes = require("./routes/user");
-const kycRoutes = require("./routes/kyc");
 const hostRoutes = require("./routes/host");
-const blogRoutes = require("./routes/blog");
 const paymentRoutes = require("./routes/payment");
 const hotelRoutes = require("./routes/hotel");
-const flightRoutes = require("./routes/flight");
-const adminRoutes = require("./routes/admin");
 const messageRoutes = require("./routes/message");
 const tripPlaningRoutes = require("./routes/tripPlanning")
 const publicRoutes = require("./routes/public");
@@ -31,14 +27,10 @@ app.use(cookieParser());
 
 // Routes
 app.use("/api/v1", publicRoutes);
-app.use("/api/v1/kyc", kycRoutes);
 app.use("/api/v1/user", userRoutes);
 app.use("/api/v1/host", hostRoutes);
-app.use("/api/v1/admin", adminRoutes);
 app.use("/api/v1/message",messageRoutes);
-app.use("/api/v1/blog", blogRoutes);
 app.use("/api/v1/hotel", hotelRoutes);
-app.use("/api/v1/flight", flightRoutes);
 app.use("/api/v1/payment", paymentRoutes);
 app.use("/api/v1/trip-planning",tripPlaningRoutes);
 app.use(errorHandler);

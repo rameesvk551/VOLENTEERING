@@ -1,5 +1,5 @@
 const express=require("express")
-const { userLogin, userSignup, addDetails, loadVolenteer, updateProfile, getUsers, updateDetails, addReview, getUserReviews } = require("../controller/user")
+const { userLogin, userSignup, addDetails, loadVolenteer, updateProfile, getUsers, updateDetails, addReview, getUserReviews, logoutUser } = require("../controller/user")
 const { isAuthenticated } = require("../middleware/auth")
 const upload = require("../config/multerConfig")
 const router=express.Router()
@@ -13,7 +13,7 @@ router.get("/all-users",getUsers)
 router.put("/update-details",isAuthenticated,updateDetails)
 router.post("/add-review",isAuthenticated,addReview)
 router.get("/get-reviews",isAuthenticated,getUserReviews)
-
+router.post("/logout",isAuthenticated,logoutUser)
 
 
 module.exports=router

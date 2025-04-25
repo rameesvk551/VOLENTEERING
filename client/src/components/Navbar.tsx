@@ -9,6 +9,9 @@ import { useSelector } from "react-redux";
 import { BiMessageMinus } from "react-icons/bi";
 import { loadHost } from "@/redux/thunks/hostTunk";
 import { useDispatch } from "react-redux";
+import axios from "axios";
+import server from "@/server/app";
+import toast from "react-hot-toast";
 
 const Navbar = () => {
   const [showProfileMenu, setShowProfileMenu] = useState(false);
@@ -18,11 +21,10 @@ const Navbar = () => {
   const navigate = useNavigate();
 
   const menuItems = [
-    { id: 1, icon: <MdOutlineFlight size={22} className="text-black" />, text: "Flight", route: "/flights" },
     { id: 2, icon: <MdHotel size={22} className="text-black" />, text: "Stay", route: "/hotels" },
     { id: 3, icon: <FaEnvelope size={22} className="text-black" />, text: "Volunteering", route: "/volunteering-oppertunities" },
     { id: 4, icon: <FaTaxi size={22} className="text-black" />, text: "Plan Your Trip", route: "/trip-planning" },
-    { id: 5, icon: <FaEnvelope size={22} className="text-black" />, text: "Contact", route: "/contact" },
+   
   ];
   const dispatch=useDispatch<AppDispatch>()
   const { hostData, loading, error } = useSelector((state: RootState) => state.host);
@@ -34,7 +36,9 @@ const Navbar = () => {
     }
   }, [dispatch, hostData?.host]);
   
-    
+    const handleSigninbtn=()=>{
+      navigate("user/login")
+    }
 
   const { volenteerData, isAuthenticated } = useSelector((state: RootState) => state.volenteer);
 
@@ -55,11 +59,35 @@ const Navbar = () => {
   };
   
 
-  const logOutHandler = () => {
+  const logOutHandler = async () => {
     setShowProfileMenu(false);
-    // add logout logic here if needed
-  };
+  
+    try {
+      let url = '';
+  
+      if (hostData?.host?._id) {
+        url = `${server}/host/logout`;
+      } else if (volenteerData?.user) {
+        url = `${server}/user/logout`;
+      } else {
+        toast.error("User type not identified");
+        return;
+      }
+  
+      const res = await axios.post(url, {}, { withCredentials: true });
+  
+      if (res.data.success) {
+        location.reload()
+        toast.success("Logged out successfully");
 
+      } else {
+        toast.error("Something went wrong during logout");
+      }
+    } catch (error) {
+      toast.error("Logout failed");
+    }
+  };
+  
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
@@ -148,7 +176,7 @@ const Navbar = () => {
               </div>
             </>
           ) : (
-            <button className="px-6 py-2 rounded-full bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-all shadow-md">
+            <button className="px-6 py-2 rounded-full bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-all shadow-md " onClick={handleSigninbtn}>
               Sign In
             </button>
           )}
