@@ -141,7 +141,9 @@ const Navbar = () => {
 
               <div className="relative">
                 <img
-                  src={"/default-avatar.png"}
+                  src={hostData?.host?.profileImage
+                    ? `${hostData.host.profileImage} (Host)`
+                    : volenteerData?.user?.profileImage }
                   alt="Profile"
                   className="w-10 h-10 rounded-full cursor-pointer border-2 border-gray-300 hover:border-blue-500 transition-all"
                   onClick={() => setShowProfileMenu((prev) => !prev)}

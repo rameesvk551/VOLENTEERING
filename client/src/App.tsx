@@ -73,13 +73,13 @@ const App = () => {
           <Route path="/user/signup" element={<RedirectRoute><UserSignupPage /></RedirectRoute>} />
           <Route path="/host/login" element={<RedirectRoute><HostLoginPage /></RedirectRoute>} />
           <Route path="/host/signup" element={<RedirectRoute><HostLoginPage /></RedirectRoute>} />
-          <Route path="/host/add-details/:id" element={ <HostProtectedRoute><HostAddDetailsPage /></HostProtectedRoute>} />
+          <Route path="/host/add-details/:id" element={<HostAddDetailsPage />} />
           <Route path="/host/preview/:id" element={ <HostProtectedRoute><HostPreviewPage /></HostProtectedRoute>} />
           <Route path="/host/edit-profile/:id" element={ <HostProtectedRoute><HostProfileEditPage /></HostProtectedRoute>} />
           <Route path="/search-hotels" element={<HotelBookingPage />} />
      
           {/* Volenteer */}
-          <Route path="/volenteer/add-details/:id" element={<UserProtectedRoute><VolenteerAddDetails /></UserProtectedRoute>} />
+          <Route path="/volenteer/add-details/:id" element={<VolenteerAddDetails />} />
         </Route>
         <Route element={<NoFooter />}>
         <Route path="/message" element={<Messages />} />

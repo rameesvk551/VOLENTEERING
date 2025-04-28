@@ -38,13 +38,13 @@ const volenteerProfile= () => {
   const [image, setImage] = useState("/default-avatar.png");
   const [activities, setActivities] = useState(volenteerData?.user?.activities || []);
   const [newActivity, setNewActivity] = useState("");
-  const [skills, setSkills] = useState(volenteerData?.user?.activities || []);
+  const [skills, setSkills] = useState(volenteerData?.user?.kills || []);
   const [newSkill, setNewSkill] = useState("");
   const [loading, setLoading] = useState<boolean>(false);
   const [editnextDestination, setEditnextDestination] = useState<boolean>(false);
-const [destination, setDestination] = useState("china");
-const [fromDate, setFromDate] = useState("2025-10");
-const [toDate, setToDate] = useState("2025-11");
+const [destination, setDestination] = useState("");
+const [fromDate, setFromDate] = useState("");
+const [toDate, setToDate] = useState("");
 const[addSkills,setAddSkills]=useState<boolean>(false);
 const [isImageUploading, setIsImageUploading] = useState(false);
 const [reviews, setReviews] = useState([]);
@@ -169,7 +169,7 @@ const handleImageChange = async (e) => {
  
  const ishaveMembership=volenteerData?.user?.status ==="active"
 
-console.log("activities",volenteerData?.user?.activities);
+console.log("activities",volenteerData?.user);
 
   return (
     <div className="flex flex-col bg-[#f5f5f5] ">
@@ -499,8 +499,8 @@ What skills you have
 
   {!addIntrestedActivities && (
     <div className="flex gap-2 flex-wrap mt-2">
-      {volenteerData?.user?.skills?.length > 0 ? (
-        volenteerData.user.skills.map((skill, index) => (
+      {volenteerData?.user?.user?.skills?.length > 0 ? (
+        volenteerData.user.user.skills.map((skill, index) => (
           <span
             key={index}
             className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-sm"

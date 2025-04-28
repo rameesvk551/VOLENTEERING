@@ -16,6 +16,8 @@ const UserProfile = () => {
   const userId = volenteerData?.user?._id;
 
   const addVolenteerDetails = () => {
+    console.log("aaading details",userId);
+    
     navigate(`/volenteer/add-details/${userId}`);
   };
 
@@ -62,6 +64,11 @@ const UserProfile = () => {
     console.log("Password changed:", password);
   };
 
+  const addHotDetails=()=>{
+    navigate(`/host/add-details/${volenteerData?.user._id}`)
+    
+  }
+
   return (
     <div className="min-h-[calc(96vh-62px)] bg-blue-50 flex items-center justify-center px-4 py-8">
       <div className="bg-white shadow-2xl rounded-2xl max-w-4xl w-full p-8 md:p-12 grid md:grid-cols-2 gap-8">
@@ -106,7 +113,7 @@ const UserProfile = () => {
             >
               Become a Volunteer
             </button>
-            <button className="bg-blue-500 hover:bg-blue-600 text-white font-semibold px-4 py-2 rounded-lg shadow">
+            <button className="bg-blue-500 hover:bg-blue-600 text-white font-semibold px-4 py-2 rounded-lg shadow" onClick={addHotDetails}>
               Become a Host
             </button>
           </div>
