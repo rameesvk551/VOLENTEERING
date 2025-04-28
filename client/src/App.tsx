@@ -17,7 +17,8 @@ import {
   HostProfileEditPage, HostSignupPage
 } from './routes/hostRoutes';
 import {
-  HomePage, HostDetailsPage, HostListPage
+  HomePage, HostDetailsPage, HostListPage,
+  RentalHomePage
 } from './routes/publicRoutes';
 
 
@@ -77,7 +78,7 @@ const App = () => {
           <Route path="/host/preview/:id" element={ <HostProtectedRoute><HostPreviewPage /></HostProtectedRoute>} />
           <Route path="/host/edit-profile/:id" element={ <HostProtectedRoute><HostProfileEditPage /></HostProtectedRoute>} />
           <Route path="/search-hotels" element={<HotelBookingPage />} />
-     
+          <Route path="/rentals" element={<RentalHomePage />} />
           {/* Volenteer */}
           <Route path="/volenteer/add-details/:id" element={<VolenteerAddDetails />} />
         </Route>
