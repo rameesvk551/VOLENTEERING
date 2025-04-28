@@ -18,6 +18,7 @@ import {
 } from './routes/hostRoutes';
 import {
   HomePage, HostDetailsPage, HostListPage,
+  ProductPage,
   RentalHomePage
 } from './routes/publicRoutes';
 
@@ -56,6 +57,8 @@ const App = () => {
         {/* Routes with Navbar */}
         <Route element={<MainLayout />}>
           <Route path="/" element={<HomePage />} />
+          <Route path="/rentals" element={<RentalHomePage />} />
+          <Route path="/product" element={<ProductPage />} />
           <Route path="/volunteering-oppertunities" element={
           <HostListPage />}
            />

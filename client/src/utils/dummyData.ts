@@ -104,3 +104,14 @@ export const posts: Post[] = [
     __v: 0,
   },
 ];
+
+
+
+export const gearList = [
+  { image: "rent.jpg", name: "Tent",id:"123", basePrice:23 },
+  { image: "backpack.jpeg", name: "Backpack",id:"123", basePrice:23 },
+  { image: "sleepingbag.jpeg", name: "Sleeping Bag" ,id:"123", basePrice:23},
+  { image: "rent.jpg", name: "Sleeping Bag",id:"123", basePrice:23 },
+  { image: "sleepingbag.jpeg", name: "Sleeping Bag" ,id:"123", basePrice:23},
+  { image: "sleepingbag.jpeg", name: "Sleeping Bag",id:"123", basePrice:23 },
+];
