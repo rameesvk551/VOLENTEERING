@@ -1,25 +1,43 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { CiLink, CiMenuKebab, CiMicrophoneOn, CiVideoOn } from 'react-icons/ci';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { MdCall,} from 'react-icons/md';
 import { IoIosSend } from 'react-icons/io';
-import { MdCall, MdEmojiEmotions } from 'react-icons/md';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '@/redux/store';
 import { loadMessages, sendMessage } from '@/redux/thunks/messageThunk';
-import UserInfo from './UserInfo';
-import Attachment from '../../components/Attachment';
+import { acceptCall, connectSocket, registerWebRTCListeners, rejectCall, startCall } from '@/lib/socket';
+import IncomingCallModal from './IncommingModal';
 
 const Inbox: React.FC = () => {
   const [message, setMessage] = useState('');
-  const [userInfoOpen, setUserInfoOpen] = useState<boolean>(false);
+  const [isCallOpen, setIsCallOpen] = useState(false);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [callerId, setCallerId] = useState('');
+  const [callType, setCallType] = useState<'audio' | 'video'>('audio');
+  const incomingOfferRef = useRef<RTCSessionDescriptionInit | null>(null);
 
   const dispatch = useDispatch<AppDispatch>();
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const { messages, selectedUser } = useSelector((state: RootState) => state.message);
   const user = useSelector((state: RootState) => state.volenteer.volenteerData);
-  const hostData = useSelector((state: RootState) => state.host.hostData);
-  
-  const senderId = useMemo(() => user?.user?._id || hostData?.host?._id, [user, hostData]);
+
+  const senderId = useMemo(() => user?.user?._id, [user]);
+
+  useEffect(() => {
+    connectSocket(senderId);
+    registerWebRTCListeners(setCallerId, setModalVisible, incomingOfferRef, setCallType);
+  }, [senderId]);
+
+  const handleAccept = async () => {
+    if (incomingOfferRef.current && callerId) {
+      await acceptCall(incomingOfferRef.current, callerId);
+      setModalVisible(false);
+    }
+  };
+
+  const handleReject = () => {
+   
+  };
 
   useEffect(() => {
     if (selectedUser?._id && senderId) {
@@ -31,32 +49,28 @@ const Inbox: React.FC = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  const handleSendMessage = useCallback(async (e: React.FormEvent) => {
+  const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
     if (message.trim()) {
-      try {
-        await dispatch(sendMessage({ content: message, receiverId: selectedUser?._id }));
-        setMessage('');
-      } catch (err) {
-        console.error('Failed to send message:', err);
-      }
+      dispatch(sendMessage({ content: message, receiverId: selectedUser?._id }));
+      setMessage('');
     }
-  }, [dispatch, message, selectedUser]);
+  };
 
-  const toggleUserInfo = useCallback(() => {
-    setUserInfoOpen(prev => !prev);
-  }, []);
-
-  const handleMicClick = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
-    e.preventDefault();
-  }, []);
+  const makeAudioCall = () => {
+    const remoteUserId = selectedUser?._id;
+    if (!remoteUserId || !senderId) return;
+    setCallType('audio');
+    setIsCallOpen(true);
+    startCall(remoteUserId, senderId);
+  };
 
   return (
     <>
       <div className="w-full bg-gradient-to-br from-blue-100 to-blue-300 h-[87vh] flex flex-col border border-gray-200 shadow-md">
         {/* Header */}
         <div className="sticky top-0 z-10 flex items-center justify-between bg-white px-6 py-4 border-b border-gray-200 shadow-sm">
-          <div className="flex items-center cursor-pointer" onClick={toggleUserInfo}>
+          <div className="flex items-center cursor-pointer">
             <div className="mr-4 h-14 w-14 rounded-full overflow-hidden border-4 border-blue-300">
               <img src={selectedUser?.profileImage} alt="User" className="h-full w-full object-cover" />
             </div>
@@ -66,9 +80,8 @@ const Inbox: React.FC = () => {
             </div>
           </div>
           <div className="flex items-center gap-4 text-gray-700">
-            <MdCall size={24} className="hover:text-blue-500 cursor-pointer" />
-            <CiVideoOn size={24} className="hover:text-blue-500 cursor-pointer" />
-            <CiMenuKebab size={22} className="hover:text-blue-500 cursor-pointer" />
+            <MdCall size={24} className="hover:text-blue-500 cursor-pointer" onClick={makeAudioCall} />
+      
           </div>
         </div>
 
@@ -77,80 +90,40 @@ const Inbox: React.FC = () => {
           {messages.map((msg, index) => {
             const isSender = msg.senderId === senderId;
             return (
-              <div
-                ref={index === messages.length - 1 ? messagesEndRef : null}
-                key={index}
-                className={`flex flex-col ${isSender ? 'items-end' : 'items-start'} text-sm`}
-              >
-                <div
-                  className={`px-5 py-3 rounded-2xl shadow-sm ${
-                    isSender
-                      ? 'bg-blue-600 text-white rounded-tr-none'
-                      : 'bg-white text-gray-800 rounded-tl-none'
-                  }`}
-                >
+              <div key={index} className={`flex flex-col ${isSender ? 'items-end' : 'items-start'} text-sm`}>
+                <div className={`px-5 py-3 rounded-2xl shadow-sm ${isSender ? 'bg-blue-600 text-white' : 'bg-white text-gray-800'}`}>
                   {msg.content}
                 </div>
-                <span className="text-xs text-gray-500 mt-1">
-                  {isSender ? 'You' : selectedUser?.firstName}
-                </span>
+                <span className="text-xs text-gray-500 mt-1">{isSender ? 'You' : selectedUser?.firstName}</span>
               </div>
             );
           })}
         </div>
 
-{/* Footer */}
-<div className="w-full bg-white sticky bottom-0 px-2 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4 border-t border-gray-200 z-10">
-  <form
-    onSubmit={handleSendMessage}
-    className="flex flex-wrap sm:flex-nowrap items-center gap-2 sm:gap-3 md:gap-4"
-  >
-    {/* Message Input Section */}
-    <div className="relative flex-1 w-full">
-      <input
-        type="text"
-        placeholder="Type a message..."
-        value={message}
-        onChange={(e) => setMessage(e.target.value)}
-        className="w-full h-11 sm:h-12 md:h-[52px] pl-4 pr-20 bg-gray-100 rounded-full border border-gray-300 text-sm placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
-      />
-
-      {/* Action Icons */}
-      <div className="absolute right-3 top-1/2 -translate-y-1/2 flex gap-2 sm:gap-3 items-center text-gray-600">
-        <button
-          type="button"
-          onClick={handleMicClick}
-          className="hover:text-blue-500 transition"
-        >
-          <CiMicrophoneOn size={18} className="sm:size-[22px]" />
-        </button>
-        <Attachment />
-        <MdEmojiEmotions
-          size={18}
-          className="sm:size-[22px] hover:text-yellow-500 transition"
-        />
-      </div>
-    </div>
-
-    {/* Send Button */}
-    <button
-      type="submit"
-      className="h-11 w-11 sm:h-12 sm:w-12 md:h-[52px] md:w-[52px] bg-blue-600 hover:bg-blue-700 text-white rounded-full flex items-center justify-center transition-transform duration-200 active:scale-90 shadow-md"
-    >
-      <IoIosSend size={18} className="sm:size-[20px]" />
-    </button>
-  </form>
-</div>
-
-
-      </div>
-
-      {/* Optional Side Panel */}
-      {userInfoOpen && (
-        <div className="hidden md:block w-[320px] border-l border-gray-200 bg-white shadow-lg">
-          <UserInfo handleTogleInfo={toggleUserInfo} selectedUser={selectedUser} />
+        {/* Footer */}
+        <div className="w-full bg-white sticky bottom-0 px-2 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4 border-t border-gray-200 z-10">
+          <form onSubmit={handleSendMessage} className="flex flex-wrap sm:flex-nowrap items-center gap-2 sm:gap-3 md:gap-4">
+            <input
+              type="text"
+              placeholder="Type a message..."
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              className="w-full h-11 sm:h-12 md:h-[52px] pl-4 pr-20 bg-gray-100 rounded-full border border-gray-300 text-sm placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <button type="submit" className="h-11 w-11 sm:h-12 sm:w-12 md:h-[52px] md:w-[52px] bg-blue-600 text-white rounded-full flex items-center justify-center">
+              <IoIosSend size={18} />
+            </button>
+          </form>
         </div>
-      )}
+      </div>
+
+      <IncomingCallModal
+        callerId={callerId}
+        callType={callType}
+        isVisible={modalVisible}
+        onAccept={handleAccept}
+        onReject={handleReject}
+      />
     </>
   );
 };
