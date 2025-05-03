@@ -1,89 +1,100 @@
-import React from 'react';
-import { MdCallEnd, MdMic, MdMicOff, MdVideocam, MdVideocamOff } from 'react-icons/md';
-import { motion, AnimatePresence } from 'framer-motion';
+
+
+import React, { useRef, useEffect } from "react";
+import { MdCallEnd } from "react-icons/md";
+import { AnimatePresence, motion } from "framer-motion";
 
 interface CallModalProps {
   isOpen: boolean;
-  onClose: () => void;
-  user: { name: string; image: string };
-  type: 'audio' | 'video';
+  onHangup: () => void;
+  userName: string;
+  userImage: string;
+  type: "audio" | "video";
   localStream?: MediaStream | null;
   remoteStream?: MediaStream | null;
+  isAnswered: boolean;
 }
 
-const CallModal: React.FC<CallModalProps> = ({ isOpen, onClose, user, type, localStream, remoteStream }) => {
+export const CallModal: React.FC<CallModalProps> = ({
+  isOpen,
+  onHangup,
+  userName,
+  userImage,
+  type,
+  localStream,
+  remoteStream,
+  isAnswered,
+}) => {
+  const localRef = useRef<HTMLVideoElement>(null);
+  const remoteRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    if (localRef.current && localStream) {
+      localRef.current.srcObject = localStream;
+      localRef.current.play().catch(() => {});
+    }
+  }, [localStream]);
+
+  useEffect(() => {
+    if (remoteRef.current && remoteStream) {
+      remoteRef.current.srcObject = remoteStream;
+      remoteRef.current.play().catch(() => {});
+    }
+  }, [remoteStream]);
+
   return (
     <AnimatePresence>
       {isOpen && (
         <motion.div
-          className="fixed inset-0 z-50 bg-black bg-opacity-90 flex items-center justify-center"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
+          className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50"
         >
-          <div className="w-full h-full flex flex-col items-center justify-center text-white relative">
+          {/* Background: remote video or avatar */}
+          {type === "video" && isAnswered ? (
+            <video
+              ref={remoteRef}
+              autoPlay
+              playsInline
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+          ) : (
+            <img
+              src={userImage}
+              alt={userName}
+              className="w-40 h-40 rounded-full object-cover shadow-lg z-10"
+            />
+          )}
 
-            {/* Remote video or avatar */}
-            {type === 'video' ? (
-              <video
-                className="absolute top-0 left-0 w-full h-full object-cover"
-                ref={(video) => video && remoteStream && (video.srcObject = remoteStream)}
-                autoPlay
-                playsInline
-              />
-            ) : (
-              <div className="w-40 h-40 rounded-full bg-gray-700 flex items-center justify-center">
-                <img src={user.image} alt={user.name} className="w-full h-full object-cover rounded-full" />
-              </div>
-            )}
+          {/* Local preview (for video only) */}
+          {type === "video" && (
+            <video
+              ref={localRef}
+              autoPlay
+              muted
+              playsInline
+              className="w-32 h-32 rounded-xl border-4 border-white shadow-lg absolute bottom-6 right-6 z-20"
+            />
+          )}
 
-            {/* Local video preview for video calls */}
-            {type === 'video' && (
-              <video
-                className="absolute bottom-4 right-4 w-32 h-32 rounded-lg border-2 border-white object-cover"
-                ref={(video) => video && localStream && (video.srcObject = localStream)}
-                autoPlay
-                muted
-                playsInline
-              />
-            )}
-
-            {/* Info */}
-            <div className="text-center mt-6">
-              <h2 className="text-2xl font-bold">{user.name}</h2>
-              <p className="text-sm text-gray-300">Calling...</p>
-            </div>
-
-            {/* Controls */}
-            <div className="absolute bottom-10 flex gap-6">
-              <button className="bg-red-600 hover:bg-red-700 p-4 rounded-full" onClick={onClose}>
-                <MdCallEnd size={24} />
-              </button>
-              {type === 'audio' ? (
-                <>
-                  <button className="bg-gray-700 hover:bg-gray-600 p-4 rounded-full">
-                    <MdMic size={24} />
-                  </button>
-                  <button className="bg-gray-700 hover:bg-gray-600 p-4 rounded-full">
-                    <MdMicOff size={24} />
-                  </button>
-                </>
-              ) : (
-                <>
-                  <button className="bg-gray-700 hover:bg-gray-600 p-4 rounded-full">
-                    <MdVideocam size={24} />
-                  </button>
-                  <button className="bg-gray-700 hover:bg-gray-600 p-4 rounded-full">
-                    <MdVideocamOff size={24} />
-                  </button>
-                </>
-              )}
-            </div>
+          {/* Overlay content */}
+          <div className="absolute top-6 left-6 text-white z-20">
+            <h2 className="text-2xl font-bold">{userName}</h2>
+            <p className="text-sm">{type === "video" ? "Video Call" : "Audio Call"}</p>
+            {!isAnswered && <p className="text-xs text-gray-300 mt-1">Calling...</p>}
           </div>
+
+          {/* Hangup */}
+          <button
+            onClick={onHangup}
+            className="absolute bottom-6 left-1/2 transform -translate-x-1/2 bg-red-600 p-4 rounded-full shadow-lg text-white hover:bg-red-700 z-20 disabled:opacity-50"
+            disabled={!localStream}
+          >
+            <MdCallEnd size={26} />
+          </button>
         </motion.div>
       )}
     </AnimatePresence>
   );
 };
-
-export default CallModal;

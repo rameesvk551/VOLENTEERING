@@ -1,59 +1,74 @@
+// server.js
 const http = require("http");
 const express = require("express");
-const { Server } = require("socket.io"); // ✅ Import Server
+const { Server } = require("socket.io");
 
 const app = express();
 const server = http.createServer(app);
 
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:5173", // ✅ Your frontend
+    origin: "http://localhost:5173",
     methods: ["GET", "POST"],
     credentials: true,
   },
 });
 
- function getReceiverSocketId (userId) {
-  return userSocketMap[userId];
-};
-//for storimg online users
-const userSocketMap={}
+const userSocketMap = {};
+
+const getReceiverSocketId = (userId) => userSocketMap[userId];
+
 io.on("connection", (socket) => {
-  console.log("✅ A user connected:", socket.id);
+  console.log("✅ Connected:", socket.id);
   const userId = socket.handshake.auth.userId;
-  console.log("userId from socket:", userId);
-  
-  
-  if(userId)userSocketMap[userId]=socket.id
-  console.log("Usercketmap",userSocketMap);
-  
+  if (userId) userSocketMap[userId] = socket.id;
 
-  //io.emiit is used  to send events to evey users connected
-io.emit("getAllOnlineUsers",Object.keys(userSocketMap))
+  io.emit("getAllOnlineUsers", Object.keys(userSocketMap));
 
-socket.on("webrtc-offer", ({ offer, to, from }) => {
-  // Find the receiver's socket ID and emit the offer to them
-  console.log("wwwwwwwwwebrtc oooofer",offer,to,from);
-  
-  const receiverSocketId = getReceiverSocketId(to);
-  if (receiverSocketId) {
-    io.to(receiverSocketId).emit("webrtc-offer", { offer, from });
-  }
-});
- // Relay answers
- socket.on('webrtc-answer', ({ answer, to }) => {
-  const targetId = userSocketMap[to];
-  if (targetId) {
-    console.log(`📤 Forwarding answer to ${to}`);
-    io.to(targetId).emit('webrtc-answer', { answer });
-  }
-});
+  socket.on("webrtc-offer", ({ offer, receiverId, callerId, type }) => {
+    const receiverSocketId = getReceiverSocketId(receiverId);
+    if (receiverSocketId) {
+      io.to(receiverSocketId).emit("webrtc-offer", {
+        offer,
+        callerId,
+        type,
+      });
+    }
+  });
+
+  socket.on("webrtc-answer", ({ answer, callerId }) => {
+    const callerSocketId = getReceiverSocketId(callerId);
+    if (callerSocketId) {
+      io.to(callerSocketId).emit("webrtc-answer", { answer });
+    }
+  });
+
+  socket.on("webrtc-candidate", ({ candidate, receiverId, callerId }) => {
+    const targetId = getReceiverSocketId(receiverId || callerId);
+    if (targetId) {
+      io.to(targetId).emit("webrtc-candidate", { candidate });
+    }
+  });
+
+  socket.on("webrtc-reject", ({ to }) => {
+    const targetId = getReceiverSocketId(to);
+    if (targetId) {
+      io.to(targetId).emit("call-rejected");
+    }
+  });
+
+  socket.on("webrtc-end", ({ to }) => {
+    const targetId = getReceiverSocketId(to);
+    if (targetId) {
+      io.to(targetId).emit("webrtc-end");
+    }
+  });
 
   socket.on("disconnect", () => {
-    console.log("❌ User disconnected:", socket.id);
-    delete userSocketMap[userId]
-    io.emit("getAllOnlineUsers",Object.keys(userSocketMap))
+    console.log("❌ Disconnected:", socket.id);
+    if (userId) delete userSocketMap[userId];
+    io.emit("getAllOnlineUsers", Object.keys(userSocketMap));
   });
 });
 
-module.exports = { io, app, server,getReceiverSocketId };
+module.exports = { io, app, server };

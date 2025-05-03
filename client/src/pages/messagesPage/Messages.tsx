@@ -43,7 +43,7 @@ console.log("hhhhhhhhhhhhhhhhhhost ",user);
 
 
   return (
-    <div className='h-[85vh] overflow-hidden flex '>
+    <div className=' overflow-hidden flex '>
    
                 {/**chatlist */}
                 <ChatList/>  
