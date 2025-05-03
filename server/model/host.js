@@ -60,6 +60,9 @@ const hostSchema = new mongoose.Schema(
       minlength: [6, "Password must be at least 6 characters"],
       select: false, // 🔒 Hide password in queries
     },
+    lastMessageTime:{
+      type: Date, 
+    },
     images: [
       {
         url: String, // Cloudinary image URL

@@ -32,7 +32,9 @@ const userSchema = new mongoose.Schema({
     fromDate:Date,
     toDate:Date
   },
-
+lastMessageTime:{
+  type: Date, 
+},
 birthDate:{type:String},
 payments: [
   {

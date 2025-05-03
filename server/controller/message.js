@@ -36,7 +36,6 @@ exports.getMessages=async (req,res)=>{
     try {
       const loggedUserId = req.user ? req.user.id : req.hostName?.id;
    
-      
         const senderId=loggedUserId
         const receverId=req.params.id
         
@@ -69,12 +68,12 @@ exports.sendMessage=async (req,res)=>{
       
         const {image,content,}=req.body
      
-        const loggedUserId = req.user ? req.user.id : req.hostName?.id;
+        const loggedUserId = req.user ? req.user : req.hostName;
    
 const receverId=req.params.id
 console.log("rrrrrrecccccccved ,rec",receverId);
 
-const senderId = loggedUserId
+const senderId = loggedUserId?.id
 
 
 let imageUrl =""
@@ -91,6 +90,7 @@ if(image){
     image:imageUrl,
     content:content
    })
+
   console.log(newMessage)
 await newMessage.save()
 
@@ -98,10 +98,13 @@ const receiverSocketId = getReceiverSocketId(receverId);
 console.log("reciverid",receiverSocketId);
 
 if (receiverSocketId) {
+  console.log("eeeemitting");
+  
     io.to(receiverSocketId).emit("newMessage", newMessage);  
 }
-console.log("endddddddddddding");
-
+const Model = req.user.role === 'host' ? Host : User;
+const updatedUser = await Model.findByIdAndUpdate(loggedUserId, { lastMessageTime: Date.now() }, { new: true });
+console.log("Time updated:", updatedUser);
 
    res.status(200).json({
    newMessage

@@ -1,5 +1,10 @@
 // socket.ts (WebRTC + Socket.io Logic)
+import toast from "react-hot-toast";
 import { io, Socket } from "socket.io-client";
+import { store } from "@/redux/store";
+import { updateOnlineUsers } from "@/redux/Slices/userSlice";
+import { addMessage } from "@/redux/Slices/messageSlice";
+import { setOnlineUsers } from "@/redux/Slices/socketlice";
 
 let socket: Socket | null = null;
 let peerConnection: RTCPeerConnection | null = null;
@@ -14,6 +19,7 @@ export const connectSocket = (
   userId: string,
   setCallerId: (id: string) => void,
   setModalVisible: (v: boolean) => void,
+  setCallAccepted: (v: boolean) => void,
   incomingOfferRef: React.MutableRefObject<RTCSessionDescriptionInit | null>,
   setCallType: (type: "audio" | "video") => void
 ) => {
@@ -31,6 +37,17 @@ export const connectSocket = (
     socket = null;
   });
 
+  socket.on("getAllOnlineUsers", (userIds: string[]) => {
+    store.dispatch(setOnlineUsers(userIds));
+  });
+
+  socket.on("newMessage", (message) => {
+    const currentUserId = store.getState().volenteer.volenteerData.user?._id;
+    if (message.senderId !== currentUserId) {
+      store.dispatch(addMessage(message));
+    }
+  });
+
   socket.on("webrtc-offer", ({ offer, callerId, type }) => {
     setCallerId(callerId);
     incomingOfferRef.current = offer;
@@ -38,7 +55,7 @@ export const connectSocket = (
     setModalVisible(true);
 
     if (!ringtone) {
-      ringtone = new Audio("/ringtone.mp3");
+      ringtone = new Audio("/sounds/jhol-66804.mp3");
       ringtone.loop = true;
     }
     ringtone.play();
@@ -56,13 +73,16 @@ export const connectSocket = (
     }
   });
 
-  socket.on("call-rejected", () => {
-    ringtone?.pause();
-    alert("Call rejected");
+  socket.on("webrtc-end", () => {
+    cleanupCall();
+    toast.error("The call was ended");
+    setCallAccepted(false);
   });
 
-  socket.on("webrtc-end", () => {
-    endCall();
+  socket.on("webrtc-reject", () => {
+    cleanupCall();
+    toast.error("The call was rejected.");
+    setCallAccepted(false);
   });
 };
 
@@ -130,6 +150,7 @@ export const acceptCall = (
     .getUserMedia({ video: callType === "video", audio: true })
     .then((stream) => {
       localStream = stream;
+
       const localVideo = document.getElementById("localVideo") as HTMLVideoElement;
       if (localVideo) {
         localVideo.srcObject = stream;
@@ -171,14 +192,10 @@ export const acceptCall = (
     .catch(console.error);
 };
 
-export const rejectCall = (to: string) => {
-  socket?.emit("webrtc-reject", { to });
-  ringtone?.pause();
-};
-
-export const endCall = () => {
+export const cleanupCall = () => {
   if (localStream) {
     localStream.getTracks().forEach((track) => track.stop());
+    localStream = null;
   }
   if (peerConnection) {
     peerConnection.close();
@@ -195,4 +212,15 @@ export const endCall = () => {
   if (remoteVideo) {
     remoteVideo.srcObject = null;
   }
+};
+
+export const endCall = (to: string) => {
+  socket?.emit("webrtc-end", { to });
+  cleanupCall();
+};
+
+export const rejectCall = (to: string) => {
+  socket?.emit("webrtc-reject", { to });
+  ringtone?.pause();
+  cleanupCall();
 };

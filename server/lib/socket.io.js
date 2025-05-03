@@ -16,7 +16,7 @@ const io = new Server(server, {
 
 const userSocketMap = {};
 
-const getReceiverSocketId = (userId) => userSocketMap[userId];
+ const getReceiverSocketId = (userId) => userSocketMap[userId];
 
 io.on("connection", (socket) => {
   console.log("✅ Connected:", socket.id);
@@ -27,6 +27,7 @@ io.on("connection", (socket) => {
 
   socket.on("webrtc-offer", ({ offer, receiverId, callerId, type }) => {
     const receiverSocketId = getReceiverSocketId(receiverId);
+   
     if (receiverSocketId) {
       io.to(receiverSocketId).emit("webrtc-offer", {
         offer,
@@ -53,16 +54,17 @@ io.on("connection", (socket) => {
   socket.on("webrtc-reject", ({ to }) => {
     const targetId = getReceiverSocketId(to);
     if (targetId) {
-      io.to(targetId).emit("call-rejected");
+      io.to(targetId).emit("webrtc-reject"); // consistent naming
     }
   });
-
+  
   socket.on("webrtc-end", ({ to }) => {
     const targetId = getReceiverSocketId(to);
     if (targetId) {
-      io.to(targetId).emit("webrtc-end");
+      io.to(targetId).emit("webrtc-end"); // consistent naming
     }
   });
+  
 
   socket.on("disconnect", () => {
     console.log("❌ Disconnected:", socket.id);
@@ -71,4 +73,4 @@ io.on("connection", (socket) => {
   });
 });
 
-module.exports = { io, app, server };
+module.exports = { io, app, server,getReceiverSocketId };

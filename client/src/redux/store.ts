@@ -6,10 +6,11 @@ import volenteerReducer from "./Slices/userSlice";
 import messageReducer from "./Slices/messageSlice";
 import attractionsReducer from "./Slices/attraction";
 import hotelBookingReducer from './Slices/hotelBookingSlice'
-
+import  socketReducer from './Slices/socketlice'
 export const store = configureStore({
     reducer: {
         admin: adminReducer,
+        socket: socketReducer,
         hostForm: hostFormReducer, 
         host:hostReducer,
         volenteer:volenteerReducer,
