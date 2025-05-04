@@ -2,7 +2,7 @@
 const http = require("http");
 const express = require("express");
 const { Server } = require("socket.io");
-
+const Call =require("../model/call")
 const app = express();
 const server = http.createServer(app);
 
@@ -15,6 +15,7 @@ const io = new Server(server, {
 });
 
 const userSocketMap = {};
+const ongoingCalls = new Map(); 
 
  const getReceiverSocketId = (userId) => userSocketMap[userId];
 
@@ -25,10 +26,22 @@ io.on("connection", (socket) => {
 
   io.emit("getAllOnlineUsers", Object.keys(userSocketMap));
 
-  socket.on("webrtc-offer", ({ offer, receiverId, callerId, type }) => {
+  socket.on("webrtc-offer", async ({ offer, receiverId, callerId, type }) => {
     const receiverSocketId = getReceiverSocketId(receiverId);
-   
+  
+    // Create a new Call document
+    const newCall = await Call.create({
+      callerId,
+      receiverId,
+      startedAt: new Date(),
+      status: "ongoing",
+    });
+  
+    ongoingCalls.set(socket.id, newCall._id); // store in map ✅
+console.log("ooooooooooooooongoing ",ongoingCalls);
+
     if (receiverSocketId) {
+      ongoingCalls.set(receiverSocketId, newCall._id);
       io.to(receiverSocketId).emit("webrtc-offer", {
         offer,
         callerId,
@@ -36,6 +49,7 @@ io.on("connection", (socket) => {
       });
     }
   });
+  
 
   socket.on("webrtc-answer", ({ answer, callerId }) => {
     const callerSocketId = getReceiverSocketId(callerId);
@@ -51,17 +65,49 @@ io.on("connection", (socket) => {
     }
   });
 
-  socket.on("webrtc-reject", ({ to }) => {
+  socket.on("webrtc-reject", async ({ to }) => {
     const targetId = getReceiverSocketId(to);
     if (targetId) {
-      io.to(targetId).emit("webrtc-reject"); // consistent naming
+      io.to(targetId).emit("webrtc-reject");
+    }
+
+    const callId = ongoingCalls.get(socket.id);
+    console.log("oooooooooongggg",ongoingCalls,"vvvvvvvvvv",callId);
+  
+    if (callId) {
+      const call = await Call.findById(callId);
+      if (call) {
+        call.endedAt = new Date();
+        call.duration = 0;
+        call.status = "rejected";
+        await call.save();
+        console.log(call);
+        
+      }
+      ongoingCalls.delete(socket.id);
     }
   });
   
-  socket.on("webrtc-end", ({ to }) => {
+  
+  socket.on("webrtc-end", async ({ to }) => {
     const targetId = getReceiverSocketId(to);
     if (targetId) {
-      io.to(targetId).emit("webrtc-end"); // consistent naming
+      io.to(targetId).emit("webrtc-end");
+    }
+  
+    const callId = ongoingCalls.get(socket.id);
+    if (callId) {
+      const endedAt = new Date();
+      const call = await Call.findById(callId);
+      if (call) {
+        call.endedAt = endedAt;
+        call.duration = (endedAt - call.startedAt) / 1000;
+        call.status = "completed";
+        await call.save();
+      }
+      console.log("ccccccccal details",call);
+      
+      ongoingCalls.delete(socket.id);
     }
   });
   

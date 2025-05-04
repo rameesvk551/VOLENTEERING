@@ -12,6 +12,7 @@ const updateLastActive = require("./middleware/updateLastActive");
 const userRoutes = require("./routes/user");
 const hostRoutes = require("./routes/host");
 const paymentRoutes = require("./routes/payment");
+const callRoutes = require("./routes/call");
 const hotelRoutes = require("./routes/hotel");
 const messageRoutes = require("./routes/message");
 const tripPlaningRoutes = require("./routes/tripPlanning")
@@ -26,6 +27,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 // Routes
+app.use("/api/v1/call", callRoutes);
 app.use("/api/v1", publicRoutes);
 app.use("/api/v1/user", userRoutes);
 app.use("/api/v1/host", hostRoutes);

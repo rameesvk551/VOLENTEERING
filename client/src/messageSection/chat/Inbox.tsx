@@ -148,20 +148,27 @@ const Inbox: React.FC = () => {
             </div>
 
             <div className="flex-1 p-4 space-y-4 overflow-y-auto bg-gray-50">
-              {messages.map((msg, i) => {
-                const isSender = msg.senderId === senderId;
-                return (
-                  <div key={i} className={`flex ${isSender ? "justify-end" : "justify-start"}`}>
-                    <div
-                      className={`px-4 py-2 max-w-xs text-sm rounded-lg shadow-sm ${
-                        isSender ? "bg-blue-600 text-white" : "bg-white text-gray-800 border"
-                      }`}
-                    >
-                      {msg.content}
-                    </div>
-                  </div>
-                );
-              })}
+            {messages.map((msg, i) => {
+  const isSender = msg.senderId === senderId;
+  const messageTime = new Date(msg.createdAt).toLocaleTimeString([], {
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+
+  return (
+    <div key={i} className={`flex flex-col ${isSender ? "items-end" : "items-start"}`}>
+      <div
+        className={`px-4 py-2 max-w-xs text-sm rounded-lg shadow-sm ${
+          isSender ? "bg-blue-600 text-white" : "bg-white text-gray-800 border"
+        }`}
+      >
+        {msg.content}
+      </div>
+      <span className="text-xs text-gray-500 mt-1">{messageTime}</span>
+    </div>
+  );
+})}
+
               <div ref={messagesEndRef} />
             </div>
 

@@ -10,6 +10,7 @@ import {
   FaArrowDown,
   FaArrowUp,
   FaTimesCircle,
+  FaPhoneSlash,
 } from 'react-icons/fa';
 import server from '@/server/app';
 import { setSelectedUser } from '@/redux/Slices/messageSlice';
@@ -31,7 +32,9 @@ interface Call {
   type: 'incoming' | 'outgoing' | 'missed';
   time: string;
   user: User;
+  status:'completed'| 'missed'| 'rejected' |"ongoing"
 }
+
 
 const ChatList: React.FC = () => {
   const dispatch = useDispatch();
@@ -45,7 +48,6 @@ const ChatList: React.FC = () => {
 
 
 
-  // — Fetch users once —
   useEffect(() => {
     (async () => {
       try {
@@ -57,8 +59,20 @@ const ChatList: React.FC = () => {
       } catch (err) {
         console.error('Failed to fetch users', err);
       }
+  
+      try {
+        const { data } = await axios.get<{ calls: Call[] }>(
+          `${server}/call/get-calls`,
+          { withCredentials: true }
+        );
+        setCalls(data.calls);
+      
+      } catch (err) {
+        console.error('Failed to fetch calls', err);
+      }
     })();
   }, []);
+  
 
   // — Default to first user if none selected —
   useEffect(() => {
@@ -163,8 +177,6 @@ const ChatListItem: React.FC<{
 }> = ({ user, selected, onClick }) => {
   const {onlineUsers} = useSelector((state: RootState) => state.socket);
   const isOnline = onlineUsers.includes(user._id); 
-console.log("oooooooooooooooonnnnnnnnnnnnnnnnnnnn",isOnline,onlineUsers);
-
   const formattedTime = useMemo(() => {
     const dateString = user?.lastMessageTime;
     if (!dateString) return '';
@@ -224,31 +236,96 @@ console.log("oooooooooooooooonnnnnnnnnnnnnnnnnnnn",isOnline,onlineUsers);
 };
 
 
-/** Single call list item **/
+
+
 const CallListItem: React.FC<{ call: Call }> = ({ call }) => {
-  const Icon = call.type === 'incoming' ? FaArrowDown : call.type === 'outgoing' ? FaArrowUp : FaTimesCircle;
-  const color = call.type === 'missed' ? 'text-red-500' : 'text-green-500';
+  const DirectionIcon =
+    call.type === 'incoming'
+      ? FaArrowDown
+      : call.type === 'outgoing'
+      ? FaArrowUp
+      : FaTimesCircle;
+
+  const directionColor =
+    call.type === 'missed'
+      ? 'text-red-500'
+      : call.type === 'incoming'
+      ? 'text-blue-500'
+      : 'text-green-500';
+
+  const statusBadge = useMemo(() => {
+    switch (call.status) {
+       case 'missed':
+        return {  color: 'bg-red-100 text-red-600', icon: <FaTimesCircle className="w-3 h-3 mr-1" /> };
+      case 'rejected':
+        return {  color: 'bg-yellow-100 text-yellow-600', icon: <FaPhoneSlash className="w-3 h-3 mr-1" /> };
+      case 'ongoing':
+        return {  color: 'bg-blue-100 text-blue-600', icon: <FaPhoneAlt className="w-3 h-3 animate-pulse mr-1" /> };
+      default:
+        return null;
+    }
+  }, [call.status]);
+
+  const formattedTime = useMemo(() => {
+    const messageDate = new Date(call.time);
+    const now = new Date();
+
+    const isToday = messageDate.toDateString() === now.toDateString();
+    const yesterday = new Date();
+    yesterday.setDate(now.getDate() - 1);
+    const isYesterday = messageDate.toDateString() === yesterday.toDateString();
+
+    if (isToday) {
+      return messageDate.toLocaleTimeString([], {
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+    } else if (isYesterday) {
+      return 'Yesterday';
+    } else {
+      return messageDate.toLocaleDateString(undefined, {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+      });
+    }
+  }, [call.time]);
 
   return (
-    <div className="flex items-center gap-3 px-4 py-2 hover:bg-gray-100 rounded-lg transition">
-      <div className="relative w-10 h-10">
+    <div className="flex items-center gap-4 px-4 py-3 rounded-xl hover:bg-gray-100 transition shadow-sm">
+      <div className="relative w-12 h-12">
         <img
-          src={call.user.profileImage}
-          alt={call.user.firstName}
-          className="w-full h-full rounded-full object-cover"
+          src={call.user?.profileImage}
+          alt={call.user?.firstName}
+          className="w-full h-full rounded-full object-cover border-2 border-white shadow-sm"
         />
-        <Icon className={`absolute bottom-0 right-0 w-4 h-4 ${color} bg-white rounded-full p-0.5`} />
-      </div>
-      <div className="flex-1">
-        <div className="flex justify-between">
-          <span className="font-medium text-gray-800">{call.user.firstName}</span>
-          <span className="text-xs text-gray-500">{call.time}</span>
+        <div className="absolute -bottom-1 -right-1 bg-white rounded-full p-0.5 shadow-sm">
+          <DirectionIcon className={`w-4 h-4 ${directionColor}`} />
         </div>
-        <p className="text-xs text-gray-500 capitalize">{call.type} call</p>
+      </div>
+
+      <div className="flex-1 min-w-0">
+        <div className="flex justify-between items-center">
+          <span className="font-semibold text-gray-800 truncate">{call.user?.firstName}</span>
+          <span className="text-xs text-gray-500">{formattedTime}</span>
+        </div>
+        <div className="flex items-center gap-2 mt-1">
+          <p className="text-sm text-gray-500 capitalize">{call.type} call</p>
+          {statusBadge && (
+            <span
+              className={`inline-flex items-center text-xs font-medium px-2 py-0.5 rounded-full ${statusBadge.color}`}
+            >
+              {statusBadge.icon}
+            
+            </span>
+          )}
+        </div>
       </div>
     </div>
   );
 };
+
+
 
 /** Placeholder when there are no calls **/
 const NoCallsPlaceholder: React.FC = () => (
