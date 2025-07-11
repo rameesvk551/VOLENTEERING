@@ -4,7 +4,6 @@ const bcrypt=require("bcrypt")
 const CustomError = require("../utils/customError")
 const axios=require("axios")
 const { default: mongoose } = require("mongoose")
-const ApiFeatures = require("../utils/ApiFeatures"); 
 
 exports.hostSignup= async(req,res,next)=>{
     console.log("host hitting");
