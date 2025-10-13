@@ -1,0 +1,1 @@
+This folder contains the route definitions for the blog posts.

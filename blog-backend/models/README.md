@@ -1,0 +1,1 @@
+This folder contains the database models for the blog posts.

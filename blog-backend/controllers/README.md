@@ -1,0 +1,1 @@
+This folder contains the controllers for the blog posts, handling the CRUD operations.
