@@ -9,7 +9,7 @@ const Blog = lazy(() => import('blog/App'));
 const VisaExplorer = lazy(() => import('visaExplorer/App'));
 const TravelHub = lazy(() => import('travelHub/App'));
 const TripPlanner = lazy(() => import('tripPlanner/App'));
-const Volunteering = lazy(() => import('volunteering/App'));
+const Volunteering = lazy(() => import('volunteering/Router'));
 
 function App() {
   return (
@@ -24,6 +24,9 @@ function App() {
               <Route path="/travel-hub/*" element={<TravelHub />} />
               <Route path="/trip-planner/*" element={<TripPlanner />} />
               <Route path="/volunteering/*" element={<Volunteering />} />
+              <Route path="/host/*" element={<Volunteering />} />
+              <Route path="/volunteer/*" element={<Volunteering />} />
+              <Route path="/volenteer/*" element={<Volunteering />} />
               <Route path="*" element={<Navigate to="/travel-hub" replace />} />
             </Routes>
           </Suspense>

@@ -20,6 +20,7 @@ check_port 5000 || exit 1
 check_port 5001 || exit 1
 check_port 5002 || exit 1
 check_port 5004 || exit 1
+check_port 5005 || exit 1
 
 echo "✅ All ports available"
 echo ""
@@ -45,6 +46,11 @@ if [ ! -d "apps/trip-planner/node_modules" ]; then
     cd apps/trip-planner && npm install && cd ../.. 
 fi
 
+if [ ! -d "apps/volunteering/node_modules" ]; then
+    echo "📦 Installing volunteering dependencies..."
+    cd apps/volunteering && npm install && cd ../.. 
+fi
+
 echo ""
 echo "🎬 Starting all services..."
 echo ""
@@ -52,6 +58,7 @@ echo "  Shell:         http://localhost:5000"
 echo "  Blog:          http://localhost:5001"
 echo "  Visa Explorer: http://localhost:5002"
 echo "  Trip Planner:  http://localhost:5004"
+echo "  Volunteering:  http://localhost:5005"
 echo ""
 echo "Press Ctrl+C to stop all services"
 echo ""
@@ -65,6 +72,7 @@ cd shell && npm run dev &
 cd apps/blog && npm run dev &
 cd apps/visa-explorer && npm run dev &
 cd apps/trip-planner && npm run dev &
+cd apps/volunteering && npm run dev &
 
 # Wait for all background jobs
 wait
