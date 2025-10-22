@@ -1,82 +1,71 @@
-# AI-Powered Travel Discovery & Trip Planning Ecosystem
+# Travel Ecosystem - Microservices Backend
 
-An intelligent, self-improving AI-driven travel discovery and recommendation platform that automatically finds, extracts, understands, and summarizes the best places, festivals, attractions, and events for any city and time period.
+Highly scalable, advanced microservices architecture for the Travel Ecosystem.
 
-## Features
+## Services
 
-### 🤖 AI-Powered Discovery Engine
-- **Natural Language Queries**: Ask questions like "Delhi in October" or "Best food festivals in Paris"
-- **Semantic Search**: Advanced vector-based search using OpenAI embeddings and Weaviate
-- **LangChain Pipeline**: Entity extraction, retrieval, summarization, and ranking
-- **LangGraph Knowledge**: Contextual recommendations through graph-based relationships
-- **Real-time Processing**: Sub-3-second query responses with 90% cache hit rate
+- **discovery-engine** (port 4000) - AI-powered travel discovery using Neo4j knowledge graph
+- **visa-explore** (port 4001) - Visa information and requirements service
+- **blog** (port 4002) - Travel blog content service (MongoDB)
+- **volenteering** (port 4003) - Volunteering opportunities service
 
-### 🎨 Advanced UI/UX Design
-- **Glassmorphism Design**: Modern, elegant interface with backdrop blur effects
-- **Framer Motion Animations**: Smooth, engaging transitions and interactions
-- **Dark Mode Support**: Complete dark theme with automatic detection
-- **Responsive Layout**: Mobile-first design optimized for all devices
-- **Interactive Components**: Draggable cards, animated search, real-time feedback
-
-## Quick Start
-
-Visit the complete documentation at [docs/AI_TRAVEL_DISCOVERY_ARCHITECTURE.md](docs/AI_TRAVEL_DISCOVERY_ARCHITECTURE.md)
+## Quick Start (Local Development)
 
 ### Prerequisites
 
-- Node.js >= 18.0.0
 - Docker & Docker Compose
-- OpenAI API Key
+- Node.js 20+ (for local dev without Docker)
 
-### Installation
+### Run All Services with Docker Compose
 
-1. **Install dependencies**:
 ```bash
-# Frontend
-cd apps/trip-planner && npm install
-
-# Backend
-cd services/discovery-engine && npm install
+docker-compose up --build
 ```
 
-2. **Setup environment variables**:
+Services will be available at:
+- http://localhost:4000 - discovery-engine
+- http://localhost:4001 - visa-explore
+- http://localhost:4002 - blog
+- http://localhost:4003 - volenteering
+
+Database UIs:
+- http://localhost:7474 - Neo4j Browser (user: neo4j, pass: password)
+- MongoDB on localhost:27017
+
+### Run Individual Service (Local Dev)
+
 ```bash
-# Backend
 cd services/discovery-engine
+npm install
 cp .env.example .env
-# Edit .env and add your OPENAI_API_KEY
-
-# Frontend
-cd apps/trip-planner
-cp .env.example .env
+npm run dev
 ```
 
-3. **Start databases**:
-```bash
-docker-compose up -d
-```
+## Architecture
 
-4. **Run the application**:
-```bash
-# Terminal 1 - Backend
-cd services/discovery-engine && npm run dev
+- **TypeScript** for type safety
+- **Express** for HTTP APIs
+- **Neo4j** for knowledge graph (discovery-engine)
+- **MongoDB** for document storage (blog)
+- **Docker** for containerization
+- **Docker Compose** for local orchestration
 
-# Terminal 2 - Frontend
-cd apps/trip-planner && npm run dev
-```
+## Production Deployment
 
-5. **Access**:
-- Frontend: http://localhost:5004
-- AI Discovery: http://localhost:5004/ai-discovery
-- Backend API: http://localhost:3000
+For production:
+- Use Kubernetes manifests (add to `k8s/` folder)
+- Configure CI/CD pipelines (GitHub Actions, GitLab CI)
+- Add horizontal pod autoscaling
+- Implement service mesh (Istio/Linkerd)
+- Add API Gateway (Kong/Traefik)
+- Configure observability (Prometheus, Grafana, Jaeger)
 
-## Technology Stack
+## Next Steps
 
-- **Frontend**: React, TypeScript, Tailwind CSS, Framer Motion, Zustand
-- **Backend**: Node.js, Fastify, LangChain, LangGraph
-- **AI**: OpenAI GPT-4o-mini, text-embedding-3-small
-- **Databases**: MongoDB, Weaviate (vectors), Redis (cache)
-
-## License
-
-MIT
+1. Add business logic to each service
+2. Implement inter-service communication (REST/gRPC/message queue)
+3. Add authentication/authorization (JWT, OAuth)
+4. Configure rate limiting and caching (Redis)
+5. Write tests (Jest, Supertest)
+6. Set up CI/CD
+7. Create Kubernetes manifests

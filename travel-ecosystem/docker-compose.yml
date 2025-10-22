@@ -1,57 +1,85 @@
 version: '3.8'
 
 services:
-  mongodb:
+  # Neo4j graph database for discovery-engine
+  neo4j:
+    image: neo4j:5.12
+    environment:
+      NEO4J_AUTH: neo4j/password
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    volumes:
+      - neo4j-data:/data
+
+  # MongoDB for blog service
+  mongo:
     image: mongo:7
-    container_name: travel-mongodb
     ports:
       - "27017:27017"
     volumes:
-      - mongodb_data:/data/db
-    environment:
-      MONGO_INITDB_DATABASE: travel_discovery
-    networks:
-      - travel-network
-    restart: unless-stopped
+      - mongo-data:/data/db
 
-  redis:
-    image: redis:7-alpine
-    container_name: travel-redis
+  # discovery-engine service
+  discovery-engine:
+    build:
+      context: ./services/discovery-engine
+      dockerfile: Dockerfile
     ports:
-      - "6379:6379"
-    volumes:
-      - redis_data:/data
-    command: redis-server --appendonly yes
-    networks:
-      - travel-network
-    restart: unless-stopped
-
-  weaviate:
-    image: semitechnologies/weaviate:latest
-    container_name: travel-weaviate
-    ports:
-      - "8080:8080"
+      - "4000:4000"
     environment:
-      QUERY_DEFAULTS_LIMIT: 25
-      AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED: 'true'
-      PERSISTENCE_DATA_PATH: '/var/lib/weaviate'
-      DEFAULT_VECTORIZER_MODULE: 'text2vec-openai'
-      ENABLE_MODULES: 'text2vec-openai'
-      CLUSTER_HOSTNAME: 'node1'
+      PORT: 4000
+      NEO4J_URI: bolt://neo4j:7687
+      NEO4J_USER: neo4j
+      NEO4J_PASSWORD: password
+    depends_on:
+      - neo4j
     volumes:
-      - weaviate_data:/var/lib/weaviate
-    networks:
-      - travel-network
-    restart: unless-stopped
+      - ./services/discovery-engine:/app
+      - /app/node_modules
+
+  # visa-explore service
+  visa-explore:
+    build:
+      context: ./services/visa-explore
+      dockerfile: Dockerfile
+    ports:
+      - "4001:4001"
+    environment:
+      PORT: 4001
+    volumes:
+      - ./services/visa-explore:/app
+      - /app/node_modules
+
+  # blog service
+  blog:
+    build:
+      context: ./services/blog
+      dockerfile: Dockerfile
+    ports:
+      - "4002:4002"
+    environment:
+      PORT: 4002
+      MONGO_URI: mongodb://mongo:27017/blog
+    depends_on:
+      - mongo
+    volumes:
+      - ./services/blog:/app
+      - /app/node_modules
+
+  # volenteering service
+  volenteering:
+    build:
+      context: ./services/volenteering
+      dockerfile: Dockerfile
+    ports:
+      - "4003:4003"
+    environment:
+      PORT: 4003
+    volumes:
+      - ./services/volenteering:/app
+      - /app/node_modules
 
 volumes:
-  mongodb_data:
-    driver: local
-  redis_data:
-    driver: local
-  weaviate_data:
-    driver: local
-
-networks:
-  travel-network:
-    driver: bridge
+  neo4j-data:
+  mongo-data:
