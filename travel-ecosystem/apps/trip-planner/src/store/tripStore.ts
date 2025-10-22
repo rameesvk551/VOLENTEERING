@@ -204,6 +204,26 @@ export const useTripStore = create<TripState>()(
     }),
     {
       name: 'trip-planner-storage',
+      version: 1,
+      migrate: (persistedState: any, version: number) => {
+        // If migrating from version 0 (or no version), clean up destinations
+        if (version === 0) {
+          const state = persistedState as TripState;
+          // Filter out destinations with invalid coordinates
+          const validDestinations = state.destinations.filter(dest => {
+            return dest.coordinates &&
+                   typeof dest.coordinates.lat === 'number' &&
+                   typeof dest.coordinates.lng === 'number' &&
+                   !isNaN(dest.coordinates.lat) &&
+                   !isNaN(dest.coordinates.lng);
+          });
+          return {
+            ...state,
+            destinations: validDestinations
+          };
+        }
+        return persistedState as TripState;
+      }
     }
   )
 );

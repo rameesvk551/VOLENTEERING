@@ -49,8 +49,14 @@ const TripMap: React.FC = () => {
   const { destinations, selectedDestinationId, setSelectedDestination } = useTripStore();
   const mapRef = useRef<L.Map | null>(null);
 
-  // Sort destinations by order
-  const sortedDestinations = [...destinations].sort((a, b) => a.order - b.order);
+  // Sort destinations by order and filter out invalid coordinates
+  const sortedDestinations = [...destinations]
+    .filter(dest => dest.coordinates &&
+                    typeof dest.coordinates.lat === 'number' &&
+                    typeof dest.coordinates.lng === 'number' &&
+                    !isNaN(dest.coordinates.lat) &&
+                    !isNaN(dest.coordinates.lng))
+    .sort((a, b) => a.order - b.order);
 
   // Calculate center and zoom
   const center: LatLngExpression = sortedDestinations.length > 0
