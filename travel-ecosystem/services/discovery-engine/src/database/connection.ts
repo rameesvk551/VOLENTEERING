@@ -251,6 +251,20 @@ class DatabaseManager {
     logger.info('All database connections established');
   }
 
+  // Convenience method for workers
+  async connect(): Promise<void> {
+    await this.connectAll();
+  }
+
+  // Check if connected
+  isConnected(): boolean {
+    return (
+      this.mongoConnection !== null &&
+      this.redisClient !== null &&
+      this.weaviateClient !== null
+    );
+  }
+
   // Disconnect all
   async disconnectAll(): Promise<void> {
     if (this.mongoConnection) {
@@ -264,6 +278,11 @@ class DatabaseManager {
     }
 
     logger.info('All database connections closed');
+  }
+
+  // Convenience method
+  async disconnect(): Promise<void> {
+    await this.disconnectAll();
   }
 
   // Getters

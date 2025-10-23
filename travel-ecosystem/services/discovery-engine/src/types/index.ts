@@ -126,17 +126,61 @@ export interface GraphState {
 
 // Crawler Types
 export interface CrawlerConfig {
-  source: 'blog' | 'event' | 'tourism' | 'news';
-  url: string;
-  schedule: string;
-  selectors: {
+  userAgent: string;
+  rateLimit: number;
+  concurrentRequests: number;
+  timeout: number;
+  retryAttempts: number;
+  retryDelay: number;
+  respectRobotsTxt: boolean;
+  source?: 'blog' | 'event' | 'tourism' | 'news';
+  url?: string;
+  schedule?: string;
+  selectors?: {
     title: string;
     content: string;
     date: string;
     location: string;
     images: string;
   };
-  rateLimit: number;
+}
+
+export interface CrawlResult {
+  source: string;
+  url: string;
+  data: {
+    name: string;
+    description: string;
+    type: 'event' | 'attraction' | 'accommodation' | 'transport';
+    category: string;
+    city: string;
+    country: string;
+    startDate: string | null;
+    endDate: string | null;
+    price: number | null;
+    image: string | null;
+    tags: string[];
+    rating: number | null;
+    reviewCount: number | null;
+    coordinates: [number, number] | null;
+    address: string | null;
+    website: string | null;
+    phone: string | null;
+    openingHours: string | null;
+    features: string[];
+    accessibility: string[];
+  };
+}
+
+export interface EventData {
+  name: string;
+  description: string;
+  startDate: Date | null;
+  endDate: Date | null;
+  location: string;
+  price: number | null;
+  category: string;
+  tags: string[];
 }
 
 export interface RawData {

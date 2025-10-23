@@ -1,0 +1,42 @@
+[
+  {
+    "city": "Delhi",
+    "country": "India"
+  },
+  {
+    "city": "Mumbai",
+    "country": "India"
+  },
+  {
+    "city": "Bangalore",
+    "country": "India"
+  },
+  {
+    "city": "Paris",
+    "country": "France"
+  },
+  {
+    "city": "London",
+    "country": "United Kingdom"
+  },
+  {
+    "city": "New York",
+    "country": "United States"
+  },
+  {
+    "city": "Tokyo",
+    "country": "Japan"
+  },
+  {
+    "city": "Singapore",
+    "country": "Singapore"
+  },
+  {
+    "city": "Dubai",
+    "country": "United Arab Emirates"
+  },
+  {
+    "city": "Bangkok",
+    "country": "Thailand"
+  }
+]

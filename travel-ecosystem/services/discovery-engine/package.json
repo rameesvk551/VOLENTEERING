@@ -12,7 +12,13 @@
     "type-check": "tsc --noEmit",
     "seed": "tsx src/utils/seed-data.ts",
     "worker:crawler": "tsx src/workers/crawler.worker.ts",
-    "worker:etl": "tsx src/workers/etl.worker.ts"
+    "worker:etl": "tsx src/workers/etl.worker.ts",
+    "cli": "tsx src/cli.ts",
+    "crawl": "tsx src/cli.ts crawl",
+    "crawl:test": "tsx src/cli.ts test",
+    "crawl:stats": "tsx src/cli.ts stats",
+    "health": "node health-check.js",
+    "health:verbose": "node health-check.js --verbose"
   },
   "keywords": [
     "travel",
@@ -48,7 +54,8 @@
     "winston": "^3.11.0",
     "date-fns": "^3.3.1",
     "nanoid": "^5.0.5",
-    "crypto-js": "^4.2.0"
+    "crypto-js": "^4.2.0",
+    "commander": "^12.0.0"
   },
   "devDependencies": {
     "@types/node": "^20.11.16",

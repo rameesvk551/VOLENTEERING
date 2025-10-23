@@ -387,5 +387,78 @@ export async function registerRoutes(fastify: FastifyInstance) {
     }
   });
 
+  /**
+   * POST /api/v1/admin/crawl
+   * Trigger crawler job (admin endpoint)
+   */
+  fastify.post<{ Body: { city: string; country: string; types?: string[] } }>(
+    '/api/v1/admin/crawl',
+    {
+      schema: {
+        description: 'Trigger a crawler job',
+        tags: ['admin'],
+        body: {
+          type: 'object',
+          required: ['city', 'country'],
+          properties: {
+            city: { type: 'string' },
+            country: { type: 'string' },
+            types: { type: 'array', items: { type: 'string' } }
+          }
+        }
+      }
+    },
+    async (request, reply) => {
+      try {
+        const { city, country, types } = request.body;
+
+        logger.info('Manual crawler trigger', { city, country, types });
+
+        // Import crawler manager
+        const { crawlerManager } = await import('@/crawlers');
+
+        // Start crawling in background
+        const result = await crawlerManager.crawlAndSave({
+          city,
+          country,
+          types: types as ('events' | 'attractions')[]
+        });
+
+        return reply.code(200).send({
+          status: 'completed',
+          city,
+          country,
+          crawled: result.crawled,
+          saved: result.saved
+        });
+      } catch (error: any) {
+        logger.error('Crawler trigger failed:', error);
+        return reply.code(500).send({
+          error: 'Crawler failed',
+          message: error.message
+        });
+      }
+    }
+  );
+
+  /**
+   * GET /api/v1/admin/crawler-stats
+   * Get crawler statistics
+   */
+  fastify.get('/api/v1/admin/crawler-stats', async (request, reply) => {
+    try {
+      const { crawlerManager } = await import('@/crawlers');
+      const stats = await crawlerManager.getStatistics();
+
+      return reply.code(200).send(stats);
+    } catch (error: any) {
+      logger.error('Failed to get crawler stats:', error);
+      return reply.code(500).send({
+        error: 'Failed to fetch crawler stats',
+        message: error.message
+      });
+    }
+  });
+
   logger.info('API routes registered');
 }
