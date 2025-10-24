@@ -1,1 +1,0 @@
-This folder contains static assets like images.

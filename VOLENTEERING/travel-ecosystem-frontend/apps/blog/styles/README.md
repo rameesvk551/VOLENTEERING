@@ -1,1 +1,0 @@
-This folder contains the styles for the blog.
