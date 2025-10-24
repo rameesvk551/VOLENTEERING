@@ -405,27 +405,39 @@ export const useDiscovery = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const search = useCallback(async (query: string, _filters?: any) => {
+  const search = useCallback(async (query: string, filters?: any) => {
     try {
       setIsLoading(true);
       setError(null);
 
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Call the real backend API
+      const response = await axios.post(`${API_BASE_URL}/discover`, {
+        query,
+        filters: filters || {},
+        preferences: {}
+      });
 
-      // Use dummy data instead of API call
-      const data: DiscoveryResult = getDummyData(query);
+      const data: DiscoveryResult = response.data;
 
       setResults(data);
       setEntities(data.entities);
       setSummary(data.summary);
-      setRecommendations(data.recommendations);
+      setRecommendations(data.recommendations || []);
 
       return data;
     } catch (err: any) {
-      const errorMessage = err.response?.data?.message || 'Search failed';
+      const errorMessage = err.response?.data?.message || err.message || 'Search failed';
       setError(errorMessage);
-      throw new Error(errorMessage);
+      
+      // Fallback to dummy data if API fails (for development)
+      console.warn('API call failed, using dummy data:', errorMessage);
+      const dummyData = getDummyData(query);
+      setResults(dummyData);
+      setEntities(dummyData.entities);
+      setSummary(dummyData.summary);
+      setRecommendations(dummyData.recommendations);
+      
+      return dummyData;
     } finally {
       setIsLoading(false);
     }

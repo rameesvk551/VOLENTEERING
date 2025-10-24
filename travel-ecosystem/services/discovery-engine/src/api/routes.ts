@@ -40,7 +40,8 @@ const RecommendationRequestSchema = z.object({
 
 export async function registerRoutes(fastify: FastifyInstance) {
   const discoveryChain = new DiscoveryChain();
-  const knowledgeGraph = new KnowledgeGraph();
+  // Temporarily disabled until LangGraph compatibility is fixed
+  // const knowledgeGraph = new KnowledgeGraph();
 
   /**
    * POST /api/v1/discover
@@ -68,21 +69,38 @@ export async function registerRoutes(fastify: FastifyInstance) {
         // Validate request
         const validated = DiscoveryRequestSchema.parse(request.body);
 
-        logger.info('Discovery request received', {
+        logger.info('📨 API Request - Discovery Endpoint', {
           query: validated.query,
-          ip: request.ip
+          filters: validated.filters || {},
+          preferences: validated.preferences || {},
+          ip: request.ip,
+          userAgent: request.headers['user-agent'],
+          timestamp: new Date().toISOString()
         });
 
         // Execute discovery pipeline
         const result = await discoveryChain.execute(validated.query);
 
         // Get recommendations from knowledge graph
-        const recommendations = await knowledgeGraph.query(result.entities);
-        result.recommendations = recommendations;
+        // Temporarily disabled until LangGraph compatibility is fixed
+        // const recommendations = await knowledgeGraph.query(result.entities);
+        // result.recommendations = recommendations;
+
+        logger.info('📤 API Response - Discovery Endpoint', {
+          query: validated.query,
+          totalResults: result.metadata.totalResults,
+          processingTime: result.metadata.processingTime,
+          cached: result.metadata.cached,
+          statusCode: 200
+        });
 
         return reply.code(200).send(result);
       } catch (error: any) {
-        logger.error('Discovery request failed:', error);
+        logger.error('❌ API Error - Discovery Endpoint', { 
+          error: error.message,
+          stack: error.stack,
+          body: request.body
+        });
 
         if (error.name === 'ZodError') {
           return reply.code(400).send({
@@ -146,7 +164,9 @@ export async function registerRoutes(fastify: FastifyInstance) {
         };
 
         if (includeRecommendations) {
-          result.recommendations = await knowledgeGraph.getRelatedEntities(id, 10);
+          // Temporarily disabled until LangGraph compatibility is fixed
+          // result.recommendations = await knowledgeGraph.getRelatedEntities(id, 10);
+          result.recommendations = [];
         }
 
         return reply.code(200).send(result);
@@ -189,10 +209,12 @@ export async function registerRoutes(fastify: FastifyInstance) {
           baseEntity: validated.baseEntity
         });
 
-        const recommendations = await knowledgeGraph.getRelatedEntities(
-          validated.baseEntity,
-          validated.limit || 10
-        );
+        // Temporarily disabled until LangGraph compatibility is fixed
+        // const recommendations = await knowledgeGraph.getRelatedEntities(
+        //   validated.baseEntity,
+        //   validated.limit || 10
+        // );
+        const recommendations: any[] = [];
 
         return reply.code(200).send({
           baseEntity: validated.baseEntity,

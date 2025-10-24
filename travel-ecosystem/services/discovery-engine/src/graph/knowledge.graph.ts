@@ -1,6 +1,6 @@
 // LangGraph Knowledge Graph for Contextual Recommendations
 
-import { StateGraph } from '@langchain/langgraph';
+import { StateGraph, Annotation } from '@langchain/langgraph';
 import { Place } from '@/database/models';
 import { dbManager } from '@/database/connection';
 import { logger } from '@/utils/logger';
@@ -28,14 +28,15 @@ export class KnowledgeGraph {
    * Build the LangGraph state machine
    */
   private buildGraph(): StateGraph<GraphState> {
-    const graph = new StateGraph<GraphState>({
-      channels: {
-        query: null,
-        nodes: null,
-        edges: null,
-        recommendations: null
-      }
+    // Define state annotation
+    const StateAnnotation = Annotation.Root({
+      query: Annotation<string>,
+      nodes: Annotation<GraphNode[]>,
+      edges: Annotation<GraphEdge[]>,
+      recommendations: Annotation<Recommendation[]>
     });
+
+    const graph = new StateGraph(StateAnnotation);
 
     // Node 1: Load relevant subgraph
     graph.addNode('load_subgraph', async (state: GraphState) => {

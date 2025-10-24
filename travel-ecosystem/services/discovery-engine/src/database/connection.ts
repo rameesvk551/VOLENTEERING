@@ -163,8 +163,7 @@ class DatabaseManager {
         vectorizer: 'text2vec-openai',
         moduleConfig: {
           'text2vec-openai': {
-            model: 'text-embedding-3-small',
-            modelVersion: '3',
+            model: 'ada',
             type: 'text'
           }
         },

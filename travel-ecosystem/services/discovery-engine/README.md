@@ -49,10 +49,13 @@ nano .env
 Required environment variables:
 ```env
 OPENAI_API_KEY=your_openai_api_key_here
+TAVILY_API_KEY=your_tavily_api_key_here  # Optional: for real-time web search
 MONGODB_URI=mongodb://localhost:27017/travel_discovery
 REDIS_HOST=localhost
 WEAVIATE_URL=http://localhost:8080
 ```
+
+> **Note:** Tavily API key is optional. Get yours at [tavily.com](https://tavily.com) for real-time search (free tier: 1000 searches/month)
 
 ### 3. Start Services
 
@@ -65,17 +68,27 @@ make services-start
 ### 4. Test the Crawler
 
 ```bash
-# Test single source
-make test-crawl
-# or: npm run crawl:test -- -s timeout -c "Delhi" -C "India"
+# ⭐ RECOMMENDED: Hybrid crawl (Tavily AI + Web Scraping)
+npm run crawl:hybrid -- -c "Delhi" -C "India"
+
+# Traditional web scraping only
+npm run crawl:test -- -s timeout -c "Delhi" -C "India"
 ```
 
 ### 5. Run Your First Crawl
 
 ```bash
-# Crawl a city
-make crawl-delhi
-# or: npm run crawl -- -c "Delhi" -C "India"
+# Hybrid mode (Tavily AI + Playwright) - RECOMMENDED
+npm run crawl:hybrid -- -c "Delhi" -C "India"
+
+# Traditional crawl (Playwright only)
+npm run crawl -- -c "Delhi" -C "India"
+
+# Tavily AI only (fastest, real-time data)
+npm run crawl:hybrid -- -c "Paris" -C "France" --tavily-only
+
+# Include food and trends
+npm run crawl:hybrid -- -c "Tokyo" -C "Japan" --food --trends
 ```
 
 ### 6. Start the API
@@ -94,6 +107,8 @@ API will be available at: `http://localhost:3000`
 
 ## 📖 Documentation
 
+- **[TAVILY_SUMMARY.md](./TAVILY_SUMMARY.md)** - ⭐ NEW: Tavily AI integration guide
+- **[TAVILY_INTEGRATION.md](./TAVILY_INTEGRATION.md)** - Complete Tavily documentation
 - **[CRAWLER_QUICKSTART.md](./CRAWLER_QUICKSTART.md)** - Get started in 5 minutes
 - **[CRAWLER_README.md](./CRAWLER_README.md)** - Complete crawler documentation
 - **[WORKFLOW.md](./WORKFLOW.md)** - System architecture and data flow

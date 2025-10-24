@@ -42,9 +42,14 @@ program
         endDate
       });
 
-      console.log('\n✅ Crawl completed!');
-      console.log(`   Crawled: ${result.crawled} items`);
-      console.log(`   Saved: ${result.saved} items`);
+      console.log('\n' + '='.repeat(60));
+      console.log('🎉 CRAWL COMPLETED SUCCESSFULLY');
+      console.log('='.repeat(60));
+      console.log(`📊 Results:`);
+      console.log(`   • Items Crawled: ${result.crawled}`);
+      console.log(`   • Items Saved:   ${result.saved}`);
+      console.log(`   • Success Rate:  ${((result.saved / result.crawled) * 100).toFixed(1)}%`);
+      console.log('='.repeat(60) + '\n');
 
       await dbManager.disconnect();
       process.exit(0);
@@ -80,19 +85,90 @@ program
 
       const result = await crawlerManager.crawlMultipleCities(cities, types);
 
-      console.log('\n✅ Batch crawl completed!');
-      console.log(`   Total crawled: ${result.totalCrawled} items`);
-      console.log(`   Total saved: ${result.totalSaved} items`);
-      console.log('\n   Per city:');
+      console.log('\n' + '='.repeat(60));
+      console.log('🎉 BATCH CRAWL COMPLETED');
+      console.log('='.repeat(60));
+      console.log(`📊 Overall Results:`);
+      console.log(`   • Total Crawled: ${result.totalCrawled} items`);
+      console.log(`   • Total Saved:   ${result.totalSaved} items`);
+      console.log(`   • Success Rate:  ${((result.totalSaved / result.totalCrawled) * 100).toFixed(1)}%`);
+      console.log('');
+      console.log('📍 Per City Breakdown:');
+      console.log('─'.repeat(60));
       
-      result.results.forEach((r) => {
-        console.log(`   - ${r.city}: ${r.crawled} crawled, ${r.saved} saved`);
+      result.results.forEach((r, index) => {
+        const successRate = r.crawled > 0 ? ((r.saved / r.crawled) * 100).toFixed(1) : '0.0';
+        console.log(`   ${index + 1}. ${r.city}`);
+        console.log(`      Crawled: ${r.crawled} | Saved: ${r.saved} | Success: ${successRate}%`);
       });
+      
+      console.log('='.repeat(60) + '\n');
 
       await dbManager.disconnect();
       process.exit(0);
     } catch (error: any) {
       console.error('\n❌ Batch crawl failed:', error.message);
+      process.exit(1);
+    }
+  });
+
+/**
+ * Hybrid crawl (Tavily AI + Playwright) - RECOMMENDED
+ */
+program
+  .command('crawl-hybrid')
+  .description('🚀 Crawl using Tavily AI + Playwright (Hybrid mode - RECOMMENDED)')
+  .requiredOption('-c, --city <city>', 'City name')
+  .requiredOption('-C, --country <country>', 'Country name')
+  .option('--playwright-only', 'Use only Playwright scraping')
+  .option('--tavily-only', 'Use only Tavily AI search')
+  .option('--food', 'Include food searches')
+  .option('--trends', 'Include trend searches')
+  .action(async (options) => {
+    try {
+      logger.info('🚀 Starting hybrid crawl', options);
+
+      await dbManager.connect();
+
+      const preferTavily = !options.playwrightOnly;
+
+      const result = await crawlerManager.crawlCityHybrid({
+        city: options.city,
+        country: options.country,
+        preferTavily,
+        includeFood: options.food,
+        includeTrends: options.trends
+      });
+
+      console.log('\n' + '┏' + '━'.repeat(68) + '┓');
+      console.log('┃' + ' '.repeat(20) + '🎉 HYBRID CRAWL COMPLETED' + ' '.repeat(23) + '┃');
+      console.log('┗' + '━'.repeat(68) + '┛');
+      console.log('');
+      console.log('📊 Results Summary:');
+      console.log('   ┌─────────────────────────────────────────────────────────────┐');
+      console.log(`   │  Total Results:        ${String(result.total).padEnd(40)} │`);
+      console.log(`   │  Tavily AI:            ${String(result.sources.tavily).padEnd(40)} │`);
+      console.log(`   │  Playwright:           ${String(result.sources.playwright).padEnd(40)} │`);
+      console.log('   └─────────────────────────────────────────────────────────────┘');
+
+      // Save to database
+      if (result.total > 0) {
+        console.log('\n💾 Saving to database...');
+        const savedCount = await crawlerManager.saveCrawlResults(result.results);
+        const successRate = ((savedCount / result.total) * 100).toFixed(1);
+        
+        console.log('');
+        console.log('✅ Save Results:');
+        console.log(`   • Saved:        ${savedCount}/${result.total} (${successRate}%)`);
+        console.log(`   • Failed:       ${result.total - savedCount}`);
+      }
+
+      console.log('\n' + '═'.repeat(70) + '\n');
+
+      await dbManager.disconnect();
+      process.exit(0);
+    } catch (error: any) {
+      console.error('\n❌ Hybrid crawl failed:', error.message);
       process.exit(1);
     }
   });
@@ -136,6 +212,64 @@ program
       process.exit(0);
     } catch (error: any) {
       console.error('\n❌ Failed to get stats:', error.message);
+      process.exit(1);
+    }
+  });
+
+/**
+ * Scrape a URL to extract places and images
+ */
+program
+  .command('scrape-url')
+  .description('Scrape a URL to extract place names and images')
+  .requiredOption('-u, --url <url>', 'URL to scrape')
+  .option('-o, --output <file>', 'Save results to JSON file')
+  .action(async (options) => {
+    try {
+      const { scrapeUrl } = await import('./utils/url-scraper');
+      
+      console.log(`\n🔍 Scraping URL: ${options.url}\n`);
+      
+      const results = await scrapeUrl(options.url);
+      
+      console.log('='.repeat(70));
+      console.log(`✅ Found ${results.length} places with images`);
+      console.log('='.repeat(70));
+      
+      if (results.length > 0) {
+        console.log('\n📋 Scraped Places:\n');
+        
+        results.forEach((place, index) => {
+          console.log(`${index + 1}. ${place.name}`);
+          console.log(`   Image: ${place.image.substring(0, 80)}${place.image.length > 80 ? '...' : ''}`);
+          console.log(`   URL: ${place.url.substring(0, 80)}${place.url.length > 80 ? '...' : ''}`);
+          if (place.description) {
+            console.log(`   Description: ${place.description.substring(0, 100)}...`);
+          }
+          if (place.additionalImages && place.additionalImages.length > 0) {
+            console.log(`   Additional Images: ${place.additionalImages.length}`);
+          }
+          console.log('');
+        });
+      } else {
+        console.log('\n⚠️  No places with images found on this page.');
+        console.log('Try a different URL with visible content.');
+      }
+      
+      // Save to file if requested
+      if (options.output) {
+        const fs = await import('fs/promises');
+        await fs.writeFile(
+          options.output,
+          JSON.stringify(results, null, 2),
+          'utf-8'
+        );
+        console.log(`\n💾 Results saved to: ${options.output}\n`);
+      }
+      
+      process.exit(0);
+    } catch (error: any) {
+      console.error('\n❌ Scraping failed:', error.message);
       process.exit(1);
     }
   });

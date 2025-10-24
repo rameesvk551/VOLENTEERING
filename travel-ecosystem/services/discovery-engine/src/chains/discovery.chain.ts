@@ -46,6 +46,17 @@ export class DiscoveryChain {
     const startTime = Date.now();
 
     try {
+      // Check if OpenAI API key is configured
+      if (!process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY === 'your_openai_api_key_here') {
+        logger.warn('OpenAI API key not configured, using fallback entity extraction');
+        return this.fallbackEntityExtraction(query);
+      }
+
+      logger.info('🤖 AI Entity Extraction - Input', { 
+        query,
+        model: process.env.OPENAI_MODEL || 'gpt-4o-mini'
+      });
+
       const extractionPrompt = PromptTemplate.fromTemplate(`
 You are a travel query analyzer. Extract structured entities from the user's query.
 
@@ -81,7 +92,7 @@ Now extract from: {query}
 
       const entities = await extractionChain.invoke({ query });
 
-      logger.info('Entities extracted', {
+      logger.info('✅ AI Entity Extraction - Output', {
         query,
         entities,
         duration: Date.now() - startTime
@@ -89,9 +100,85 @@ Now extract from: {query}
 
       return entities;
     } catch (error) {
-      logger.error('Entity extraction failed:', error);
-      throw new Error('Failed to extract entities from query');
+      logger.error('Entity extraction failed, using fallback:', error);
+      return this.fallbackEntityExtraction(query);
     }
+  }
+
+  /**
+   * Fallback entity extraction using simple regex patterns
+   */
+  private fallbackEntityExtraction(query: string): QueryEntities {
+    const lowerQuery = query.toLowerCase();
+    
+    // Common city mappings
+    const cityMappings: Record<string, { city: string; country: string }> = {
+      'delhi': { city: 'Delhi', country: 'India' },
+      'mumbai': { city: 'Mumbai', country: 'India' },
+      'bangalore': { city: 'Bangalore', country: 'India' },
+      'paris': { city: 'Paris', country: 'France' },
+      'london': { city: 'London', country: 'United Kingdom' },
+      'tokyo': { city: 'Tokyo', country: 'Japan' },
+      'new york': { city: 'New York', country: 'United States' },
+      'bali': { city: 'Bali', country: 'Indonesia' },
+      'rome': { city: 'Rome', country: 'Italy' },
+      'barcelona': { city: 'Barcelona', country: 'Spain' },
+    };
+
+    // Extract city
+    let city = '';
+    let country = '';
+    for (const [key, value] of Object.entries(cityMappings)) {
+      if (lowerQuery.includes(key)) {
+        city = value.city;
+        country = value.country;
+        break;
+      }
+    }
+
+    // Extract month
+    const months = ['january', 'february', 'march', 'april', 'may', 'june', 
+                   'july', 'august', 'september', 'october', 'november', 'december'];
+    let month: string | null = null;
+    for (const m of months) {
+      if (lowerQuery.includes(m)) {
+        month = m.charAt(0).toUpperCase() + m.slice(1);
+        break;
+      }
+    }
+
+    // Extract interests
+    const interests: string[] = [];
+    if (lowerQuery.includes('food') || lowerQuery.includes('culinary')) interests.push('food');
+    if (lowerQuery.includes('culture') || lowerQuery.includes('cultural')) interests.push('culture');
+    if (lowerQuery.includes('history') || lowerQuery.includes('historical')) interests.push('history');
+    if (lowerQuery.includes('adventure') || lowerQuery.includes('outdoor')) interests.push('adventure');
+    if (lowerQuery.includes('nature') || lowerQuery.includes('beach')) interests.push('nature');
+    if (lowerQuery.includes('art') || lowerQuery.includes('museum')) interests.push('art');
+
+    // Extract event types
+    const eventType: string[] = [];
+    if (lowerQuery.includes('festival')) eventType.push('festival');
+    if (lowerQuery.includes('attraction') || lowerQuery.includes('monument')) eventType.push('attraction');
+    if (lowerQuery.includes('event')) eventType.push('event');
+    if (lowerQuery.includes('museum')) eventType.push('museum');
+
+    // Extract duration
+    const durationMatch = lowerQuery.match(/(\d+)\s*(day|days)/);
+    const duration = durationMatch ? parseInt(durationMatch[1]) : null;
+
+    const entities: QueryEntities = {
+      city: city || 'Delhi',
+      country: country || 'India',
+      month: month || undefined,
+      year: 2025,
+      interests,
+      eventType,
+      duration: duration || undefined
+    };
+
+    logger.info('📝 Fallback Entity Extraction - Output', { query, entities });
+    return entities;
   }
 
   /**
@@ -136,11 +223,29 @@ Now extract from: {query}
    */
   async embedQuery(query: string): Promise<number[]> {
     try {
+      // Check if OpenAI API key is configured
+      if (!process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY === 'your_openai_api_key_here') {
+        logger.warn('⚠️ OpenAI API key not configured, using zero vector (skipping semantic search)');
+        // Return a zero vector (will skip vector search)
+        return new Array(1536).fill(0);
+      }
+
+      logger.info('🔢 Generating embeddings', { 
+        query: query.substring(0, 100),
+        model: process.env.OPENAI_EMBEDDING_MODEL || 'text-embedding-3-small'
+      });
+
       const result = await this.embeddings.embedQuery(query);
+      
+      logger.info('✅ Embeddings generated', { 
+        vectorLength: result.length,
+        sampleValues: result.slice(0, 5)
+      });
+      
       return result;
     } catch (error) {
-      logger.error('Embedding generation failed:', error);
-      throw new Error('Failed to generate embeddings');
+      logger.error('❌ Embedding generation failed, using zero vector:', error);
+      return new Array(1536).fill(0);
     }
   }
 
@@ -163,11 +268,15 @@ Now extract from: {query}
       // Merge and deduplicate
       const merged = this.mergeResults(vectorResults, keywordResults);
 
-      logger.info('Content retrieved', {
+      logger.info('📊 Content Retrieved', {
         vectorCount: vectorResults.length,
         keywordCount: keywordResults.length,
         mergedCount: merged.length,
-        duration: Date.now() - startTime
+        duration: Date.now() - startTime,
+        types: merged.reduce((acc, doc) => {
+          acc[doc.type] = (acc[doc.type] || 0) + 1;
+          return acc;
+        }, {} as Record<string, number>)
       });
 
       return merged;
@@ -394,6 +503,22 @@ Example output: ["doc1", "doc3", "doc2", ...]
     documents: StructuredData[]
   ): Promise<Summary> {
     try {
+      // Check if OpenAI API key is configured
+      if (!process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY === 'your_openai_api_key_here') {
+        logger.warn('⚠️ OpenAI API key not configured, using fallback summary');
+        return this.generateFallbackSummary(query, documents);
+      }
+
+      const contentForSummary = this.formatDocumentsForSummary(documents.slice(0, 10));
+      
+      logger.info('🤖 AI Summary Generation - Input', {
+        query,
+        documentCount: documents.length,
+        topDocumentsUsed: 10,
+        contentPreview: contentForSummary.substring(0, 200) + '...',
+        model: process.env.OPENAI_MODEL || 'gpt-4o-mini'
+      });
+
       const summaryPrompt = PromptTemplate.fromTemplate(`
 You are an expert travel writer. Create a compelling summary for the user's query.
 
@@ -422,18 +547,53 @@ Use vivid, descriptive language.
 
       const summary = await summaryChain.invoke({
         query,
-        content: this.formatDocumentsForSummary(documents.slice(0, 10))
+        content: contentForSummary
+      });
+
+      logger.info('✅ AI Summary Generation - Output', {
+        headline: summary.headline,
+        highlightCount: summary.highlights?.length || 0,
+        tipCount: summary.tips?.length || 0,
+        hasBestTime: !!summary.bestTime
       });
 
       return summary;
     } catch (error) {
-      logger.error('Summarization failed:', error);
-      return {
-        headline: `Discover ${documents[0]?.location.city || 'Amazing Places'}`,
-        overview: `Explore the best experiences and attractions.`,
-        highlights: documents.slice(0, 5).map(d => d.title)
-      };
+      logger.error('Summarization failed, using fallback:', error);
+      return this.generateFallbackSummary(query, documents);
     }
+  }
+
+  /**
+   * Generate fallback summary without AI
+   */
+  private generateFallbackSummary(query: string, documents: StructuredData[]): Summary {
+    const city = documents[0]?.location.city || 'this destination';
+    const festivalCount = documents.filter(d => d.type === 'festival').length;
+    const attractionCount = documents.filter(d => d.type === 'attraction').length;
+    
+    const summary = {
+      headline: `Discover ${city}: Your Ultimate Travel Guide`,
+      overview: `Explore ${city} with ${documents.length} amazing experiences including ${festivalCount} festivals and ${attractionCount} attractions. Find the perfect blend of culture, history, and adventure in this vibrant destination.`,
+      highlights: documents.slice(0, 5).map(d => d.title),
+      bestTime: 'Year-round destination with seasonal highlights',
+      tips: [
+        'Book accommodations in advance during peak season',
+        'Try local cuisine and street food',
+        'Use public transportation to save money',
+        'Respect local customs and traditions',
+        'Stay hydrated and carry essentials'
+      ]
+    };
+
+    logger.info('📝 Fallback Summary Generated', {
+      city,
+      documentCount: documents.length,
+      festivalCount,
+      attractionCount
+    });
+
+    return summary;
   }
 
   /**
@@ -490,26 +650,36 @@ Use vivid, descriptive language.
     const startTime = Date.now();
 
     try {
-      logger.info('Discovery pipeline started', { query });
+      logger.info('🚀 Discovery Pipeline Started', { 
+        query,
+        timestamp: new Date().toISOString(),
+        hasOpenAIKey: !!(process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY !== 'your_openai_api_key_here')
+      });
 
       // 1. Extract entities
+      logger.info('📍 Step 1/7: Extracting entities from query...');
       const entities = await this.extractEntities(query);
 
       // 2. Check cache
+      logger.info('💾 Step 2/7: Checking cache...');
       const cacheKey = this.generateCacheKey(entities);
       const cached = await this.checkCache(cacheKey);
       if (cached) {
         cached.metadata.processingTime = Date.now() - startTime;
+        logger.info('⚡ Cache hit! Returning cached results', { cacheKey });
         return cached;
       }
 
       // 3. Generate embeddings
+      logger.info('🔢 Step 3/7: Generating embeddings...');
       const embeddings = await this.embedQuery(query);
 
       // 4. Retrieve relevant content
+      logger.info('🔍 Step 4/7: Searching for relevant content...');
       const documents = await this.retrieveRelevantContent(entities, embeddings);
 
       if (documents.length === 0) {
+        logger.warn('⚠️ No documents found for query', { query, entities });
         return {
           query,
           entities,
@@ -531,12 +701,15 @@ Use vivid, descriptive language.
       }
 
       // 5. Rerank results
+      logger.info('🎯 Step 5/7: Reranking results...');
       const rankedDocs = await this.rerankResults(query, documents);
 
       // 6. Generate summary
+      logger.info('✍️ Step 6/7: Generating summary...');
       const summary = await this.summarizeResults(query, rankedDocs);
 
       // 7. Categorize results
+      logger.info('📂 Step 7/7: Categorizing results...');
       const categorized = this.categorizeResults(rankedDocs);
 
       // 8. Build response
@@ -558,10 +731,15 @@ Use vivid, descriptive language.
       // 9. Cache result
       await this.cacheResult(cacheKey, response);
 
-      logger.info('Discovery pipeline completed', {
+      logger.info('✅ Discovery Pipeline Completed Successfully', {
         query,
-        resultCount: documents.length,
-        duration: Date.now() - startTime
+        totalResults: documents.length,
+        festivals: categorized.festivals.length,
+        attractions: categorized.attractions.length,
+        places: categorized.places.length,
+        events: categorized.events.length,
+        processingTime: Date.now() - startTime,
+        timestamp: new Date().toISOString()
       });
 
       return response;

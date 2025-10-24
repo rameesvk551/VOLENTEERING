@@ -180,34 +180,39 @@ export async function seedDatabase() {
 
     logger.info(`Successfully seeded ${samplePlaces.length} places`);
 
-    // Also seed to Weaviate
-    const weaviate = dbManager.getWeaviate();
+    // Also seed to Weaviate (optional, skip if not connected)
+    try {
+      await dbManager.connectWeaviate();
+      const weaviate = dbManager.getWeaviate();
 
-    for (const place of samplePlaces) {
-      try {
-        await weaviate.data
-          .creator()
-          .withClassName('TravelContent')
-          .withProperties({
-            title: place.title,
-            description: place.description,
-            city: place.location.city,
-            country: place.location.country || '',
-            type: place.type,
-            startDate: place.dates?.start?.toISOString(),
-            endDate: place.dates?.end?.toISOString(),
-            category: place.metadata.category,
-            tags: place.metadata.tags,
-            popularity: place.metadata.popularity,
-            sourceUrl: place.source.url,
-            mongoId: 'placeholder' // Will be updated with actual ID
-          })
-          .do();
+      for (const place of samplePlaces) {
+        try {
+          await weaviate.data
+            .creator()
+            .withClassName('TravelContent')
+            .withProperties({
+              title: place.title,
+              description: place.description,
+              city: place.location.city,
+              country: place.location.country || '',
+              type: place.type,
+              startDate: place.dates?.start?.toISOString(),
+              endDate: place.dates?.end?.toISOString(),
+              category: place.metadata.category,
+              tags: place.metadata.tags,
+              popularity: place.metadata.popularity,
+              sourceUrl: place.source.url,
+              mongoId: 'placeholder' // Will be updated with actual ID
+            })
+            .do();
 
-        logger.info(`Seeded to Weaviate: ${place.title}`);
-      } catch (error) {
-        logger.warn(`Failed to seed to Weaviate: ${place.title}`, error);
+          logger.info(`Seeded to Weaviate: ${place.title}`);
+        } catch (error) {
+          logger.warn(`Failed to seed to Weaviate: ${place.title}`, error);
+        }
       }
+    } catch (error) {
+      logger.warn('Weaviate seeding skipped (not critical):', error);
     }
 
     logger.info('Database seeding completed successfully');
