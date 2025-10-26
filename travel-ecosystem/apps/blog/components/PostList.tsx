@@ -31,7 +31,7 @@ const PostList: React.FC<PostListProps> = ({
   const posts = dummyPosts;
   const loading = false;
   const error = null;
-  const pagination = null;
+  const pagination = null as { totalPages: number; hasPrev: boolean; hasNext: boolean } | null;
 
   if (error) {
     return (

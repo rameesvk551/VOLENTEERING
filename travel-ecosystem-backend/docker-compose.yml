@@ -1,0 +1,118 @@
+version: '3.8'
+
+services:
+  # MongoDB
+  mongodb:
+    image: mongo:7
+    container_name: travel-mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - travel-network
+
+  # API Gateway
+  api-gateway:
+    build:
+      context: ./api-gateway
+      dockerfile: Dockerfile
+    container_name: travel-api-gateway
+    restart: unless-stopped
+    ports:
+      - "4000:4000"
+    environment:
+      - PORT=4000
+      - NODE_ENV=production
+      - JWT_SECRET=your-super-secret-jwt-key-change-in-production
+      - AUTH_SERVICE_URL=http://auth-service:4001
+      - BLOG_SERVICE_URL=http://blog-service:4003
+      - ADMIN_SERVICE_URL=http://admin-service:4002
+      - CORS_ORIGIN=http://localhost:5173,http://localhost:5174,http://localhost:5175
+    depends_on:
+      - auth-service
+      - blog-service
+      - admin-service
+    networks:
+      - travel-network
+
+  # Auth Service
+  auth-service:
+    build:
+      context: ./micro-services/auth
+      dockerfile: Dockerfile
+    container_name: travel-auth-service
+    restart: unless-stopped
+    ports:
+      - "4001:4001"
+    environment:
+      - PORT=4001
+      - NODE_ENV=production
+      - MONGODB_URI=mongodb://admin:password@mongodb:27017/travel-auth?authSource=admin
+      - JWT_SECRET=your-super-secret-jwt-key-change-in-production
+      - JWT_EXPIRES_IN=7d
+      - JWT_REFRESH_SECRET=your-super-secret-refresh-key-change-in-production
+      - JWT_REFRESH_EXPIRES_IN=30d
+      - CORS_ORIGIN=http://localhost:5173
+      - SMTP_HOST=smtp.gmail.com
+      - SMTP_PORT=587
+      - SMTP_USER=your-email@gmail.com
+      - SMTP_PASS=your-app-password
+      - FRONTEND_URL=http://localhost:5173
+    depends_on:
+      - mongodb
+    networks:
+      - travel-network
+
+  # Blog Service
+  blog-service:
+    build:
+      context: ./micro-services/blog
+      dockerfile: Dockerfile
+    container_name: travel-blog-service
+    restart: unless-stopped
+    ports:
+      - "4003:4003"
+    environment:
+      - PORT=4003
+      - NODE_ENV=production
+      - MONGODB_URI=mongodb://admin:password@mongodb:27017/travel-blog?authSource=admin
+      - CORS_ORIGIN=http://localhost:5173,http://localhost:5174
+    depends_on:
+      - mongodb
+    networks:
+      - travel-network
+
+  # Admin Service
+  admin-service:
+    build:
+      context: ./micro-services/admin
+      dockerfile: Dockerfile
+    container_name: travel-admin-service
+    restart: unless-stopped
+    ports:
+      - "4002:4002"
+    environment:
+      - PORT=4002
+      - NODE_ENV=production
+      - MONGODB_URI=mongodb://admin:password@mongodb:27017/travel-admin?authSource=admin
+      - CORS_ORIGIN=http://localhost:5175
+      - AUTH_SERVICE_URL=http://auth-service:4001
+      - BLOG_SERVICE_URL=http://blog-service:4003
+    depends_on:
+      - mongodb
+      - auth-service
+      - blog-service
+    networks:
+      - travel-network
+
+volumes:
+  mongodb_data:
+
+networks:
+  travel-network:
+    driver: bridge

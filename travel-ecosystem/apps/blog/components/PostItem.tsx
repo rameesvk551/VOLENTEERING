@@ -7,10 +7,10 @@
 import React from 'react';
 import { formatDate, formatReadingTime, truncate } from '../utils/format';
 import Tag from './Tag';
-import type { Post } from '../services/api';
+import type { BlogPost } from '../data/dummyPosts';
 
 interface PostItemProps {
-  post: Post;
+  post: BlogPost;
   onClick?: (slug: string) => void;
 }
 

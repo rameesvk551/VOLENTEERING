@@ -1,1 +1,0 @@
-This folder contains the API service layer for the blog.

@@ -1,1 +1,0 @@
-This folder contains the middlewares for request validation and error handling.

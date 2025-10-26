@@ -30,7 +30,7 @@ export const formatDate = (
         day: 'numeric',
       });
     case 'iso':
-      return d.toISOString().split('T')[0];
+      return d.toISOString().split('T')[0] || '';
     default:
       return d.toLocaleDateString();
   }

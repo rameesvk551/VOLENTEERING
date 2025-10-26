@@ -1,0 +1,25 @@
+{
+  "name": "travel-ecosystem-backend",
+  "version": "1.0.0",
+  "description": "Microservices backend for Travel Ecosystem",
+  "scripts": {
+    "setup": "bash setup.sh",
+    "dev": "concurrently \"npm run dev:gateway\" \"npm run dev:auth\" \"npm run dev:blog\" \"npm run dev:admin\"",
+    "dev:gateway": "cd api-gateway && npm run dev",
+    "dev:auth": "cd micro-services/auth && npm run dev",
+    "dev:blog": "cd micro-services/blog && npm run dev",
+    "dev:admin": "cd micro-services/admin && npm run dev",
+    "build": "npm run build:gateway && npm run build:auth && npm run build:blog && npm run build:admin",
+    "build:gateway": "cd api-gateway && npm run build",
+    "build:auth": "cd micro-services/auth && npm run build",
+    "build:blog": "cd micro-services/blog && npm run build",
+    "build:admin": "cd micro-services/admin && npm run build",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "docker:logs": "docker-compose logs -f",
+    "docker:build": "docker-compose build"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
