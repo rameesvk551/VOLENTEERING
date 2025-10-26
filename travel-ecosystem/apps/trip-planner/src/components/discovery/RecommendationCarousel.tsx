@@ -66,11 +66,11 @@ export const RecommendationCarousel: React.FC<RecommendationCarouselProps> = ({
             {/* Image */}
             <div className="relative h-40 overflow-hidden bg-gray-200 dark:bg-gray-800">
               <img
-                src={recommendation.entity.media.images[0] || '/placeholder.jpg'}
+                src={recommendation.entity.media.images[0] || 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=400&h=300&fit=crop'}
                 alt={recommendation.entity.title}
                 className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                 onError={(e) => {
-                  (e.target as HTMLImageElement).src = '/placeholder.jpg';
+                  (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=400&h=300&fit=crop';
                 }}
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />

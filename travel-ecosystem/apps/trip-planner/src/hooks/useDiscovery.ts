@@ -483,6 +483,11 @@ export const useDiscovery = () => {
     setError(null);
   }, []);
 
+  // Helper method for searching destinations specifically
+  const searchDestinations = useCallback(async (query: string, filters?: any) => {
+    return search(query, filters);
+  }, [search]);
+
   return {
     results,
     entities,
@@ -491,6 +496,7 @@ export const useDiscovery = () => {
     isLoading,
     error,
     search,
+    searchDestinations,
     getEntityDetails,
     getRecommendations,
     getTrending,

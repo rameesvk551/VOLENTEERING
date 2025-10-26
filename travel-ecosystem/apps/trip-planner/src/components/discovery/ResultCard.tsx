@@ -85,12 +85,12 @@ export const ResultCard: React.FC<ResultCardProps> = ({ result, index, onSelect 
       {/* Image */}
       <div className="relative h-52 overflow-hidden bg-gray-200 dark:bg-gray-800">
         <img
-          src={result.media.images[0] || '/placeholder.jpg'}
+          src={result.media.images[0] || 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=400&h=300&fit=crop'}
           alt={result.title}
           className="w-full h-full object-cover transition-transform duration-500"
           style={{ transform: isHovered ? 'scale(1.1)' : 'scale(1)' }}
           onError={(e) => {
-            (e.target as HTMLImageElement).src = '/placeholder.jpg';
+            (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=400&h=300&fit=crop';
           }}
         />
 

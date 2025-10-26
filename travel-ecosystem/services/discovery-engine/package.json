@@ -5,6 +5,7 @@
   "main": "dist/index.js",
   "scripts": {
     "dev": "tsx watch src/index.ts",
+    "dev:simple": "tsx watch src/api/simple-server.ts",
     "build": "tsc",
     "start": "node dist/index.js",
     "test": "jest",
@@ -40,6 +41,8 @@
     "@langchain/langgraph": "^0.0.10",
     "@langchain/openai": "^0.0.19",
     "axios": "^1.6.7",
+  "jsdom": "^22.1.0",
+  "@mozilla/readability": "^0.4.4",
     "bullmq": "^5.1.9",
     "cheerio": "^1.0.0-rc.12",
     "commander": "^12.0.0",

@@ -253,7 +253,7 @@ export interface CrawlLogDocument {
   url: string;
   status: 'success' | 'failed' | 'partial';
   itemsExtracted: number;
-  errors: string[];
+  errorMessages: string[];
   duration: number;
   startedAt: Date;
   completedAt: Date;

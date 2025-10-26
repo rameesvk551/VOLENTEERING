@@ -23,17 +23,44 @@ export class DiscoveryChain {
   private weaviate;
 
   constructor() {
-    this.llm = new ChatOpenAI({
+    // Support both OpenAI and OpenRouter APIs
+    const configuration: any = {
       modelName: process.env.OPENAI_MODEL || 'gpt-4o-mini',
       temperature: 0.3,
       maxTokens: 1500,
-      openAIApiKey: process.env.OPENAI_API_KEY
-    });
+      openAIApiKey: process.env.OPENAI_API_KEY || process.env.OPENROUTER_API_KEY
+    };
 
-    this.embeddings = new OpenAIEmbeddings({
+    // Add OpenRouter base URL if configured
+    if (process.env.OPENAI_API_BASE) {
+      configuration.configuration = {
+        baseURL: process.env.OPENAI_API_BASE,
+        defaultHeaders: {
+          'HTTP-Referer': process.env.OPENROUTER_SITE_URL || 'http://localhost:3000',
+          'X-Title': process.env.OPENROUTER_APP_NAME || 'Travel Discovery Engine'
+        }
+      };
+    }
+
+    this.llm = new ChatOpenAI(configuration);
+
+    // Embeddings configuration
+    // Note: OpenRouter doesn't support embeddings API, only chat completions
+    // We'll use OpenAI directly for embeddings or skip if not available
+    const embeddingConfig: any = {
       modelName: process.env.OPENAI_EMBEDDING_MODEL || 'text-embedding-3-small',
-      openAIApiKey: process.env.OPENAI_API_KEY
-    });
+      openAIApiKey: process.env.OPENAI_API_KEY || process.env.OPENROUTER_API_KEY
+    };
+
+    // Only use OpenAI directly for embeddings (not OpenRouter)
+    // OpenRouter doesn't support the embeddings endpoint
+    if (process.env.OPENAI_API_BASE && !process.env.OPENAI_API_BASE.includes('openrouter')) {
+      embeddingConfig.configuration = {
+        baseURL: process.env.OPENAI_API_BASE
+      };
+    }
+
+    this.embeddings = new OpenAIEmbeddings(embeddingConfig);
 
     this.redis = dbManager.getRedis();
     this.weaviate = dbManager.getWeaviate();
@@ -223,9 +250,15 @@ Now extract from: {query}
    */
   async embedQuery(query: string): Promise<number[]> {
     try {
+      // Check if using OpenRouter (which doesn't support embeddings)
+      if (process.env.OPENAI_API_BASE && process.env.OPENAI_API_BASE.includes('openrouter')) {
+        logger.warn('⚠️ OpenRouter does not support embeddings API, using zero vector (skipping semantic search)');
+        return new Array(1536).fill(0);
+      }
+
       // Check if OpenAI API key is configured
-      if (!process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY === 'your_openai_api_key_here') {
-        logger.warn('⚠️ OpenAI API key not configured, using zero vector (skipping semantic search)');
+      if (!process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY === 'your_openai_api_key_here' || process.env.OPENAI_API_KEY.startsWith('sk-or-')) {
+        logger.warn('⚠️ OpenAI API key not configured for embeddings, using zero vector (skipping semantic search)');
         // Return a zero vector (will skip vector search)
         return new Array(1536).fill(0);
       }
@@ -375,20 +408,57 @@ Now extract from: {query}
         query['dates.end'] = { $lte: endDate };
       }
 
-      // Add interests filter
+      // Add interests filter - check both interests and categories
       if (entities.interests.length > 0) {
-        query['metadata.category'] = { $in: entities.interests };
+        query.$or = query.$or || [];
+        query.$or.push({ 'metadata.category': { $in: entities.interests } });
+        query.$or.push({ 'metadata.tags': { $in: entities.interests } });
       }
 
-      // Add event type filter
-      if (entities.eventType.length > 0) {
-        query.type = { $in: entities.eventType };
+      // Add event type filter - but make it flexible
+      // Don't filter if no specific type, or if it's too restrictive
+      if (entities.eventType.length > 0 && entities.eventType.length < 3) {
+        // Only apply type filter if it's specific (not too many types)
+        const typeQuery = { type: { $in: entities.eventType } };
+        if (query.$or) {
+          query.$or.push(typeQuery);
+        } else {
+          query.type = { $in: entities.eventType };
+        }
       }
 
       const documents = await Place.find(query)
         .sort({ 'metadata.popularity': -1 })
         .limit(30)
         .lean();
+
+      // If no results with strict filters, try a broader search with just city
+      if (documents.length === 0) {
+        logger.info('🔍 No results with filters, trying broader city search', { city: entities.city });
+        const broadQuery = {
+          'location.city': new RegExp(entities.city, 'i')
+        };
+        
+        const broadDocs = await Place.find(broadQuery)
+          .sort({ 'metadata.popularity': -1 })
+          .limit(30)
+          .lean();
+          
+        logger.info(`📊 Broad search found ${broadDocs.length} results`, { city: entities.city });
+        
+        return broadDocs.map((doc: any) => ({
+          id: doc._id.toString(),
+          type: doc.type,
+          title: doc.title,
+          description: doc.description,
+          location: doc.location,
+          dates: doc.dates,
+          metadata: doc.metadata,
+          media: doc.media,
+          source: doc.source,
+          confidence: doc.confidence
+        }));
+      }
 
       return documents.map((doc: any) => ({
         id: doc._id.toString(),
@@ -406,6 +476,321 @@ Now extract from: {query}
       logger.error('Keyword search failed:', error);
       return [];
     }
+  }
+
+  /**
+   * Fetch real attractions from Google Places API
+   */
+  private async fetchGooglePlacesData(query: string, entities: QueryEntities): Promise<StructuredData[]> {
+    try {
+      // Import Google Places service
+      const { GooglePlacesService } = await import('@/services/google-places.service');
+      const placesService = new GooglePlacesService();
+
+      if (!placesService.isEnabled()) {
+        logger.warn('⚠️ Google Places API not enabled');
+        return [];
+      }
+
+      logger.info('🗺️ Fetching REAL attractions from Google Places', { 
+        city: entities.city, 
+        country: entities.country 
+      });
+
+      // Get categorized attractions
+      const attractions = await placesService.getPopularAttractions(
+        entities.city,
+        entities.country || ''
+      );
+
+      // Combine all attraction types
+      const allAttractions = [
+        ...attractions.monuments,
+        ...attractions.museums,
+        ...attractions.parks,
+        ...attractions.religious
+      ];
+
+      if (allAttractions.length === 0) {
+        logger.warn('No attractions found from Google Places');
+        return [];
+      }
+
+      logger.info(`✅ Google Places found ${allAttractions.length} REAL attractions with images & coordinates`);
+
+      // Convert to StructuredData format
+      const structuredResults: StructuredData[] = allAttractions.map((place, index) => {
+        // Determine category based on types
+        const category = this.categorizeGooglePlace(place.types);
+        
+        return {
+          id: `google-places-${place.placeId}`,
+          type: 'attraction',
+          title: place.name,
+          description: place.description,
+          location: {
+            city: entities.city,
+            country: entities.country || '',
+            venue: place.address,
+            // Convert {lat, lng} to [lng, lat] format
+            coordinates: [place.coordinates.lng, place.coordinates.lat] as [number, number]
+          },
+          metadata: {
+            category: [category],
+            tags: entities.interests,
+            popularity: place.rating ? (place.rating / 5) : 0, // Normalize to 0-1
+            cost: undefined,
+            duration: undefined,
+            openingHours: place.openingHours?.weekday_text?.join(', ')
+          },
+          media: {
+            images: place.photos.length > 0 ? place.photos : [this.getPlaceholderImageUrl('attraction', entities.city)]
+          },
+          source: {
+            url: place.url,
+            domain: 'google-places',
+            crawledAt: new Date().toISOString(),
+            lastUpdated: new Date().toISOString()
+          },
+          confidence: place.rating ? (place.rating / 5) : 0.8
+        } as StructuredData;
+      });
+
+      logger.info('✅ Google Places data converted to structured format', { 
+        count: structuredResults.length,
+        sample: structuredResults.slice(0, 2).map(r => ({ 
+          title: r.title,
+          coordinates: r.location.coordinates,
+          images: r.media.images.length,
+          rating: r.metadata.popularity
+        }))
+      });
+
+      return structuredResults;
+
+    } catch (error: any) {
+      logger.error('Failed to fetch Google Places data:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Categorize Google Place by its types
+   */
+  private categorizeGooglePlace(types: string[]): string {
+    if (types.includes('museum')) return 'museum';
+    if (types.includes('park')) return 'park';
+    if (types.includes('place_of_worship')) return 'religious';
+    if (types.includes('tourist_attraction')) return 'monument';
+    if (types.includes('point_of_interest')) return 'attraction';
+    return 'place';
+  }
+
+  /**
+   * Fetch real-time data using Tavily AI when database is empty
+   */
+  private async fetchTavilyData(query: string, entities: QueryEntities): Promise<StructuredData[]> {
+    try {
+      // Check if Tavily is configured
+      if (!process.env.TAVILY_API_KEY || process.env.TAVILY_API_KEY === 'your_tavily_api_key_here') {
+        logger.warn('Tavily API key not configured, cannot fetch real-time data');
+        return [];
+      }
+
+      // Import Tavily service dynamically
+      const { TavilyService } = await import('@/services/tavily.service');
+      const tavilyService = new TavilyService();
+
+      if (!tavilyService.isEnabled()) {
+        logger.warn('Tavily service is not enabled');
+        return [];
+      }
+
+      logger.info('🔍 Searching Tavily for real-time data', { 
+        city: entities.city, 
+        country: entities.country 
+      });
+
+      // Use comprehensive search which handles multiple types
+      const results = await tavilyService.comprehensiveSearch(
+        entities.city,
+        entities.country || '',
+        {
+          month: entities.month,
+          interests: [...entities.eventType, ...entities.interests],
+          includeFood: false,
+          includeTrends: false
+        }
+      );
+
+      // Combine all results
+      const allResults = [
+        ...results.events,
+        ...results.attractions,
+        ...results.food,
+        ...results.trends
+      ];
+
+      if (allResults.length === 0) {
+        logger.warn('Tavily returned no results');
+        return [];
+      }
+
+      logger.info(`✅ Tavily found ${allResults.length} results`, {
+        events: results.events.length,
+        attractions: results.attractions.length
+      });
+
+      // Filter out blog posts and low-quality results with AGGRESSIVE filtering
+      const filteredResults = allResults.filter(result => {
+        const titleLower = result.name.toLowerCase();
+        const descLower = result.description.toLowerCase();
+        const urlLower = result.url.toLowerCase();
+        
+        // Exclude blog-style content and aggregator pages
+        const badPatterns = [
+          'things to do',
+          'best things',
+          'top things',
+          'must do',
+          'best restaurants',
+          'travel guide',
+          'all you must know',
+          'tourist attractions',
+          'best places to visit',
+          'places to visit',
+          'what to do',
+          'where to go',
+          'travel tips',
+          'complete guide',
+          'ultimate guide'
+        ];
+        
+        const badDomains = [
+          'reddit.com',
+          'tripadvisor.com/tourism-',
+          'tripadvisor.com/attractions-',
+          'bookmyshow.com/explore',
+          'justdial.com',
+          'trip.com/travel-guide',
+          'expedia.com',
+          'mindtrip.ai',
+          'tripoto.com'
+        ];
+        
+        // Check title for bad patterns
+        if (badPatterns.some(pattern => titleLower.includes(pattern))) {
+          logger.debug(`Filtered out blog post: ${result.name}`);
+          return false;
+        }
+        
+        // Check URL for aggregator domains
+        if (badDomains.some(domain => urlLower.includes(domain))) {
+          logger.debug(`Filtered out aggregator: ${result.url}`);
+          return false;
+        }
+        
+        // Exclude results with generic descriptions
+        if (descLower.includes('some of the most popular') || 
+            descLower.includes('yes, you\'ll find') ||
+            descLower.includes('explore a world of travel')) {
+          return false;
+        }
+        
+        return true;
+      });
+
+      logger.info(`📊 Filtered results: ${filteredResults.length} / ${allResults.length}`, {
+        filtered: allResults.length - filteredResults.length,
+        remaining: filteredResults.length
+      });
+
+      // Convert Tavily results to StructuredData format with images
+      const structuredResults: StructuredData[] = filteredResults.map((result, index) => {
+        const inferredType = this.inferType(result.category || 'place');
+        const placeholderImage = this.getPlaceholderImageUrl(inferredType, entities.city);
+        
+        logger.debug(`🖼️ Generated placeholder for ${result.name}`, {
+          type: inferredType,
+          imageUrl: placeholderImage
+        });
+        
+        const imageUrl = (result as any).image || placeholderImage;
+
+        const structuredData: StructuredData = {
+          id: `tavily-${Date.now()}-${index}`,
+          type: inferredType,
+          title: result.name,
+          description: result.description,
+          location: {
+            city: entities.city,
+            country: entities.country || result.location?.country || '',
+            coordinates: [0, 0] as [number, number] // [lng, lat] - Tavily doesn't provide coordinates
+          },
+          metadata: {
+            category: result.category ? [result.category] : ['general'],
+            tags: entities.interests,
+            popularity: result.relevanceScore || 0.5,
+          },
+          media: {
+            images: [imageUrl]  // Prefer extracted image, fall back to Unsplash placeholder
+          },
+          source: {
+            url: result.url,
+            domain: result.source,
+            crawledAt: new Date().toISOString(),  // Convert Date to string
+            lastUpdated: new Date().toISOString()
+          },
+          confidence: result.relevanceScore || 0.7
+        };
+        
+        return structuredData;
+      });
+
+      logger.info('✅ Tavily data converted to structured format', { 
+        count: structuredResults.length,
+        sampleImages: structuredResults.slice(0, 2).map(r => ({ 
+          title: r.title, 
+          images: r.media.images 
+        }))
+      });
+
+      return structuredResults;
+
+    } catch (error) {
+      logger.error('Failed to fetch Tavily data:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Infer entity type from category
+   */
+  private inferType(category: string): 'festival' | 'attraction' | 'event' | 'place' | 'experience' {
+    const lowerCategory = category.toLowerCase();
+    if (lowerCategory.includes('festival')) return 'festival';
+    if (lowerCategory.includes('museum') || lowerCategory.includes('attraction')) return 'attraction';
+    if (lowerCategory.includes('event')) return 'event';
+    if (lowerCategory.includes('experience')) return 'experience';
+    return 'place';
+  }
+
+  /**
+   * Get placeholder image URL based on type and location
+   */
+  private getPlaceholderImageUrl(type: string, city?: string): string {
+    // Use Unsplash for category-specific placeholder images
+    const imageMap: Record<string, string> = {
+      'festival': 'photo-1533174072545-7a4b6ad7a6c3', // Festival crowd
+      'event': 'photo-1492684223066-81342ee5ff30', // Event/concert
+      'attraction': 'photo-1469854523086-cc02fe5d8800', // Travel destination
+      'place': 'photo-1488646953014-85cb44e25828', // City/place
+      'experience': 'photo-1476514525535-07fb3b4ae5f1', // Adventure
+    };
+
+    const imageId = imageMap[type.toLowerCase()] || imageMap['place'];
+    
+    return `https://images.unsplash.com/${imageId}?w=800&h=600&fit=crop`;
   }
 
   /**
@@ -680,12 +1065,86 @@ Use vivid, descriptive language.
 
       if (documents.length === 0) {
         logger.warn('⚠️ No documents found for query', { query, entities });
+        
+        // Try to fetch REAL attractions using Google Places first
+        logger.info('🗺️ Attempting to fetch REAL attractions from Google Places API...', { query, entities });
+        
+        const googlePlacesResults = await this.fetchGooglePlacesData(query, entities);
+        
+        if (googlePlacesResults.length > 0) {
+          logger.info('✅ Google Places found REAL attractions with images & coordinates!', { 
+            count: googlePlacesResults.length,
+            sample: googlePlacesResults.slice(0, 2).map(r => ({
+              name: r.title,
+              coordinates: r.location.coordinates,
+              rating: r.metadata.popularity,
+              images: r.media.images.length
+            }))
+          });
+          
+          // Use Google Places results to continue the pipeline
+          const rankedDocs = await this.rerankResults(query, googlePlacesResults);
+          const summary = await this.summarizeResults(query, rankedDocs);
+          const categorized = this.categorizeResults(rankedDocs);
+          
+          const response: DiscoveryResponse = {
+            query,
+            entities,
+            summary,
+            results: categorized,
+            recommendations: [],
+            metadata: {
+              totalResults: googlePlacesResults.length,
+              processingTime: Date.now() - startTime,
+              cached: false,
+              sources: ['google-places'],
+              generatedAt: new Date().toISOString()
+            }
+          };
+
+          await this.cacheResult(cacheKey, response);
+          
+          return response;
+        }
+        
+        // Fallback to Tavily if Google Places fails or not configured
+        logger.info('🌐 Google Places not available, trying Tavily for real-time data...', { query, entities });
+        
+        const tavilyResults = await this.fetchTavilyData(query, entities);
+        
+        if (tavilyResults.length > 0) {
+          logger.info('✅ Tavily found results, using real-time data', { count: tavilyResults.length });
+          
+          // Use Tavily results to continue the pipeline
+          const rankedDocs = await this.rerankResults(query, tavilyResults);
+          const summary = await this.summarizeResults(query, rankedDocs);
+          const categorized = this.categorizeResults(rankedDocs);
+          
+          const response: DiscoveryResponse = {
+            query,
+            entities,
+            summary,
+            results: categorized,
+            recommendations: [],
+            metadata: {
+              totalResults: tavilyResults.length,
+              processingTime: Date.now() - startTime,
+              cached: false,
+              sources: ['tavily-realtime'],
+              generatedAt: new Date().toISOString()
+            }
+          };
+          
+          return response;
+        }
+        
+        // If Tavily also returns nothing, return empty response
         return {
           query,
           entities,
           summary: {
             headline: `No results found for ${entities.city}`,
-            overview: 'Try adjusting your search or explore nearby cities.',
+            overview: 'Try adjusting your search or explore nearby cities. We are continuously adding new destinations.',
             highlights: []
           },
           results: { festivals: [], attractions: [], places: [], events: [] },

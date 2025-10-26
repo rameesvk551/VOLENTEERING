@@ -11,8 +11,7 @@ const LocationSchema = new Schema({
   venue: String,
   coordinates: {
     type: [Number],
-    required: true,
-    index: '2dsphere'
+    required: true
   }
 }, { _id: false });
 
@@ -23,7 +22,7 @@ const DateRangeSchema = new Schema({
 }, { _id: false });
 
 const MetadataSchema = new Schema({
-  category: [{ type: String, index: true }],
+  category: [String],
   tags: [String],
   popularity: { type: Number, min: 0, max: 1 },
   cost: String,
@@ -65,7 +64,7 @@ const PlaceSchema = new Schema<PlaceDocument>({
   source: { type: SourceSchema, required: true },
   embedding: [Number],
   confidence: { type: Number, required: true, min: 0, max: 1 },
-  searchableText: { type: String, index: 'text' }
+  searchableText: { type: String }
 }, {
   timestamps: true,
   collection: 'places'
@@ -107,7 +106,7 @@ const QueryCacheSchema = new Schema<QueryCacheDocument>({
     duration: Number
   },
   results: { type: Schema.Types.Mixed, required: true },
-  expiresAt: { type: Date, required: true, index: true },
+  expiresAt: { type: Date, required: true },
   createdAt: { type: Date, default: Date.now },
   hitCount: { type: Number, default: 0 }
 }, {
@@ -130,12 +129,13 @@ const CrawlLogSchema = new Schema<CrawlLogDocument>({
     index: true
   },
   itemsExtracted: { type: Number, default: 0 },
-  errors: [String],
+  errorMessages: [String],
   duration: { type: Number, required: true },
   startedAt: { type: Date, required: true },
   completedAt: { type: Date, required: true }
 }, {
-  collection: 'crawl_logs'
+  collection: 'crawl_logs',
+  suppressReservedKeysWarning: true
 });
 
 CrawlLogSchema.index({ startedAt: -1 });
