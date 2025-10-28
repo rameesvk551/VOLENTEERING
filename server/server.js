@@ -26,6 +26,36 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
+// Root endpoint
+app.get("/", (req, res) => {
+  res.status(200).json({
+    message: "Volunteering API Server",
+    version: "1.0.0",
+    status: "operational",
+    endpoints: {
+      public: "/api/v1",
+      users: "/api/v1/user",
+      hosts: "/api/v1/host",
+      hotels: "/api/v1/hotel",
+      messages: "/api/v1/message",
+      payments: "/api/v1/payment",
+      calls: "/api/v1/call",
+      tripPlanning: "/api/v1/trip-planning"
+    },
+    documentation: "/api/v1/docs"
+  });
+});
+
+// Health check endpoint
+app.get("/health", (req, res) => {
+  res.status(200).json({
+    status: "healthy",
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    environment: process.env.NODE_ENV || "development"
+  });
+});
+
 // Routes
 app.use("/api/v1/call", callRoutes);
 app.use("/api/v1", publicRoutes);
