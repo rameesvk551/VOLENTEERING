@@ -13,18 +13,19 @@ import { loggerMiddleware } from './middleware/logger.middleware.js';
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 4000;
+const PORT = Number(process.env.PORT) || 4000;
 
 // Middleware
 app.use(helmet());
 app.use(cors({ 
-  origin: process.env.CORS_ORIGIN?.split(',') || ['http://localhost:5173'],
+  origin: process.env.CORS_ORIGIN?.split(',') || ['http://localhost:5173', 'http://localhost:5000', 'http://localhost:3002'],
   credentials: true 
 }));
 app.use(compression());
 app.use(morgan('dev'));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// NOTE: Do NOT use express.json() before proxies - it consumes the body
+// app.use(express.json());
+// app.use(express.urlencoded({ extended: true }));
 app.use(loggerMiddleware);
 
 // Rate limiting
@@ -66,6 +67,14 @@ app.use('/api/auth', createProxyMiddleware({
   changeOrigin: true,
   pathRewrite: {
     '^/api/auth': '/api/auth'
+  },
+  timeout: 30000,
+  proxyTimeout: 30000,
+  onProxyReq: (proxyReq, req, res) => {
+    console.log('Proxying to Auth Service:', req.method, req.url);
+  },
+  onProxyRes: (proxyRes, req, res) => {
+    console.log('Auth Service Response:', proxyRes.statusCode);
   },
   onError: (err, req, res) => {
     console.error('Auth Service Proxy Error:', err);
@@ -137,12 +146,23 @@ app.use((req: Request, res: Response) => {
 app.use(errorHandler);
 
 // Start Server
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`🚀 API Gateway running on port ${PORT}`);
   console.log(`📍 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`🔗 Auth Service: ${process.env.AUTH_SERVICE_URL}`);
   console.log(`🔗 Blog Service: ${process.env.BLOG_SERVICE_URL}`);
   console.log(`🔗 Admin Service: ${process.env.ADMIN_SERVICE_URL}`);
+});
+
+// Graceful error handling for server startup
+server.on('error', (err: any) => {
+  if (err?.code === 'EADDRINUSE') {
+    console.error(`Port ${PORT} is already in use. Please free the port or set a different PORT environment variable.`);
+    console.error(`Example: In PowerShell run: $env:PORT = 4001; npm run dev`);
+    process.exit(1);
+  }
+  console.error('Server error:', err);
+  process.exit(1);
 });
 
 export default app;

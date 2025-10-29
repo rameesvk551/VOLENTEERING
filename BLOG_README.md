@@ -56,6 +56,11 @@ Complete blog and admin dashboard system with authentication, built using micros
 └─────────────────┘
 ```
 
+┌─────────────────┐
+│  postgress      │  Port 27017
+│   (Database)    │
+└─────────────────┘
+
 ### Frontend Applications
 ```
 ┌─────────────────┐

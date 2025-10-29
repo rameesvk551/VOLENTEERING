@@ -13,7 +13,7 @@ import Signup from './pages/Signup';
 // Lazy load micro-frontends
 const Blog = lazy(() => import('blog/App'));
 const VisaExplorer = lazy(() => import('visaExplorer/App'));
-const TravelHub = lazy(() => import('travelHub/App'));
+const AdminDashboard = lazy(() => import('adminDashboard/App'));
 const TripPlanner = lazy(() => import('tripPlanner/App'));
 const Volunteering = lazy(() => import('volunteering/Router'));
 
@@ -47,16 +47,16 @@ function App() {
                 <ProtectedRoute>
                   <MainLayout>
                     <Routes>
-                      <Route path="/" element={<Navigate to="/travel-hub" replace />} />
+                      <Route path="/" element={<Navigate to="/admin" replace />} />
                       <Route path="/blog/*" element={<Blog />} />
                       <Route path="/visa-explorer/*" element={<VisaExplorer />} />
-                      <Route path="/travel-hub/*" element={<TravelHub />} />
+                      <Route path="/admin/*" element={<AdminDashboard />} />
                       <Route path="/trip-planner/*" element={<TripPlanner />} />
                       <Route path="/volunteering/*" element={<Volunteering />} />
                       <Route path="/host/*" element={<Volunteering />} />
                       <Route path="/volunteer/*" element={<Volunteering />} />
                       <Route path="/volenteer/*" element={<Volunteering />} />
-                      <Route path="*" element={<Navigate to="/travel-hub" replace />} />
+                      <Route path="*" element={<Navigate to="/admin" replace />} />
                     </Routes>
                   </MainLayout>
                 </ProtectedRoute>

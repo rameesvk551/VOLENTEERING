@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
 import { RootState } from '@/store';
 import { fetchPosts, deletePost, publishPost } from '@/store/slices/blogSlice';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,6 +12,7 @@ import { formatDate } from '@/lib/utils';
 
 export function BlogPage() {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const { posts, loading } = useSelector((state: RootState) => state.blog);
 
   useEffect(() => {
@@ -33,7 +35,7 @@ export function BlogPage() {
           <h1 className="text-3xl font-bold">Blog Management</h1>
           <p className="text-gray-600 mt-1">Create and manage blog posts, categories, and tags</p>
         </div>
-        <Button>
+        <Button onClick={() => navigate('/blog/create')}>
           <Plus className="h-4 w-4 mr-2" />
           New Post
         </Button>

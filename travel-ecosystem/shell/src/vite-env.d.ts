@@ -20,7 +20,7 @@ declare module 'visaExplorer/App' {
   export default App;
 }
 
-declare module 'travelHub/App' {
+declare module 'adminDashboard/App' {
   const App: React.ComponentType;
   export default App;
 }

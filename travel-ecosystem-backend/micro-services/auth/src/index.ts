@@ -13,9 +13,6 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 4001;
 
-// Connect to Database
-connectDB();
-
 // Middleware
 app.use(helmet());
 app.use(cors({ 
@@ -43,9 +40,41 @@ app.use('/api/auth', authRoutes);
 app.use(errorHandler);
 
 // Start Server
-app.listen(PORT, () => {
-  console.log(`🔐 Auth Service running on port ${PORT}`);
-  console.log(`📍 Environment: ${process.env.NODE_ENV || 'development'}`);
-});
+const startServer = async () => {
+  try {
+    // Connect to Database first
+    await connectDB();
+    
+    // Then start the server
+    const server = app.listen(PORT, () => {
+      console.log(`🔐 Auth Service running on port ${PORT}`);
+      console.log(`📍 Environment: ${process.env.NODE_ENV || 'development'}`);
+      console.log(`🌐 Server URL: http://localhost:${PORT}`);
+      console.log(`🏥 Health check: http://localhost:${PORT}/health`);
+    });
+
+    // Keep process alive and handle graceful shutdown
+    process.on('SIGTERM', () => {
+      console.log('SIGTERM received, closing server...');
+      server.close(() => {
+        console.log('Server closed');
+        process.exit(0);
+      });
+    });
+
+    process.on('SIGINT', () => {
+      console.log('\nSIGINT received, closing server...');
+      server.close(() => {
+        console.log('Server closed');
+        process.exit(0);
+      });
+    });
+  } catch (error) {
+    console.error('❌ Failed to start server:', error);
+    process.exit(1);
+  }
+};
+
+startServer();
 
 export default app;

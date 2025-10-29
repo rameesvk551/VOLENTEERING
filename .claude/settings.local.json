@@ -1,7 +1,16 @@
 {
   "permissions": {
     "allow": [
-      "Bash(tree:*)"
+      "Bash(npm uninstall:*)",
+      "Bash(npm install:*)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "Bash(taskkill:*)",
+      "Bash(npm run dev:*)",
+      "Bash(Start-Sleep -Seconds 5)",
+      "Bash(curl:*)",
+      "Bash(npm run build:*)",
+      "Bash(npm run preview:*)"
     ],
     "deny": [],
     "ask": []

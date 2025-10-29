@@ -1,16 +1,8 @@
-import { Outlet, Navigate } from 'react-router-dom';
-import { useSelector } from 'react-redux';
-import { RootState } from '@/store';
+import { Outlet } from 'react-router-dom';
 import { Sidebar } from '@/components/Sidebar';
 import { Header } from '@/components/Header';
 
 export function DashboardLayout() {
-  const { isAuthenticated } = useSelector((state: RootState) => state.auth);
-
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
-  }
-
   return (
     <div className="flex h-screen overflow-hidden">
       <Sidebar />

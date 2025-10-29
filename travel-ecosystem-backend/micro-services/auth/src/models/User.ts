@@ -1,7 +1,9 @@
-import mongoose, { Document, Schema } from 'mongoose';
+import { DataTypes, Model, Optional } from 'sequelize';
 import bcrypt from 'bcryptjs';
+import { sequelize } from '../config/database.js';
 
-export interface IUser extends Document {
+export interface IUserAttributes {
+  id: number;
   name: string;
   email: string;
   password: string;
@@ -22,101 +24,203 @@ export interface IUser extends Document {
   refreshTokens: string[];
   lastLogin?: Date;
   isActive: boolean;
-  comparePassword(candidatePassword: string): Promise<boolean>;
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
-const userSchema = new Schema<IUser>(
+export interface IUserCreationAttributes extends Optional<IUserAttributes, 'id' | 'role' | 'isEmailVerified' | 'profileImage' | 'phone' | 'bio' | 'location' | 'preferences' | 'resetPasswordToken' | 'resetPasswordExpires' | 'emailVerificationToken' | 'emailVerificationExpires' | 'refreshTokens' | 'lastLogin' | 'isActive' | 'createdAt' | 'updatedAt'> {}
+
+export class User extends Model<IUserAttributes, IUserCreationAttributes> implements IUserAttributes {
+  declare id: number;
+  declare name: string;
+  declare email: string;
+  declare password: string;
+  declare role: 'user' | 'admin' | 'super_admin' | 'host';
+  declare isEmailVerified: boolean;
+  declare profileImage?: string;
+  declare phone?: string;
+  declare bio?: string;
+  declare location?: string;
+  declare preferences?: {
+    newsletter: boolean;
+    notifications: boolean;
+  };
+  declare resetPasswordToken?: string;
+  declare resetPasswordExpires?: Date;
+  declare emailVerificationToken?: string;
+  declare emailVerificationExpires?: Date;
+  declare refreshTokens: string[];
+  declare lastLogin?: Date;
+  declare isActive: boolean;
+
+  declare readonly createdAt: Date;
+  declare readonly updatedAt: Date;
+
+  // Instance method to compare password
+  public async comparePassword(candidatePassword: string): Promise<boolean> {
+    return await bcrypt.compare(candidatePassword, this.password);
+  }
+}
+
+User.init(
   {
+    id: {
+      type: DataTypes.INTEGER,
+      autoIncrement: true,
+      primaryKey: true
+    },
     name: {
-      type: String,
-      required: [true, 'Name is required'],
-      trim: true,
-      minlength: [2, 'Name must be at least 2 characters'],
-      maxlength: [50, 'Name cannot exceed 50 characters']
-    },
-    email: {
-      type: String,
-      required: [true, 'Email is required'],
-      unique: true,
-      lowercase: true,
-      trim: true,
-      match: [/^\S+@\S+\.\S+$/, 'Please provide a valid email']
-    },
-    password: {
-      type: String,
-      required: [true, 'Password is required'],
-      minlength: [6, 'Password must be at least 6 characters'],
-      select: false
-    },
-    role: {
-      type: String,
-      enum: ['user', 'admin', 'super_admin', 'host'],
-      default: 'user'
-    },
-    isEmailVerified: {
-      type: Boolean,
-      default: false
-    },
-    profileImage: {
-      type: String,
-      default: null
-    },
-    phone: {
-      type: String,
-      default: null
-    },
-    bio: {
-      type: String,
-      maxlength: [500, 'Bio cannot exceed 500 characters']
-    },
-    location: {
-      type: String,
-      maxlength: [100, 'Location cannot exceed 100 characters']
-    },
-    preferences: {
-      newsletter: {
-        type: Boolean,
-        default: true
-      },
-      notifications: {
-        type: Boolean,
-        default: true
+      type: DataTypes.STRING(50),
+      allowNull: false,
+      validate: {
+        notEmpty: {
+          msg: 'Name is required'
+        },
+        len: {
+          args: [2, 50],
+          msg: 'Name must be between 2 and 50 characters'
+        }
       }
     },
-    resetPasswordToken: String,
-    resetPasswordExpires: Date,
-    emailVerificationToken: String,
-    emailVerificationExpires: Date,
-    refreshTokens: [String],
-    lastLogin: Date,
+    email: {
+      type: DataTypes.STRING(255),
+      allowNull: false,
+      unique: true,
+      validate: {
+        notEmpty: {
+          msg: 'Email is required'
+        },
+        isEmail: {
+          msg: 'Please provide a valid email'
+        }
+      },
+      set(value: string) {
+        this.setDataValue('email', value.toLowerCase().trim());
+      }
+    },
+    password: {
+      type: DataTypes.STRING(255),
+      allowNull: false,
+      validate: {
+        notEmpty: {
+          msg: 'Password is required'
+        },
+        len: {
+          args: [6, 255],
+          msg: 'Password must be at least 6 characters'
+        }
+      }
+    },
+    role: {
+      type: DataTypes.ENUM('user', 'admin', 'super_admin', 'host'),
+      defaultValue: 'user',
+      allowNull: false
+    },
+    isEmailVerified: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+      allowNull: false
+    },
+    profileImage: {
+      type: DataTypes.STRING(500),
+      allowNull: true,
+      defaultValue: null
+    },
+    phone: {
+      type: DataTypes.STRING(20),
+      allowNull: true,
+      defaultValue: null
+    },
+    bio: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+      validate: {
+        len: {
+          args: [0, 500],
+          msg: 'Bio cannot exceed 500 characters'
+        }
+      }
+    },
+    location: {
+      type: DataTypes.STRING(100),
+      allowNull: true,
+      validate: {
+        len: {
+          args: [0, 100],
+          msg: 'Location cannot exceed 100 characters'
+        }
+      }
+    },
+    preferences: {
+      type: DataTypes.JSONB,
+      allowNull: true,
+      defaultValue: {
+        newsletter: true,
+        notifications: true
+      }
+    },
+    resetPasswordToken: {
+      type: DataTypes.STRING(255),
+      allowNull: true
+    },
+    resetPasswordExpires: {
+      type: DataTypes.DATE,
+      allowNull: true
+    },
+    emailVerificationToken: {
+      type: DataTypes.STRING(255),
+      allowNull: true
+    },
+    emailVerificationExpires: {
+      type: DataTypes.DATE,
+      allowNull: true
+    },
+    refreshTokens: {
+      type: DataTypes.ARRAY(DataTypes.TEXT),
+      allowNull: false,
+      defaultValue: []
+    },
+    lastLogin: {
+      type: DataTypes.DATE,
+      allowNull: true
+    },
     isActive: {
-      type: Boolean,
-      default: true
+      type: DataTypes.BOOLEAN,
+      defaultValue: true,
+      allowNull: false
     }
   },
   {
-    timestamps: true
+    sequelize,
+    tableName: 'users',
+    timestamps: true,
+    indexes: [
+      {
+        unique: true,
+        fields: ['email']
+      },
+      {
+        fields: ['role']
+      },
+      {
+        fields: ['isActive']
+      }
+    ],
+    hooks: {
+      beforeCreate: async (user: User) => {
+        // Hash password on creation
+        if (user.password && !user.password.startsWith('$2a$') && !user.password.startsWith('$2b$')) {
+          const salt = await bcrypt.genSalt(10);
+          user.password = await bcrypt.hash(user.password, salt);
+        }
+      },
+      beforeUpdate: async (user: User) => {
+        // Hash password if it has been modified
+        if (user.changed('password') && user.password && !user.password.startsWith('$2a$') && !user.password.startsWith('$2b$')) {
+          const salt = await bcrypt.genSalt(10);
+          user.password = await bcrypt.hash(user.password, salt);
+        }
+      }
+    }
   }
 );
-
-// Hash password before saving
-userSchema.pre('save', async function (next) {
-  if (!this.isModified('password')) return next();
-  
-  try {
-    const salt = await bcrypt.genSalt(10);
-    this.password = await bcrypt.hash(this.password, salt);
-    next();
-  } catch (error: any) {
-    next(error);
-  }
-});
-
-// Compare password method
-userSchema.methods.comparePassword = async function (candidatePassword: string): Promise<boolean> {
-  return await bcrypt.compare(candidatePassword, this.password);
-};
-
-export const User = mongoose.model<IUser>('User', userSchema);

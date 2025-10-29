@@ -10,11 +10,11 @@ export default defineConfig({
       remotes: {
         blog: 'http://localhost:5001/assets/remoteEntry.js',
         visaExplorer: 'http://localhost:5002/assets/remoteEntry.js',
-        travelHub: 'http://localhost:5003/assets/remoteEntry.js',
+        adminDashboard: 'http://localhost:5003/assets/remoteEntry.js',
         tripPlanner: 'http://localhost:5004/assets/remoteEntry.js',
         volunteering: 'http://localhost:5005/assets/remoteEntry.js',
       },
-      shared: ['react', 'react-dom', 'react-router-dom']
+      shared: ['react', 'react-dom', 'react-router-dom', 'react-redux', '@reduxjs/toolkit']
     })
   ],
   server: {

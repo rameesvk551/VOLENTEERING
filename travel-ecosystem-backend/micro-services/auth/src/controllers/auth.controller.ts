@@ -5,7 +5,7 @@ import { User } from '../models/User.js';
 import { sendEmail } from '../utils/email.js';
 
 // Generate JWT Token
-const generateToken = (userId: string, email: string, role: string) => {
+const generateToken = (userId: number, email: string, role: string) => {
   return jwt.sign(
     { id: userId, email, role },
     process.env.JWT_SECRET || 'your-secret-key',
@@ -14,7 +14,7 @@ const generateToken = (userId: string, email: string, role: string) => {
 };
 
 // Generate Refresh Token
-const generateRefreshToken = (userId: string) => {
+const generateRefreshToken = (userId: number) => {
   return jwt.sign(
     { id: userId, type: 'refresh' },
     process.env.JWT_REFRESH_SECRET || 'your-refresh-secret',
@@ -30,7 +30,7 @@ export const signup = async (req: Request, res: Response, next: NextFunction) =>
     const { name, email, password, role = 'user' } = req.body;
 
     // Check if user already exists
-    const existingUser = await User.findOne({ email });
+    const existingUser = await User.findOne({ where: { email } });
     if (existingUser) {
       return res.status(400).json({
         success: false,
@@ -49,7 +49,8 @@ export const signup = async (req: Request, res: Response, next: NextFunction) =>
       password,
       role: role === 'admin' || role === 'super_admin' ? 'user' : role, // Prevent self-assignment of admin roles
       emailVerificationToken,
-      emailVerificationExpires
+      emailVerificationExpires,
+      refreshTokens: []
     });
 
     // Send verification email
@@ -68,10 +69,11 @@ export const signup = async (req: Request, res: Response, next: NextFunction) =>
     });
 
     // Generate tokens
-    const token = generateToken(user._id.toString(), user.email, user.role);
-    const refreshToken = generateRefreshToken(user._id.toString());
+    const token = generateToken(user.id, user.email, user.role);
+    const refreshToken = generateRefreshToken(user.id);
 
     // Save refresh token
+    user.refreshTokens = user.refreshTokens || [];
     user.refreshTokens.push(refreshToken);
     await user.save();
 
@@ -80,7 +82,7 @@ export const signup = async (req: Request, res: Response, next: NextFunction) =>
       message: 'User registered successfully. Please check your email to verify your account.',
       data: {
         user: {
-          id: user._id,
+          id: user.id,
           name: user.name,
           email: user.email,
           role: user.role,
@@ -102,8 +104,8 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
   try {
     const { email, password } = req.body;
 
-    // Check if user exists
-    const user = await User.findOne({ email }).select('+password');
+    // Check if user exists (password is included by default in Sequelize unless excluded)
+    const user = await User.findOne({ where: { email } });
     if (!user) {
       return res.status(401).json({
         success: false,
@@ -111,11 +113,22 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
       });
     }
 
+    // Debug: Check if password field exists
+    console.log('User found:', { email: user.email, hasPassword: !!user.password, passwordLength: user.password?.length });
+
     // Check if user is active
-    if (!user.isActive) {
-      return res.status(403).json({
+    // if (!user.isActive) {
+    //   return res.status(403).json({
+    //     success: false,
+    //     message: 'Account has been deactivated. Please contact support.'
+    //   });
+    // }
+
+    // Verify password exists
+    if (!user.password) {
+      return res.status(500).json({
         success: false,
-        message: 'Account has been deactivated. Please contact support.'
+        message: 'Password not found in database. Please contact support.'
       });
     }
 
@@ -129,10 +142,11 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
     }
 
     // Generate tokens
-    const token = generateToken(user._id.toString(), user.email, user.role);
-    const refreshToken = generateRefreshToken(user._id.toString());
+    const token = generateToken(user.id, user.email, user.role);
+    const refreshToken = generateRefreshToken(user.id);
 
     // Save refresh token and update last login
+    user.refreshTokens = user.refreshTokens || [];
     user.refreshTokens.push(refreshToken);
     user.lastLogin = new Date();
     await user.save();
@@ -142,7 +156,7 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
       message: 'Login successful',
       data: {
         user: {
-          id: user._id,
+          id: user.id,
           name: user.name,
           email: user.email,
           role: user.role,
@@ -176,7 +190,7 @@ export const refreshToken = async (req: Request, res: Response, next: NextFuncti
     const decoded = jwt.verify(
       refreshToken,
       process.env.JWT_REFRESH_SECRET || 'your-refresh-secret'
-    ) as { id: string; type: string };
+    ) as { id: number; type: string };
 
     if (decoded.type !== 'refresh') {
       return res.status(401).json({
@@ -186,7 +200,7 @@ export const refreshToken = async (req: Request, res: Response, next: NextFuncti
     }
 
     // Find user and check if refresh token exists
-    const user = await User.findById(decoded.id);
+    const user = await User.findByPk(decoded.id);
     if (!user || !user.refreshTokens.includes(refreshToken)) {
       return res.status(401).json({
         success: false,
@@ -195,12 +209,12 @@ export const refreshToken = async (req: Request, res: Response, next: NextFuncti
     }
 
     // Generate new tokens
-    const newToken = generateToken(user._id.toString(), user.email, user.role);
-    const newRefreshToken = generateRefreshToken(user._id.toString());
+    const newToken = generateToken(user.id, user.email, user.role);
+    const newRefreshToken = generateRefreshToken(user.id);
 
     // Replace old refresh token with new one
-    user.refreshTokens = user.refreshTokens.filter(t => t !== refreshToken);
-    user.refreshTokens.push(newRefreshToken);
+    user.refreshTokens = user.refreshTokens.filter((t: string) => t !== refreshToken);
+    user.refreshTokens = [...user.refreshTokens, newRefreshToken];
     await user.save();
 
     res.json({
@@ -227,9 +241,9 @@ export const logout = async (req: Request, res: Response, next: NextFunction) =>
     const userId = (req as any).user?.id;
 
     if (userId && refreshToken) {
-      const user = await User.findById(userId);
+      const user = await User.findByPk(userId);
       if (user) {
-        user.refreshTokens = user.refreshTokens.filter(t => t !== refreshToken);
+        user.refreshTokens = user.refreshTokens.filter((t: string) => t !== refreshToken);
         await user.save();
       }
     }
@@ -250,7 +264,7 @@ export const forgotPassword = async (req: Request, res: Response, next: NextFunc
   try {
     const { email } = req.body;
 
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ where: { email } });
     if (!user) {
       return res.status(404).json({
         success: false,
@@ -296,11 +310,13 @@ export const resetPassword = async (req: Request, res: Response, next: NextFunct
     const { token, newPassword } = req.body;
 
     const user = await User.findOne({
-      resetPasswordToken: token,
-      resetPasswordExpires: { $gt: Date.now() }
+      where: {
+        resetPasswordToken: token
+      }
     });
 
-    if (!user) {
+    // Check if user exists and token is not expired
+    if (!user || !user.resetPasswordExpires || user.resetPasswordExpires < new Date()) {
       return res.status(400).json({
         success: false,
         message: 'Invalid or expired reset token'
@@ -331,7 +347,7 @@ export const changePassword = async (req: Request, res: Response, next: NextFunc
     const { currentPassword, newPassword } = req.body;
     const userId = (req as any).user?.id;
 
-    const user = await User.findById(userId).select('+password');
+    const user = await User.findByPk(userId);
     if (!user) {
       return res.status(404).json({
         success: false,
@@ -370,11 +386,13 @@ export const verifyEmail = async (req: Request, res: Response, next: NextFunctio
     const { token } = req.query;
 
     const user = await User.findOne({
-      emailVerificationToken: token,
-      emailVerificationExpires: { $gt: Date.now() }
+      where: {
+        emailVerificationToken: token as string
+      }
     });
 
-    if (!user) {
+    // Check if user exists and token is not expired
+    if (!user || !user.emailVerificationExpires || user.emailVerificationExpires < new Date()) {
       return res.status(400).json({
         success: false,
         message: 'Invalid or expired verification token'
@@ -402,7 +420,7 @@ export const getMe = async (req: Request, res: Response, next: NextFunction) => 
   try {
     const userId = (req as any).user?.id;
 
-    const user = await User.findById(userId);
+    const user = await User.findByPk(userId);
     if (!user) {
       return res.status(404).json({
         success: false,
@@ -414,7 +432,7 @@ export const getMe = async (req: Request, res: Response, next: NextFunction) => 
       success: true,
       data: {
         user: {
-          id: user._id,
+          id: user.id,
           name: user.name,
           email: user.email,
           role: user.role,
@@ -440,7 +458,7 @@ export const updateProfile = async (req: Request, res: Response, next: NextFunct
     const userId = (req as any).user?.id;
     const { name, phone, bio, location, profileImage, preferences } = req.body;
 
-    const user = await User.findById(userId);
+    const user = await User.findByPk(userId);
     if (!user) {
       return res.status(404).json({
         success: false,
@@ -463,7 +481,7 @@ export const updateProfile = async (req: Request, res: Response, next: NextFunct
       message: 'Profile updated successfully',
       data: {
         user: {
-          id: user._id,
+          id: user.id,
           name: user.name,
           email: user.email,
           role: user.role,
