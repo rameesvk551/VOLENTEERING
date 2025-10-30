@@ -2,6 +2,12 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import federation from '@originjs/vite-plugin-federation';
 
+const sharedDeps = {
+  react: { singleton: true, eager: true, requiredVersion: '^18.2.0' },
+  'react-dom': { singleton: true, eager: true, requiredVersion: '^18.2.0' },
+  'react-router-dom': { singleton: true, eager: true, requiredVersion: '^6.30.1' }
+} satisfies Record<string, Record<string, unknown>>;
+
 export default defineConfig({
   plugins: [
     react(),
@@ -14,7 +20,7 @@ export default defineConfig({
         tripPlanner: 'http://localhost:5004/assets/remoteEntry.js',
         volunteering: 'http://localhost:5005/assets/remoteEntry.js',
       },
-      shared: ['react', 'react-dom', 'react-router-dom', 'react-redux', '@reduxjs/toolkit']
+  shared: sharedDeps
     })
   ],
   server: {
