@@ -26,11 +26,12 @@ function App() {
         <Route path="hosts" element={<HostsPage />} />
         <Route path="gear-rentals" element={<GearRentalsPage />} />
         <Route path="bookings" element={<BookingsPage />} />
-        <Route path="blog" element={<BlogPage />} />
-        <Route path="blog/create" element={<BlogCreatePage />} />
-        <Route path="finance" element={<FinancePage />} />
-        <Route path="analytics" element={<AnalyticsPage />} />
-        <Route path="content" element={<ContentPage />} />
+        <Route path="admin/blog" element={<BlogPage />} />
+        <Route path="admin/blog/create" element={<BlogCreatePage />} />
+        <Route path="admin/blog-create" element={<BlogCreatePage />} />
+        <Route path="admin/finance" element={<FinancePage />} />
+        <Route path="admin/analytics" element={<AnalyticsPage />} />
+        <Route path="admin/content" element={<ContentPage />} />
       </Route>
     </Routes>
   );

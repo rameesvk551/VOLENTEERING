@@ -15,15 +15,15 @@ import { cn } from '@/lib/utils';
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-  { name: 'Users', href: '/users', icon: Users },
-  { name: 'Trips', href: '/trips', icon: MapPin },
-  { name: 'Hosts & Volunteers', href: '/hosts', icon: UserCog },
-  { name: 'Gear Rentals', href: '/gear-rentals', icon: Package },
-  { name: 'Bookings', href: '/bookings', icon: Calendar },
-  { name: 'Blog Management', href: '/blog', icon: FileText },
-  { name: 'Finance', href: '/finance', icon: DollarSign },
-  { name: 'Analytics', href: '/analytics', icon: BarChart3 },
-  { name: 'Content & Support', href: '/content', icon: Settings },
+  { name: 'Users', href: '/admin/users', icon: Users },
+  { name: 'Trips', href: '/admin/trips', icon: MapPin },
+  { name: 'Hosts & Volunteers', href: '/admin/hosts', icon: UserCog },
+  { name: 'Gear Rentals', href: '/admin/gear-rentals', icon: Package },
+  { name: 'Bookings', href: '/admin/bookings', icon: Calendar },
+  { name: 'Blog Management', href: '/admin/blog', icon: FileText },
+  { name: 'Finance', href: '/admin/finance', icon: DollarSign },
+  { name: 'Analytics', href: '/admin/analytics', icon: BarChart3 },
+  { name: 'Content & Support', href: '/admin/content', icon: Settings },
 ];
 
 export function Sidebar() {

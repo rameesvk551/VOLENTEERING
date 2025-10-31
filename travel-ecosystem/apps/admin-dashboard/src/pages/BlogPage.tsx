@@ -35,7 +35,7 @@ export function BlogPage() {
           <h1 className="text-3xl font-bold">Blog Management</h1>
           <p className="text-gray-600 mt-1">Create and manage blog posts, categories, and tags</p>
         </div>
-        <Button onClick={() => navigate('/blog/create')}>
+        <Button onClick={() => navigate('/admin/blog/create')}>
           <Plus className="h-4 w-4 mr-2" />
           New Post
         </Button>

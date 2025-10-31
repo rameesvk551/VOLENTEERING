@@ -297,7 +297,7 @@ export function BlogCreatePage() {
     console.log('Publishing:', formData);
     localStorage.removeItem('blog_draft');
     setIsPublishing(false);
-    navigate('/blog');
+    navigate('/admin/blog');
   };
 
   const getSEOScoreColor = (score: number) => {
