@@ -10,10 +10,10 @@
  * - Build optimization
  */
 
-import { defineConfig } from 'vite';
+import { defineConfig, type PluginOption } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
-import federation from '@originjs/vite-plugin-federation';
+import { federation } from '@module-federation/vite';
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -21,7 +21,7 @@ export default defineConfig({
     react(),
 
     // Module Federation - expose blog app
-    federation({
+    ...(federation({
       name: 'blog',
       filename: 'remoteEntry.js',
       // Expose the entire app for the shell to consume
@@ -30,7 +30,7 @@ export default defineConfig({
       },
       // Shared dependencies with host app
       shared: ['react', 'react-dom', 'react-router-dom']
-    }),
+    }) as unknown as PluginOption[]),
 
     // PWA Plugin
     VitePWA({
@@ -106,14 +106,14 @@ export default defineConfig({
 
   // Server configuration
   server: {
-    port: 5001,
+    port: 1002,
     strictPort: true,
     cors: true,
   },
 
   // Preview configuration
   preview: {
-    port: 5001,
+    port: 1002,
     strictPort: true,
   },
 

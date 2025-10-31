@@ -17,8 +17,20 @@ const PORT = Number(process.env.PORT) || 4000;
 
 // Middleware
 app.use(helmet());
+const defaultOrigins = [
+  'http://localhost:5173',
+  'http://localhost:5000',
+  'http://localhost:3002',
+  'http://localhost:1001',
+  'http://localhost:1002',
+  'http://localhost:1003',
+  'http://localhost:1004',
+  'http://localhost:1005',
+  'http://localhost:1006'
+];
+
 app.use(cors({ 
-  origin: process.env.CORS_ORIGIN?.split(',') || ['http://localhost:5173', 'http://localhost:5000', 'http://localhost:3002'],
+  origin: process.env.CORS_ORIGIN?.split(',') || defaultOrigins,
   credentials: true 
 }));
 app.use(compression());

@@ -1,6 +1,6 @@
-import { defineConfig } from 'vite';
+import { defineConfig, type PluginOption } from 'vite';
 import react from '@vitejs/plugin-react';
-import federation from '@originjs/vite-plugin-federation';
+import { federation } from '@module-federation/vite';
 import path from 'path';
 
 const sharedDeps = {
@@ -14,14 +14,14 @@ const sharedDeps = {
 export default defineConfig({
   plugins: [
     react(),
-    federation({
+    ...(federation({
       name: 'adminDashboard',
       filename: 'remoteEntry.js',
       exposes: {
         './App': './src/AppWithProvider',
       },
       shared: sharedDeps
-    })
+    }) as unknown as PluginOption[])
   ],
   resolve: {
     alias: {
@@ -29,7 +29,7 @@ export default defineConfig({
     },
   },
   server: {
-    port: 5003,
+    port: 1003,
     strictPort: true,
     cors: true,
     proxy: {
@@ -40,7 +40,7 @@ export default defineConfig({
     },
   },
   preview: {
-    port: 5003,
+    port: 1003,
     strictPort: true,
   },
   build: {

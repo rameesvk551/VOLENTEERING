@@ -1,27 +1,27 @@
-import { defineConfig } from 'vite'
+import { defineConfig, type PluginOption } from 'vite'
 import react from '@vitejs/plugin-react'
-import federation from '@originjs/vite-plugin-federation'
+import { federation } from '@module-federation/vite'
 
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [
     react(),
-    federation({
+    ...(federation({
       name: 'visaExplorer',
       filename: 'remoteEntry.js',
       exposes: {
         './App': './src/App',
       },
       shared: ['react', 'react-dom', 'react-router-dom']
-    })
+    }) as unknown as PluginOption[])
   ],
   server: {
-    port: 5002,
+    port: 1004,
     strictPort: true,
     cors: true,
   },
   preview: {
-    port: 5002,
+    port: 1004,
     strictPort: true,
   },
   build: {

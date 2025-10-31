@@ -1,34 +1,56 @@
-import { defineConfig } from 'vite';
+import { defineConfig, type PluginOption } from 'vite';
 import react from '@vitejs/plugin-react';
-import federation from '@originjs/vite-plugin-federation';
+import { federation } from '@module-federation/vite';
 
 const sharedDeps = {
   react: { singleton: true, eager: true, requiredVersion: '^18.2.0' },
   'react-dom': { singleton: true, eager: true, requiredVersion: '^18.2.0' },
-  'react-router-dom': { singleton: true, eager: true, requiredVersion: '^6.30.1' }
+  'react-router-dom': { singleton: true, eager: true, requiredVersion: '^6.30.1' },
+  'react-redux': { singleton: true, eager: true, requiredVersion: '^9.0.4' },
+  '@reduxjs/toolkit': { singleton: true, requiredVersion: '^2.0.1' }
 } satisfies Record<string, Record<string, unknown>>;
 
 export default defineConfig({
   plugins: [
     react(),
-    federation({
+    ...(federation({
       name: 'shell',
       remotes: {
-        blog: 'http://localhost:5001/assets/remoteEntry.js',
-        visaExplorer: 'http://localhost:5002/assets/remoteEntry.js',
-        adminDashboard: 'http://localhost:5003/assets/remoteEntry.js',
-        tripPlanner: 'http://localhost:5004/assets/remoteEntry.js',
-        volunteering: 'http://localhost:5005/assets/remoteEntry.js',
+        blog: {
+          type: 'module',
+          name: 'blog',
+          entry: 'http://localhost:1002/assets/remoteEntry.js',
+        },
+        visaExplorer: {
+          type: 'module',
+          name: 'visaExplorer',
+          entry: 'http://localhost:1004/assets/remoteEntry.js',
+        },
+        adminDashboard: {
+          type: 'module',
+          name: 'adminDashboard',
+          entry: 'http://localhost:1003/remoteEntry.js',
+        },
+        tripPlanner: {
+          type: 'module',
+          name: 'tripPlanner',
+          entry: 'http://localhost:1005/assets/remoteEntry.js',
+        },
+        volunteering: {
+          type: 'module',
+          name: 'volunteering',
+          entry: 'http://localhost:1006/assets/remoteEntry.js',
+        },
       },
-  shared: sharedDeps
-    })
+      shared: sharedDeps
+    }) as unknown as PluginOption[])
   ],
   server: {
-    port: 5000,
+    port: 1001,
     strictPort: true,
   },
   preview: {
-    port: 5000,
+    port: 1001,
     strictPort: true,
   },
   build: {

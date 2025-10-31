@@ -16,11 +16,12 @@ check_port() {
 
 # Check all required ports
 echo "Checking ports..."
-check_port 5000 || exit 1
-check_port 5001 || exit 1
-check_port 5002 || exit 1
-check_port 5004 || exit 1
-check_port 5005 || exit 1
+check_port 1001 || exit 1
+check_port 1002 || exit 1
+check_port 1003 || exit 1
+check_port 1004 || exit 1
+check_port 1005 || exit 1
+check_port 1006 || exit 1
 
 echo "✅ All ports available"
 echo ""
@@ -54,11 +55,12 @@ fi
 echo ""
 echo "🎬 Starting all services..."
 echo ""
-echo "  Shell:         http://localhost:5000"
-echo "  Blog:          http://localhost:5001"
-echo "  Visa Explorer: http://localhost:5002"
-echo "  Trip Planner:  http://localhost:5004"
-echo "  Volunteering:  http://localhost:5005"
+echo "  Shell:         http://localhost:1001"
+echo "  Blog:          http://localhost:1002"
+echo "  Admin Dashboard: http://localhost:1003"
+echo "  Visa Explorer: http://localhost:1004"
+echo "  Trip Planner:  http://localhost:1005"
+echo "  Volunteering:  http://localhost:1006"
 echo ""
 echo "Press Ctrl+C to stop all services"
 echo ""
@@ -68,11 +70,12 @@ echo ""
 
 trap 'kill $(jobs -p) 2>/dev/null' EXIT
 
-cd shell && npm run dev &
-cd apps/blog && npm run dev &
-cd apps/visa-explorer && npm run dev &
-cd apps/trip-planner && npm run dev &
-cd apps/volunteering && npm run dev &
+(cd shell && npm run dev) &
+(cd apps/blog && npm run dev) &
+(cd apps/admin-dashboard && npm run dev) &
+(cd apps/visa-explorer && npm run dev) &
+(cd apps/trip-planner && npm run dev) &
+(cd apps/volunteering && npm run dev) &
 
 # Wait for all background jobs
 wait

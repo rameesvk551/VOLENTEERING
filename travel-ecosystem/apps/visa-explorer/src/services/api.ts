@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'http://localhost:5001/api/visa';
+const API_URL = 'http://localhost:1001/api/visa';
 
 export const getVisaRequirements = async (country: string) => {
   try {

@@ -19,8 +19,19 @@ connectDB();
 
 // Middleware
 app.use(helmet());
+const allowedOrigins = process.env.CORS_ORIGIN?.split(',') || [
+  'http://localhost:5173',
+  'http://localhost:5174',
+  'http://localhost:1001',
+  'http://localhost:1002',
+  'http://localhost:1003',
+  'http://localhost:1004',
+  'http://localhost:1005',
+  'http://localhost:1006'
+];
+
 app.use(cors({ 
-  origin: process.env.CORS_ORIGIN?.split(',') || ['http://localhost:5173'],
+  origin: allowedOrigins,
   credentials: true 
 }));
 app.use(compression());

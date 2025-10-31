@@ -20,7 +20,7 @@ function App() {
   useEffect(() => {
     // Check if user is not authenticated and redirect to shell login
     if (!isAuthenticated && !token) {
-      window.location.href = 'http://localhost:5000/login';
+      window.location.href = 'http://localhost:1001/login';
     }
   }, [isAuthenticated, token]);
 

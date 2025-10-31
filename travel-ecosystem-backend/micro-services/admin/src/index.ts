@@ -21,9 +21,19 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 4002;
 
+const allowedOrigins = process.env.CORS_ORIGIN?.split(',') || [
+  'http://localhost:3002',
+  'http://localhost:1001',
+  'http://localhost:1002',
+  'http://localhost:1003',
+  'http://localhost:1004',
+  'http://localhost:1005',
+  'http://localhost:1006'
+];
+
 // Middleware
 app.use(helmet());
-app.use(cors({ origin: process.env.CORS_ORIGIN || 'http://localhost:3002' }));
+app.use(cors({ origin: allowedOrigins, credentials: true }));
 app.use(compression());
 app.use(morgan('dev'));
 app.use(express.json());

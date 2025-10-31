@@ -40,11 +40,11 @@ echo ""
 
 # Test 3: Frontend
 echo "Test 3: Frontend Check"
-if curl -s http://localhost:5004 > /dev/null 2>&1; then
-    echo -e "${GREEN}✅ Frontend is responding on port 5004${NC}"
-    echo "   Open in browser: http://localhost:5004"
+if curl -s http://localhost:1005 > /dev/null 2>&1; then
+    echo -e "${GREEN}✅ Frontend is responding on port 1005${NC}"
+    echo "   Open in browser: http://localhost:1005"
 else
-    echo -e "${YELLOW}⚠️  Frontend is not responding on port 5004${NC}"
+    echo -e "${YELLOW}⚠️  Frontend is not responding on port 1005${NC}"
     echo "   Start it with: cd /home/ramees/www/VOLENTEERING/travel-ecosystem/apps/trip-planner && npm run dev"
 fi
 
@@ -52,18 +52,18 @@ echo ""
 
 # Test 4: Port Status
 echo "Test 4: Port Status"
-echo "Checking ports 3000 and 5004..."
-lsof -i :3000 -i :5004 2>/dev/null || echo "No services detected"
+echo "Checking ports 3000 and 1005..."
+lsof -i :3000 -i :1005 2>/dev/null || echo "No services detected"
 
 echo ""
 echo "===================="
 echo "Test Summary"
 echo "===================="
-if curl -s http://localhost:3000/health > /dev/null 2>&1 && curl -s http://localhost:5004 > /dev/null 2>&1; then
+if curl -s http://localhost:3000/health > /dev/null 2>&1 && curl -s http://localhost:1005 > /dev/null 2>&1; then
     echo -e "${GREEN}✅ All services are running!${NC}"
     echo ""
     echo "🌐 Access the application:"
-    echo "   Trip Planner: http://localhost:5004"
+    echo "   Trip Planner: http://localhost:1005"
     echo "   API Backend: http://localhost:3000"
 else
     echo -e "${YELLOW}⚠️  Some services are not running${NC}"

@@ -8,7 +8,7 @@ export function AuthRedirect() {
     // Check if user is not authenticated
     if (!isAuthenticated && !token) {
       // Redirect to shell login page
-      window.location.href = 'http://localhost:5000/login';
+  window.location.href = 'http://localhost:1001/login';
     }
   }, [isAuthenticated, token]);
 
