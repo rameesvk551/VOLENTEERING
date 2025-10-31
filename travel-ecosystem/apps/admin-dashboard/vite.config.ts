@@ -46,6 +46,11 @@ export default defineConfig({
   build: {
     target: 'esnext',
     minify: false,
-    cssCodeSplit: false
+    cssCodeSplit: false,
+    rollupOptions: {
+      output: {
+        inlineDynamicImports: false,
+      }
+    }
   }
 });

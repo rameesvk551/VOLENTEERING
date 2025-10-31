@@ -19,7 +19,12 @@ const Volunteering = lazy(() => import('volunteering/Router'));
 
 function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter
+      future={{
+        v7_startTransition: true,
+        v7_relativeSplatPath: true,
+      }}
+    >
       <AuthProvider>
         <ErrorBoundary>
           <Suspense fallback={<LoadingFallback />}>
@@ -42,25 +47,81 @@ function App() {
                 } 
               />
 
+              {/* Root redirect */}
+              <Route 
+                path="/" 
+                element={<Navigate to="/admin" replace />} 
+              />
+
+              {/* Admin Dashboard - No MainLayout (uses its own layout) */}
+              <Route 
+                path="/admin/*" 
+                element={
+                  <ProtectedRoute>
+                    <AdminDashboard />
+                  </ProtectedRoute>
+                } 
+              />
+
               {/* Protected Routes with MainLayout */}
-              <Route path="/*" element={
+              <Route path="/blog/*" element={
                 <ProtectedRoute>
                   <MainLayout>
-                    <Routes>
-                      <Route path="/" element={<Navigate to="/admin" replace />} />
-                      <Route path="/blog/*" element={<Blog />} />
-                      <Route path="/visa-explorer/*" element={<VisaExplorer />} />
-                      <Route path="/admin/*" element={<AdminDashboard />} />
-                      <Route path="/trip-planner/*" element={<TripPlanner />} />
-                      <Route path="/volunteering/*" element={<Volunteering />} />
-                      <Route path="/host/*" element={<Volunteering />} />
-                      <Route path="/volunteer/*" element={<Volunteering />} />
-                      <Route path="/volenteer/*" element={<Volunteering />} />
-                      <Route path="*" element={<Navigate to="/admin" replace />} />
-                    </Routes>
+                    <Blog />
                   </MainLayout>
                 </ProtectedRoute>
               } />
+
+              <Route path="/visa-explorer/*" element={
+                <ProtectedRoute>
+                  <MainLayout>
+                    <VisaExplorer />
+                  </MainLayout>
+                </ProtectedRoute>
+              } />
+
+              <Route path="/trip-planner/*" element={
+                <ProtectedRoute>
+                  <MainLayout>
+                    <TripPlanner />
+                  </MainLayout>
+                </ProtectedRoute>
+              } />
+
+              <Route path="/volunteering/*" element={
+                <ProtectedRoute>
+                  <MainLayout>
+                    <Volunteering />
+                  </MainLayout>
+                </ProtectedRoute>
+              } />
+
+              <Route path="/host/*" element={
+                <ProtectedRoute>
+                  <MainLayout>
+                    <Volunteering />
+                  </MainLayout>
+                </ProtectedRoute>
+              } />
+
+              <Route path="/volunteer/*" element={
+                <ProtectedRoute>
+                  <MainLayout>
+                    <Volunteering />
+                  </MainLayout>
+                </ProtectedRoute>
+              } />
+
+              <Route path="/volenteer/*" element={
+                <ProtectedRoute>
+                  <MainLayout>
+                    <Volunteering />
+                  </MainLayout>
+                </ProtectedRoute>
+              } />
+
+              {/* Catch-all redirect */}
+              <Route path="*" element={<Navigate to="/admin" replace />} />
             </Routes>
           </Suspense>
         </ErrorBoundary>
