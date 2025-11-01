@@ -414,3 +414,304 @@ export const getTags = async (req: Request, res: Response, next: NextFunction) =
     next(error);
   }
 };
+
+// ============================================
+// ADMIN/CRUD OPERATIONS
+// ============================================
+
+// @route   GET /api/blog/all
+// @desc    Get all blogs including drafts (for admin)
+// @access  Admin
+export const getAllBlogsForAdmin = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const {
+      page = 1,
+      limit = 10,
+      search,
+      category,
+      status,
+      sort = '-createdAt'
+    } = req.query;
+
+    const query: any = {};
+
+    // Search
+    if (search) {
+      query.$or = [
+        { title: { $regex: search, $options: 'i' } },
+        { content: { $regex: search, $options: 'i' } },
+        { excerpt: { $regex: search, $options: 'i' } }
+      ];
+    }
+
+    // Category filter
+    if (category) {
+      query.category = category;
+    }
+
+    // Status filter
+    if (status) {
+      query.status = status;
+    }
+
+    const pageNum = parseInt(page as string);
+    const limitNum = parseInt(limit as string);
+    const skip = (pageNum - 1) * limitNum;
+
+    const [blogs, total] = await Promise.all([
+      Blog.find(query)
+        .sort(sort as string)
+        .skip(skip)
+        .limit(limitNum),
+      Blog.countDocuments(query)
+    ]);
+
+    res.json({
+      success: true,
+      data: {
+        blogs,
+        pagination: {
+          currentPage: pageNum,
+          totalPages: Math.ceil(total / limitNum),
+          totalBlogs: total,
+          limit: limitNum
+        }
+      }
+    });
+  } catch (error: any) {
+    next(error);
+  }
+};
+
+// @route   GET /api/blog/edit/:id
+// @desc    Get blog by ID for editing (includes drafts)
+// @access  Admin
+export const getBlogByIdForEdit = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id } = req.params;
+
+    const blog = await Blog.findById(id);
+
+    if (!blog) {
+      return res.status(404).json({
+        success: false,
+        message: 'Blog not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      data: { blog }
+    });
+  } catch (error: any) {
+    next(error);
+  }
+};
+
+// @route   POST /api/blog
+// @desc    Create a new blog
+// @access  Admin
+export const createBlog = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const {
+      title,
+      slug,
+      content,
+      excerpt,
+      featuredImage,
+      category,
+      tags,
+      metaTitle,
+      metaDescription,
+      keywords,
+      status = 'draft',
+      isFeatured = false
+    } = req.body;
+
+    // Get author info from headers (set by admin service or auth middleware)
+    const authorId = req.headers['x-user-id'] as string;
+    const authorName = req.headers['x-user-name'] as string;
+    const authorEmail = req.headers['x-user-email'] as string;
+
+    // Validation
+    if (!title || !content) {
+      return res.status(400).json({
+        success: false,
+        message: 'Title and content are required'
+      });
+    }
+
+    // Generate slug from title if not provided
+    const blogSlug = slug || title
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+
+    // Check if slug already exists
+    const existingBlog = await Blog.findOne({ slug: blogSlug });
+    if (existingBlog) {
+      return res.status(400).json({
+        success: false,
+        message: 'A blog with this slug already exists'
+      });
+    }
+
+    // Create blog
+    const blog = await Blog.create({
+      title,
+      slug: blogSlug,
+      content,
+      excerpt: excerpt || content.substring(0, 200),
+      featuredImage,
+      category,
+      tags: tags || [],
+      author: {
+        id: authorId,
+        name: authorName || 'Admin',
+        email: authorEmail || 'admin@example.com'
+      },
+      seo: {
+        metaTitle: metaTitle || title,
+        metaDescription: metaDescription || excerpt || content.substring(0, 160),
+        keywords: keywords || []
+      },
+      status,
+      isFeatured,
+      isPublished: status === 'published',
+      publishedAt: status === 'published' ? new Date() : undefined
+    });
+
+    res.status(201).json({
+      success: true,
+      message: 'Blog created successfully',
+      data: { blog }
+    });
+  } catch (error: any) {
+    next(error);
+  }
+};
+
+// @route   PUT /api/blog/:id
+// @desc    Update a blog
+// @access  Admin
+export const updateBlog = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id } = req.params;
+    const updateData = req.body;
+
+    const blog = await Blog.findById(id);
+
+    if (!blog) {
+      return res.status(404).json({
+        success: false,
+        message: 'Blog not found'
+      });
+    }
+
+    // If slug is being updated, check if it's unique
+    if (updateData.slug && updateData.slug !== blog.slug) {
+      const existingBlog = await Blog.findOne({ slug: updateData.slug });
+      if (existingBlog) {
+        return res.status(400).json({
+          success: false,
+          message: 'A blog with this slug already exists'
+        });
+      }
+    }
+
+    // Update SEO fields if provided
+    if (updateData.metaTitle || updateData.metaDescription || updateData.keywords) {
+      updateData.seo = {
+        metaTitle: updateData.metaTitle || blog.seo?.metaTitle,
+        metaDescription: updateData.metaDescription || blog.seo?.metaDescription,
+        keywords: updateData.keywords || blog.seo?.keywords || []
+      };
+      delete updateData.metaTitle;
+      delete updateData.metaDescription;
+      delete updateData.keywords;
+    }
+
+    // Update blog
+    const updatedBlog = await Blog.findByIdAndUpdate(
+      id,
+      { $set: updateData },
+      { new: true, runValidators: true }
+    );
+
+    res.json({
+      success: true,
+      message: 'Blog updated successfully',
+      data: { blog: updatedBlog }
+    });
+  } catch (error: any) {
+    next(error);
+  }
+};
+
+// @route   DELETE /api/blog/:id
+// @desc    Delete a blog
+// @access  Admin
+export const deleteBlog = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id } = req.params;
+
+    const blog = await Blog.findById(id);
+
+    if (!blog) {
+      return res.status(404).json({
+        success: false,
+        message: 'Blog not found'
+      });
+    }
+
+    await Blog.findByIdAndDelete(id);
+
+    // Also delete all ratings for this blog
+    await Rating.deleteMany({ blogId: id });
+
+    res.json({
+      success: true,
+      message: 'Blog deleted successfully'
+    });
+  } catch (error: any) {
+    next(error);
+  }
+};
+
+// @route   POST /api/blog/:id/publish
+// @desc    Publish a blog (change status from draft to published)
+// @access  Admin
+export const publishBlog = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id } = req.params;
+
+    const blog = await Blog.findById(id);
+
+    if (!blog) {
+      return res.status(404).json({
+        success: false,
+        message: 'Blog not found'
+      });
+    }
+
+    if (blog.status === 'published') {
+      return res.status(400).json({
+        success: false,
+        message: 'Blog is already published'
+      });
+    }
+
+    blog.status = 'published';
+    blog.isPublished = true;
+    blog.publishedAt = new Date();
+    await blog.save();
+
+    res.json({
+      success: true,
+      message: 'Blog published successfully',
+      data: { blog }
+    });
+  } catch (error: any) {
+    next(error);
+  }
+};

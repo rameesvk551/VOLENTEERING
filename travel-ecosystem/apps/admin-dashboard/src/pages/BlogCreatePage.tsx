@@ -17,6 +17,8 @@ import {
 } from '@/components/ui/select';
 import { ArrowLeft, Upload, X, Save, Send, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { createBlog, publishBlog as publishBlogApi } from '@/services/adminApi';
+import { useToast } from '@/hooks/use-toast';
 
 interface FormData {
   title: string;
@@ -41,6 +43,7 @@ interface SEOScore {
 
 export function BlogCreatePage() {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [isPublishing, setIsPublishing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [formData, setFormData] = useState<FormData>({
@@ -279,11 +282,39 @@ export function BlogCreatePage() {
 
   const handleSaveDraft = async () => {
     setIsSaving(true);
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    console.log('Saving draft:', formData);
-    setIsSaving(false);
-    // Show success message
+    try {
+      const blogData: any = {
+        title: formData.title,
+        slug: formData.slug,
+        content: formData.content,
+        excerpt: formData.content.replace(/<[^>]*>/g, '').substring(0, 200),
+        featuredImage: formData.featuredImage,
+        category: formData.category,
+        tags: formData.tags,
+        metaTitle: formData.metaTitle,
+        metaDescription: formData.metaDescription,
+        keywords: formData.keywords,
+        status: 'draft' as const
+      };
+
+      await createBlog(blogData);
+      
+      localStorage.removeItem('blog_draft');
+      toast({
+        title: 'Success',
+        description: 'Draft saved successfully',
+      });
+      navigate('/admin/blog');
+    } catch (error: any) {
+      console.error('Error saving draft:', error);
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to save draft',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handlePublish = async () => {
@@ -292,12 +323,39 @@ export function BlogCreatePage() {
     }
 
     setIsPublishing(true);
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    console.log('Publishing:', formData);
-    localStorage.removeItem('blog_draft');
-    setIsPublishing(false);
-    navigate('/admin/blog');
+    try {
+      const blogData: any = {
+        title: formData.title,
+        slug: formData.slug,
+        content: formData.content,
+        excerpt: formData.content.replace(/<[^>]*>/g, '').substring(0, 200),
+        featuredImage: formData.featuredImage,
+        category: formData.category,
+        tags: formData.tags,
+        metaTitle: formData.metaTitle,
+        metaDescription: formData.metaDescription,
+        keywords: formData.keywords,
+        status: 'published' as const
+      };
+
+      await createBlog(blogData);
+      
+      localStorage.removeItem('blog_draft');
+      toast({
+        title: 'Success',
+        description: 'Blog published successfully',
+      });
+      navigate('/admin/blog');
+    } catch (error: any) {
+      console.error('Error publishing blog:', error);
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to publish blog',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsPublishing(false);
+    }
   };
 
   const getSEOScoreColor = (score: number) => {

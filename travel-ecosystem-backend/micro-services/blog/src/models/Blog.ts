@@ -58,7 +58,7 @@ const blogSchema = new Schema<IBlog>(
     },
     featuredImage: {
       type: String,
-      required: [true, 'Featured image is required']
+      required: false // Made optional to allow blog creation without image
     },
     author: {
       id: {

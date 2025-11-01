@@ -11,9 +11,13 @@ export interface CreateBlogInput {
   title: string;
   content: string;
   excerpt: string;
-  featuredImage: string;
+  featuredImage?: string | null;
   category: string;
   tags: string[];
+  slug?: string;
+  metaTitle?: string;
+  metaDescription?: string;
+  keywords?: string[];
   status?: 'draft' | 'published' | 'archived';
   isFeatured?: boolean;
   seo?: {
@@ -88,7 +92,8 @@ export const getAllBlogsAdmin = async (params?: {
   if (params?.category) queryParams.append('category', params.category);
   if (params?.status) queryParams.append('status', params.status);
 
-  const response = await fetch(`${ADMIN_API_URL}/posts?${queryParams}`, {
+  // Call blog microservice directly
+  const response = await fetch(`${BLOG_API_URL}/all?${queryParams}`, {
     headers: getAuthHeaders(),
   });
 
@@ -103,7 +108,8 @@ export const getAllBlogsAdmin = async (params?: {
  * Get blog by ID for editing
  */
 export const getBlogByIdAdmin = async (id: string): Promise<any> => {
-  const response = await fetch(`${ADMIN_API_URL}/posts/${id}`, {
+  // Call blog microservice directly
+  const response = await fetch(`${BLOG_API_URL}/edit/${id}`, {
     headers: getAuthHeaders(),
   });
 
@@ -120,7 +126,8 @@ export const getBlogByIdAdmin = async (id: string): Promise<any> => {
 export const createBlog = async (blogData: CreateBlogInput): Promise<any> => {
   const user = getUserInfo();
   
-  const response = await fetch(`${ADMIN_API_URL}/posts`, {
+  // Call blog microservice directly
+  const response = await fetch(`${BLOG_API_URL}`, {
     method: 'POST',
     headers: getAuthHeaders(),
     body: JSON.stringify({
@@ -145,7 +152,8 @@ export const createBlog = async (blogData: CreateBlogInput): Promise<any> => {
  * Update a blog
  */
 export const updateBlog = async (id: string, blogData: Partial<CreateBlogInput>): Promise<any> => {
-  const response = await fetch(`${ADMIN_API_URL}/posts/${id}`, {
+  // Call blog microservice directly
+  const response = await fetch(`${BLOG_API_URL}/${id}`, {
     method: 'PUT',
     headers: getAuthHeaders(),
     body: JSON.stringify(blogData),
@@ -163,7 +171,8 @@ export const updateBlog = async (id: string, blogData: Partial<CreateBlogInput>)
  * Delete a blog
  */
 export const deleteBlog = async (id: string): Promise<void> => {
-  const response = await fetch(`${ADMIN_API_URL}/posts/${id}`, {
+  // Call blog microservice directly
+  const response = await fetch(`${BLOG_API_URL}/${id}`, {
     method: 'DELETE',
     headers: getAuthHeaders(),
   });
@@ -178,7 +187,8 @@ export const deleteBlog = async (id: string): Promise<void> => {
  * Publish a blog
  */
 export const publishBlog = async (id: string): Promise<any> => {
-  const response = await fetch(`${ADMIN_API_URL}/posts/${id}/publish`, {
+  // Call blog microservice directly
+  const response = await fetch(`${BLOG_API_URL}/${id}/publish`, {
     method: 'POST',
     headers: getAuthHeaders(),
   });

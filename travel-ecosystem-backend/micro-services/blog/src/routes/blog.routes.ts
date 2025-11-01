@@ -11,7 +11,13 @@ import {
   rateBlog,
   getUserRating,
   getCategories,
-  getTags
+  getTags,
+  createBlog,
+  updateBlog,
+  deleteBlog,
+  publishBlog,
+  getBlogByIdForEdit,
+  getAllBlogsForAdmin
 } from '../controllers/blog.controller.js';
 
 const router = express.Router();
@@ -25,6 +31,16 @@ router.get('/trending', getTrendingBlogs);
 router.get('/categories/list', getCategories);
 router.get('/tags/list', getTags);
 router.get('/category/:category', getBlogsByCategory);
+
+// Admin/Internal routes for CRUD operations
+router.post('/', createBlog);  // Create blog
+router.get('/all', getAllBlogsForAdmin);  // Get all blogs including drafts
+router.get('/edit/:id', getBlogByIdForEdit);  // Get blog by ID for editing
+router.put('/:id', updateBlog);  // Update blog
+router.delete('/:id', deleteBlog);  // Delete blog
+router.post('/:id/publish', publishBlog);  // Publish blog
+
+// Public blog detail routes (must be after specific routes)
 router.get('/id/:id', getBlogById);
 router.get('/:slug', getBlogBySlug);
 
