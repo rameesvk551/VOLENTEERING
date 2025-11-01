@@ -335,7 +335,7 @@ export function BlogCreatePage() {
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => navigate('/blog')}
+                onClick={() => navigate('/admin/blog')}
                 aria-label="Go back to blog list"
               >
                 <ArrowLeft className="h-5 w-5" />

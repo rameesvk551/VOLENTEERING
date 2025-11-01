@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { RootState } from '@/store';
+import { RootState, AppDispatch } from '@/store';
+import { useAppDispatch, useAppSelector } from '@/store';
 import { fetchPosts, deletePost, publishPost } from '@/store/slices/blogSlice';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,12 +11,12 @@ import { Plus, Edit, Trash2, Eye } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
 
 export function BlogPage() {
-  const dispatch = useDispatch();
+  const dispatch = useAppDispatch();
   const navigate = useNavigate();
-  const { posts, loading } = useSelector((state: RootState) => state.blog);
+  const { posts, loading } = useAppSelector((state) => state.blog);
 
   useEffect(() => {
-    dispatch(fetchPosts());
+    dispatch(fetchPosts({}));
   }, [dispatch]);
 
   const getStatusBadge = (status: string) => {
