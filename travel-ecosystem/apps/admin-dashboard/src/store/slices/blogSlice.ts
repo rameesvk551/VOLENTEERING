@@ -23,8 +23,9 @@ const initialState: BlogState = {
 };
 
 export const fetchPosts = createAsyncThunk('blog/fetchPosts', async (params?: any) => {
-  const response = await api.get<PaginatedResponse<BlogPost>>('/blog/posts', { params });
-  return response.data;
+  const response = await api.get('/blog/posts', { params });
+  // Backend returns: { success: true, data: { blogs: [], pagination: {...} } }
+  return response.data.data;
 });
 
 export const fetchPostById = createAsyncThunk('blog/fetchPostById', async (id: string) => {
@@ -76,8 +77,9 @@ const blogSlice = createSlice({
       })
       .addCase(fetchPosts.fulfilled, (state, action) => {
         state.loading = false;
-        state.posts = action.payload.items;
-        state.total = action.payload.total;
+        // Backend returns: { blogs: [], pagination: { totalBlogs: ... } }
+        state.posts = action.payload.blogs || [];
+        state.total = action.payload.pagination?.totalBlogs || 0;
       })
       .addCase(fetchPosts.rejected, (state, action) => {
         state.loading = false;

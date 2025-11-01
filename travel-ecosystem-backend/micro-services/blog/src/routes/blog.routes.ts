@@ -18,6 +18,7 @@ const router = express.Router();
 
 // Public routes
 router.get('/', getAllBlogs);
+router.get('/posts', getAllBlogs); // Alias for /api/blog/
 router.get('/featured', getFeaturedBlogs);
 router.get('/popular', getPopularBlogs);
 router.get('/trending', getTrendingBlogs);

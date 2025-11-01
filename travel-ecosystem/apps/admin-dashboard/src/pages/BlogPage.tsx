@@ -15,6 +15,9 @@ export function BlogPage() {
   const navigate = useNavigate();
   const { posts, loading } = useAppSelector((state) => state.blog);
 
+  // Ensure posts is always an array
+  const blogPosts = posts || [];
+
   useEffect(() => {
     dispatch(fetchPosts({}));
   }, [dispatch]);
@@ -47,7 +50,7 @@ export function BlogPage() {
             <CardTitle className="text-sm font-medium">Total Posts</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{posts.length}</div>
+            <div className="text-2xl font-bold">{blogPosts.length}</div>
           </CardContent>
         </Card>
         <Card>
@@ -56,7 +59,7 @@ export function BlogPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-600">
-              {posts.filter((p) => p.status === 'published').length}
+              {blogPosts.filter((p) => p.status === 'published').length}
             </div>
           </CardContent>
         </Card>
@@ -66,7 +69,7 @@ export function BlogPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-orange-600">
-              {posts.filter((p) => p.status === 'draft').length}
+              {blogPosts.filter((p) => p.status === 'draft').length}
             </div>
           </CardContent>
         </Card>
@@ -96,7 +99,7 @@ export function BlogPage() {
                   </TableCell>
                 </TableRow>
               ) : (
-                posts.map((post) => (
+                blogPosts.map((post) => (
                   <TableRow key={post.id}>
                     <TableCell className="font-medium">{post.title}</TableCell>
                     <TableCell>{post.authorName}</TableCell>
