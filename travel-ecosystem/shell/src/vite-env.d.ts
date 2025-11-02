@@ -11,7 +11,7 @@ interface ImportMeta {
 
 // Module Federation type declarations
 declare module 'blog/App' {
-  const App: React.ComponentType;
+  const App: React.ComponentType<{ basePath?: string }>;
   export default App;
 }
 

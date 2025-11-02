@@ -6,16 +6,10 @@
 
 import React from 'react';
 import PostList from '../components/PostList';
-import { useTheme } from '../hooks/useTheme';
-import Navbar from '../components/Navbar';
 
 const HomePage: React.FC = () => {
-  const { theme, toggleTheme } = useTheme();
-
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900">
-      {/* Header */}
-      <Navbar />
       {/* Hero */}
       <section className="bg-gradient-to-r from-primary-600 to-secondary-600 text-white py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">

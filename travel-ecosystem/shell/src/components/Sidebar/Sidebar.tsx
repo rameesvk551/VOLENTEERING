@@ -32,11 +32,11 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       {/* Sidebar */}
       <aside
         className={`
-          fixed md:static inset-y-0 left-0 z-50
+          fixed inset-y-0 left-0 z-50
           w-64 bg-white dark:bg-gray-800 shadow-xl
           transform transition-transform duration-300 ease-in-out
-          ${isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
-          md:block
+          ${isOpen ? 'translate-x-0' : '-translate-x-full'}
+          md:hidden
         `}
       >
         <div className="h-full flex flex-col p-4">

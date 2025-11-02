@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import ThemeSwitcher from '../ThemeSwitcher/ThemeSwitcher';
 import { useAuth } from '../../context/AuthContext';
@@ -7,21 +7,38 @@ interface NavbarProps {
   onMenuClick: () => void;
 }
 
+interface NavItem {
+  label: string;
+  href: string;
+}
+
+const navItems: NavItem[] = [
+  { label: 'Travel Hub', href: '/travel-hub' },
+  { label: 'Visa Explorer', href: '/visa-explorer' },
+  { label: 'Trip Planner', href: '/trip-planner' },
+  { label: 'Blog', href: '/blog' },
+  { label: 'Volunteering', href: '/volunteering' },
+];
+
 const Navbar: React.FC<NavbarProps> = ({ onMenuClick }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, isAuthenticated, logout } = useAuth();
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [search, setSearch] = useState('');
 
-  const navItems = [
-    { path: '/travel-hub', label: 'Travel Hub' },
-    { path: '/visa-explorer', label: 'Visa Explorer' },
-    { path: '/trip-planner', label: 'Trip Planner' },
-    { path: '/blog', label: 'Blog' },
-    { path: '/volunteering', label: 'Volunteering' },
-  ];
+  const activePath = useMemo(() => {
+    const active = navItems.find((item) => location.pathname.startsWith(item.href));
+    return active?.href ?? '';
+  }, [location.pathname]);
 
-  const isActive = (path: string) => location.pathname.startsWith(path);
+  const handleSearch = (event: React.FormEvent) => {
+    event.preventDefault();
+    if (search.trim()) {
+      navigate(`/blog?search=${encodeURIComponent(search.trim())}`);
+      setSearch('');
+    }
+  };
 
   const handleLogout = () => {
     logout();
@@ -30,120 +47,183 @@ const Navbar: React.FC<NavbarProps> = ({ onMenuClick }) => {
   };
 
   return (
-    <nav className="bg-white dark:bg-gray-800 shadow-lg sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16">
-          <div className="flex items-center">
-            <button
-              onClick={onMenuClick}
-              className="md:hidden p-2 rounded-md text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-              aria-label="Toggle menu"
+    <header className="w-full bg-white dark:bg-gray-900 shadow-md sticky top-0 z-50">
+      <div className="max-w-7xl mx-auto flex items-center justify-between px-4 py-3">
+        <Link to="/" className="flex items-center gap-2">
+          <span className="text-2xl">🌍</span>
+          <span className="text-xl font-bold text-gray-900 dark:text-white tracking-tight">RAIH</span>
+        </Link>
+
+        <nav className="hidden md:flex items-center gap-6">
+          {navItems.map((item) => (
+            <Link
+              key={item.label}
+              to={item.href}
+              className={`px-4 py-2 rounded hover:bg-gray-100 dark:hover:bg-gray-800 focus:bg-gray-200 dark:focus:bg-gray-700 transition-colors ${
+                activePath === item.href ? 'text-blue-600 dark:text-blue-400 font-semibold' : 'text-gray-700 dark:text-gray-200'
+              }`}
             >
-              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              {item.label}
+            </Link>
+          ))}
+
+          <form
+            onSubmit={handleSearch}
+            className="ml-4 flex items-center bg-gray-100 dark:bg-gray-800 rounded-lg px-2 py-1 focus-within:ring-2 focus-within:ring-blue-500 transition w-64"
+            role="search"
+            aria-label="Site search"
+          >
+            <input
+              type="text"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              className="bg-transparent outline-none px-2 py-1 w-full text-gray-800 dark:text-gray-200 placeholder-gray-500 dark:placeholder-gray-400"
+              placeholder="Search..."
+              aria-label="Search"
+            />
+            <button
+              type="submit"
+              className="p-2 text-blue-600 dark:text-blue-400 hover:text-blue-700"
+              aria-label="Submit search"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <circle cx="11" cy="11" r="7" />
+                <line x1="21" y1="21" x2="16.65" y2="16.65" />
               </svg>
             </button>
+          </form>
 
-            <Link to="/" className="flex items-center space-x-2 ml-2 md:ml-0">
-              <span className="text-2xl">🌍</span>
-              <span className="text-xl font-bold text-gray-900 dark:text-white">
-                Travel Ecosystem
-              </span>
-            </Link>
-          </div>
+          <ThemeSwitcher />
 
-          <div className="hidden md:flex items-center space-x-4">
-            {navItems.map((item) => (
-              <Link
-                key={item.path}
-                to={item.path}
-                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                  isActive(item.path)
-                    ? 'bg-blue-600 text-white'
-                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
-                }`}
+          {isAuthenticated ? (
+            <div className="relative">
+              <button
+                onClick={() => setShowUserMenu(!showUserMenu)}
+                className="flex items-center gap-2 px-3 py-2 rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
               >
-                {item.label}
+                <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white font-semibold">
+                  {user?.name?.charAt(0).toUpperCase()}
+                </div>
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-200">{user?.name}</span>
+                <svg className="w-4 h-4 text-gray-500 dark:text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+
+              {showUserMenu && (
+                <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-xl shadow-xl py-2 border border-gray-100 dark:border-gray-700">
+                  <div className="px-4 pb-3 border-b border-gray-100 dark:border-gray-700">
+                    <p className="text-sm font-semibold text-gray-900 dark:text-white">{user?.name}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{user?.email}</p>
+                  </div>
+                  <Link
+                    to="/profile"
+                    className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                    onClick={() => setShowUserMenu(false)}
+                  >
+                    Profile
+                  </Link>
+                  <Link
+                    to="/settings"
+                    className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                    onClick={() => setShowUserMenu(false)}
+                  >
+                    Settings
+                  </Link>
+                  {user?.role === 'admin' && (
+                    <Link
+                      to="/admin"
+                      className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                      onClick={() => setShowUserMenu(false)}
+                    >
+                      Admin Dashboard
+                    </Link>
+                  )}
+                  <button
+                    onClick={handleLogout}
+                    className="block w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-gray-100 dark:hover:bg-gray-700"
+                  >
+                    Sign out
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <Link
+                to="/login"
+                className="px-4 py-2 text-sm font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full"
+              >
+                Sign in
               </Link>
-            ))}
-          </div>
+              <Link
+                to="/signup"
+                className="px-4 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-full shadow"
+              >
+                Sign up
+              </Link>
+            </div>
+          )}
+        </nav>
 
-          <div className="flex items-center space-x-3">
-            <ThemeSwitcher />
-            
-            {isAuthenticated ? (
-              <div className="relative">
-                <button
-                  onClick={() => setShowUserMenu(!showUserMenu)}
-                  className="flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                >
-                  <div className="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-white font-semibold">
-                    {user?.name?.charAt(0).toUpperCase()}
-                  </div>
-                  <span className="hidden md:block">{user?.name}</span>
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </button>
+        <div className="flex md:hidden items-center gap-2">
+          <form
+            onSubmit={handleSearch}
+            className="flex items-center bg-gray-100 dark:bg-gray-800 rounded-lg px-2 py-1 focus-within:ring-2 focus-within:ring-blue-500 transition w-32"
+            role="search"
+            aria-label="Site search"
+          >
+            <input
+              type="text"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              className="bg-transparent outline-none px-2 py-1 w-full text-gray-800 dark:text-gray-200 placeholder-gray-500 dark:placeholder-gray-400"
+              placeholder="Search..."
+              aria-label="Search"
+            />
+            <button
+              type="submit"
+              className="p-2 text-blue-600 dark:text-blue-400"
+              aria-label="Submit search"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <circle cx="11" cy="11" r="7" />
+                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
+            </button>
+          </form>
 
-                {showUserMenu && (
-                  <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg py-1 z-50">
-                    <div className="px-4 py-2 border-b border-gray-200 dark:border-gray-700">
-                      <p className="text-sm font-medium text-gray-900 dark:text-white">{user?.name}</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">{user?.email}</p>
-                    </div>
-                    <Link
-                      to="/profile"
-                      className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                      onClick={() => setShowUserMenu(false)}
-                    >
-                      Profile
-                    </Link>
-                    <Link
-                      to="/settings"
-                      className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                      onClick={() => setShowUserMenu(false)}
-                    >
-                      Settings
-                    </Link>
-                    {user?.role === 'admin' && (
-                      <Link
-                        to="/admin"
-                        className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                        onClick={() => setShowUserMenu(false)}
-                      >
-                        Admin Dashboard
-                      </Link>
-                    )}
-                    <button
-                      onClick={handleLogout}
-                      className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100 dark:hover:bg-gray-700"
-                    >
-                      Sign out
-                    </button>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="flex items-center space-x-2">
-                <Link
-                  to="/login"
-                  className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
-                >
-                  Sign in
-                </Link>
-                <Link
-                  to="/signup"
-                  className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-md"
-                >
-                  Sign up
-                </Link>
-              </div>
-            )}
-          </div>
+          <ThemeSwitcher />
+
+          {isAuthenticated ? (
+            <button
+              onClick={() => navigate('/profile')}
+              className="w-9 h-9 rounded-full bg-blue-600 text-white font-semibold"
+              aria-label="Open profile"
+            >
+              {user?.name?.charAt(0).toUpperCase()}
+            </button>
+          ) : (
+            <Link
+              to="/login"
+              className="px-3 py-1.5 text-sm font-semibold text-white bg-blue-600 rounded-full"
+            >
+              Sign in
+            </Link>
+          )}
+
+          <button
+            onClick={onMenuClick}
+            className="p-2 rounded-lg text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+            aria-label="Open navigation menu"
+          >
+            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
         </div>
       </div>
-    </nav>
+    </header>
   );
 };
 

@@ -5,17 +5,16 @@
  */
 
 import React from 'react';
+import { Link, useParams } from 'react-router-dom';
+import { useBasePath } from '../context/BasePathContext';
 import { dummyPosts } from '../data/dummyPosts';
-import { formatDate, formatReadingTime } from '../utils/format';
-import { sharePost } from '../utils/seo';
+import { formatDate } from '../utils/format';
 import Tag from '../components/Tag';
 import Breadcrumbs from '../components/Breadcrumbs';
-import Navbar from '../components/Navbar';
-
-import { useParams } from 'react-router-dom';
 
 const PostPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
+  const basePath = useBasePath();
   const post = dummyPosts.find(p => p.slug === slug);
   const loading = false;
   const error = !post ? 'Post not found' : null;
@@ -37,7 +36,7 @@ const PostPage: React.FC = () => {
         <div className="text-center">
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Post Not Found</h2>
           <p className="text-gray-600 dark:text-gray-400 mb-4">{error || 'The post does not exist.'}</p>
-          <a href="/" className="btn btn-primary">Back to Home</a>
+          <Link to={basePath === '/' ? '/' : basePath} className="btn btn-primary">Back to Posts</Link>
         </div>
       </div>
     );
@@ -45,13 +44,12 @@ const PostPage: React.FC = () => {
 
   const breadcrumbItems = [
     { label: 'Home', href: '/' },
-  { label: 'Blog', href: '/blog' },
+    { label: 'Blog', href: '/blog' },
     { label: post.title },
   ];
 
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900">
-      <Navbar />
       <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <Breadcrumbs items={breadcrumbItems} />
@@ -91,9 +89,9 @@ const PostPage: React.FC = () => {
         {/* No admin actions: only display post and sharing UI */}
 
         <div className="text-center">
-          <a href="/" className="text-primary-600 dark:text-primary-400 hover:underline font-medium">
+          <Link to={basePath === '/' ? '/' : basePath} className="text-primary-600 dark:text-primary-400 hover:underline font-medium">
             ← Back to all posts
-          </a>
+          </Link>
         </div>
       </article>
     </div>

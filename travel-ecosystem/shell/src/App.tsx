@@ -67,7 +67,7 @@ function App() {
               <Route path="/blog/*" element={
                 <ProtectedRoute>
                   <MainLayout>
-                    <Blog />
+                    <Blog basePath="/blog" />
                   </MainLayout>
                 </ProtectedRoute>
               } />

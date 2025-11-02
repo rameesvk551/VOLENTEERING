@@ -16,7 +16,7 @@ import '../styles/index.css';
 // Render React app
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <App />
+    <App basePath="/" />
   </React.StrictMode>
 );
 

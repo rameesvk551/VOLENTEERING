@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { Link } from "react-router-dom";
 import { SubMenu, SubMenuProps } from "./SubMenu";
 
 export type NavItemProps = {
@@ -75,8 +76,8 @@ export const NavItem: React.FC<NavItemProps> = ({
   }
 
   return (
-    <a
-      href={href}
+    <Link
+      to={href || '#'}
       className={baseClasses}
       onClick={onClick}
       tabIndex={0}
@@ -84,6 +85,6 @@ export const NavItem: React.FC<NavItemProps> = ({
     >
       {icon && <span className="mr-2">{icon}</span>}
       {label}
-    </a>
+    </Link>
   );
 };

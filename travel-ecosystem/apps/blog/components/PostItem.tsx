@@ -5,7 +5,9 @@
  */
 
 import React from 'react';
-import { formatDate, formatReadingTime, truncate } from '../utils/format';
+import { useNavigate } from 'react-router-dom';
+import { useBasePath } from '../context/BasePathContext';
+import { formatDate, truncate } from '../utils/format';
 import Tag from './Tag';
 import type { BlogPost } from '../data/dummyPosts';
 
@@ -15,11 +17,15 @@ interface PostItemProps {
 }
 
 const PostItem: React.FC<PostItemProps> = ({ post, onClick }) => {
+  const navigate = useNavigate();
+  const basePath = useBasePath();
+
   const handleClick = () => {
     if (onClick) {
       onClick(post.slug);
     } else {
-      window.location.href = `/blog/${post.slug}`;
+      const slugPath = basePath === '/' ? `/${post.slug}` : `${basePath}/${post.slug}`;
+      navigate(slugPath);
     }
   };
 

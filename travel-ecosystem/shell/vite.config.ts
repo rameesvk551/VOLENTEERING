@@ -19,12 +19,12 @@ export default defineConfig({
         blog: {
           type: 'module',
           name: 'blog',
-          entry: 'http://localhost:1002/assets/remoteEntry.js',
+          entry: 'http://localhost:1002/remoteEntry.js',
         },
         visaExplorer: {
           type: 'module',
           name: 'visaExplorer',
-          entry: 'http://localhost:1004/assets/remoteEntry.js',
+          entry: 'http://localhost:1004/remoteEntry.js',
         },
         adminDashboard: {
           type: 'module',
@@ -34,12 +34,12 @@ export default defineConfig({
         tripPlanner: {
           type: 'module',
           name: 'tripPlanner',
-          entry: 'http://localhost:1005/assets/remoteEntry.js',
+          entry: 'http://localhost:1005/remoteEntry.js',
         },
         volunteering: {
           type: 'module',
           name: 'volunteering',
-          entry: 'http://localhost:1006/assets/remoteEntry.js',
+          entry: 'http://localhost:1006/remoteEntry.js',
         },
       },
       shared: sharedDeps
