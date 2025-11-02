@@ -67,12 +67,18 @@ export function BlogCreatePage() {
   // Mock data - replace with API calls
   const categories = [
     'Travel Tips',
-    'Destination Guides',
-    'Volunteering',
-    'Culture & Heritage',
-    'Adventure Travel',
+    'Destinations',
+    'Adventure',
+    'Culture',
+    'Food & Drink',
     'Budget Travel',
-    'Food & Cuisine',
+    'Luxury Travel',
+    'Solo Travel',
+    'Family Travel',
+    'Volunteering',
+    'Travel Gear',
+    'Photography',
+    'Other'
   ];
 
   const availableTags = [
@@ -194,9 +200,24 @@ export function BlogCreatePage() {
     const draft = localStorage.getItem('blog_draft');
     if (draft) {
       try {
-        setFormData(JSON.parse(draft));
+        const parsedDraft = JSON.parse(draft);
+        
+        // Validate category against current valid categories
+        if (parsedDraft.category && !categories.includes(parsedDraft.category)) {
+          console.warn(`Draft has invalid category "${parsedDraft.category}". Clearing category.`);
+          parsedDraft.category = '';
+          toast({
+            title: 'Draft Updated',
+            description: `The category "${parsedDraft.category}" is no longer valid. Please select a new category.`,
+            variant: 'default',
+          });
+        }
+        
+        setFormData(parsedDraft);
       } catch (e) {
         console.error('Failed to load draft:', e);
+        // Clear invalid draft
+        localStorage.removeItem('blog_draft');
       }
     }
   }, []);
@@ -251,6 +272,29 @@ export function BlogCreatePage() {
     );
   };
 
+  const clearDraft = () => {
+    if (confirm('Are you sure you want to clear the draft? This will reset the form.')) {
+      localStorage.removeItem('blog_draft');
+      setFormData({
+        title: '',
+        slug: '',
+        metaTitle: '',
+        metaDescription: '',
+        keywords: [],
+        featuredImage: null,
+        category: '',
+        tags: [],
+        content: '',
+      });
+      setImagePreview(null);
+      setErrors({});
+      toast({
+        title: 'Draft Cleared',
+        description: 'Form has been reset',
+      });
+    }
+  };
+
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
 
@@ -274,6 +318,12 @@ export function BlogCreatePage() {
     }
     if (!formData.content.trim() || formData.content === '<p><br></p>') {
       newErrors.content = 'Content is required';
+    } else {
+      // Strip HTML tags and check minimum length
+      const contentText = formData.content.replace(/<[^>]*>/g, '').trim();
+      if (contentText.length < 100) {
+        newErrors.content = 'Content must be at least 100 characters';
+      }
     }
 
     setErrors(newErrors);
@@ -283,6 +333,10 @@ export function BlogCreatePage() {
   const handleSaveDraft = async () => {
     setIsSaving(true);
     try {
+      // Debug: Check localStorage for user
+      const authUser = localStorage.getItem('auth_user');
+      console.log('🔍 Auth user from localStorage:', authUser);
+      
       const blogData: any = {
         title: formData.title,
         slug: formData.slug,
@@ -297,6 +351,7 @@ export function BlogCreatePage() {
         status: 'draft' as const
       };
 
+      console.log('📤 Sending blog data:', blogData);
       await createBlog(blogData);
       
       localStorage.removeItem('blog_draft');

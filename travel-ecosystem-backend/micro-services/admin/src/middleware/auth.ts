@@ -11,13 +11,18 @@ export interface AuthRequest extends Request {
 
 export const authenticate = (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    const token = req.headers.authorization?.split(' ')[1];
-    
+    const authHeader = req.headers.authorization;
+    const bearerToken = authHeader?.startsWith('Bearer ')
+      ? authHeader.slice(7).trim()
+      : authHeader?.trim();
+    const token = bearerToken || (req as any).cookies?.token;
+
     if (!token) {
       throw new AppError('No token provided', 401);
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret') as { id: string; role: string };
+  const jwtSecret = process.env.JWT_SECRET || process.env.AUTH_JWT_SECRET || 'volenteering-shared-secret';
+    const decoded = jwt.verify(token, jwtSecret) as { id: string; role: string };
     req.user = decoded;
     next();
   } catch (error) {

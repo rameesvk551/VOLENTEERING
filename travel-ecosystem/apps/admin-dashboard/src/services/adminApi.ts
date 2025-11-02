@@ -43,30 +43,91 @@ export interface User {
 }
 
 const getAuthHeaders = () => {
-  const token = localStorage.getItem('auth_token');
-  return {
+  // Check both possible token locations
+  const token = localStorage.getItem('token') || localStorage.getItem('auth_token');
+
+  if (!token) {
+    console.warn('⚠️ No authentication token found in localStorage');
+  }
+
+  const headers: Record<string, string> = {
     'Content-Type': 'application/json',
-    'Authorization': `Bearer ${token || ''}`,
   };
+
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
+  return headers;
+};
+
+// Helper to decode JWT and extract user info if needed
+const decodeToken = (token: string) => {
+  try {
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+      return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+    }).join(''));
+    return JSON.parse(jsonPayload);
+  } catch (error) {
+    console.error('Failed to decode token:', error);
+    return null;
+  }
 };
 
 const getUserId = () => {
-  const userStr = localStorage.getItem('auth_user');
+  // Check both possible user locations
+  const userStr = localStorage.getItem('user') || localStorage.getItem('auth_user');
   if (!userStr) return null;
   try {
     const user = JSON.parse(userStr);
-    return user.id;
+    return user.id || user._id;
   } catch {
     return null;
   }
 };
 
 const getUserInfo = () => {
-  const userStr = localStorage.getItem('auth_user');
-  if (!userStr) return null;
+  // Check both possible user locations
+  const userStr = localStorage.getItem('user') || localStorage.getItem('auth_user');
+  
+  // Debug logging
+  console.log('🔍 Checking localStorage for user...');
+  console.log('  - localStorage.getItem("user"):', localStorage.getItem('user'));
+  console.log('  - localStorage.getItem("auth_user"):', localStorage.getItem('auth_user'));
+  console.log('  - localStorage.getItem("token"):', localStorage.getItem('token') ? '✓ exists' : '✗ missing');
+  
+  if (!userStr) {
+    console.warn('⚠️ No user found in localStorage. Available keys:', Object.keys(localStorage));
+    
+    // Fallback: try to decode user info from JWT token
+    const token = localStorage.getItem('token') || localStorage.getItem('auth_token');
+    if (token) {
+      console.log('🔄 Attempting to extract user info from JWT token...');
+      const decoded = decodeToken(token);
+      if (decoded) {
+        console.log('✅ Extracted user from token:', decoded);
+        // JWT payload typically has: userId, email, role, etc.
+        return {
+          id: decoded.userId || decoded.id || decoded.sub,
+          _id: decoded.userId || decoded.id || decoded.sub,
+          name: decoded.name || decoded.username || 'Admin User',
+          email: decoded.email || '',
+          role: decoded.role || 'admin',
+        };
+      }
+    }
+    
+    return null;
+  }
+  
   try {
-    return JSON.parse(userStr);
-  } catch {
+    const parsed = JSON.parse(userStr);
+    console.log('✅ Successfully parsed user:', parsed);
+    return parsed;
+  } catch (error) {
+    console.error('❌ Failed to parse user from localStorage:', error);
     return null;
   }
 };
@@ -125,27 +186,42 @@ export const getBlogByIdAdmin = async (id: string): Promise<any> => {
  */
 export const createBlog = async (blogData: CreateBlogInput): Promise<any> => {
   const user = getUserInfo();
+  const payload: any = { ...blogData };
+
+  if (user) {
+    const authorId = user.id || user._id;
+    if (authorId) {
+      payload.author = {
+        id: authorId,
+        name: user.name || user.username || 'Admin',
+        email: user.email || 'admin@example.com',
+      };
+      console.log('📝 Including author data in payload:', payload.author);
+    } else {
+      console.warn('⚠️ User found but missing id fields. Backend will populate author.');
+    }
+  } else {
+    console.warn('⚠️ No user info available locally. Relying on backend headers for author data.');
+  }
+
+  console.log('📦 Full payload being sent to API:', JSON.stringify(payload, null, 2));
   
-  // Call blog microservice directly
-  const response = await fetch(`${BLOG_API_URL}`, {
+  // Call admin microservice which forwards to blog service with proper headers
+  const response = await fetch(`${ADMIN_API_URL}/posts`, {
     method: 'POST',
     headers: getAuthHeaders(),
-    body: JSON.stringify({
-      ...blogData,
-      author: user ? {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-      } : undefined,
-    }),
+    body: JSON.stringify(payload),
   });
 
   if (!response.ok) {
     const error = await response.json();
+    console.error('❌ API Error Response:', error);
     throw new Error(error.message || 'Failed to create blog');
   }
 
-  return await response.json();
+  const result = await response.json();
+  console.log('✅ Blog created successfully:', result);
+  return result;
 };
 
 /**

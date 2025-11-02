@@ -9,6 +9,7 @@ import rateLimit from 'express-rate-limit';
 import { authMiddleware, optionalAuthMiddleware } from './middleware/auth.middleware.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { loggerMiddleware } from './middleware/logger.middleware.js';
+import { validateAdminBlogQuery } from './middleware/validation.middleware.js';
 
 dotenv.config();
 
@@ -124,7 +125,7 @@ app.use('/api/blog', optionalAuthMiddleware, createProxyMiddleware({
 }));
 
 // Admin Service - Protected routes (auth required)
-app.use('/api/admin', authMiddleware, createProxyMiddleware({
+app.use('/api/admin', authMiddleware, validateAdminBlogQuery, createProxyMiddleware({
   target: process.env.ADMIN_SERVICE_URL || 'http://localhost:4002',
   changeOrigin: true,
   pathRewrite: {

@@ -36,8 +36,9 @@ app.use(helmet());
 app.use(cors({ origin: allowedOrigins, credentials: true }));
 app.use(compression());
 app.use(morgan('dev'));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// Increase payload limit to 10MB for handling large requests (blog posts, images, etc.)
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Root route
 app.get('/', (req, res) => {
@@ -72,7 +73,9 @@ app.use('/api/trips', tripRoutes);
 app.use('/api/hosts', hostRoutes);
 app.use('/api/gear', gearRoutes);
 app.use('/api/bookings', bookingRoutes);
+// Mount blog admin routes both under historical path and current gateway path
 app.use('/api/blog', blogRoutes);
+app.use('/api/admin', blogRoutes);
 app.use('/api/finance', financeRoutes);
 app.use('/api/analytics', analyticsRoutes);
 

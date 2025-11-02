@@ -18,7 +18,25 @@ function App() {
   
   return (
     <Routes>
+      {/* Keep standalone routes (root) for local dev */}
       <Route path="/" element={<DashboardLayout />}>
+        <Route index element={<Dashboard />} />
+        <Route path="dashboard" element={<Dashboard />} />
+        <Route path="users" element={<UsersPage />} />
+        <Route path="trips" element={<TripsPage />} />
+        <Route path="hosts" element={<HostsPage />} />
+        <Route path="gear-rentals" element={<GearRentalsPage />} />
+        <Route path="bookings" element={<BookingsPage />} />
+        <Route path="blog" element={<BlogPage />} />
+        <Route path="blog/create" element={<BlogCreatePage />} />
+        <Route path="blog-create" element={<BlogCreatePage />} />
+        <Route path="finance" element={<FinancePage />} />
+        <Route path="analytics" element={<AnalyticsPage />} />
+        <Route path="content" element={<ContentPage />} />
+      </Route>
+
+      {/* Also support being mounted at /admin in the shell (module federation) */}
+      <Route path="/admin/*" element={<DashboardLayout />}>
         <Route index element={<Dashboard />} />
         <Route path="dashboard" element={<Dashboard />} />
         <Route path="users" element={<UsersPage />} />

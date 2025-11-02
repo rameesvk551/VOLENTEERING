@@ -105,7 +105,7 @@ export function BlogPage() {
                     <TableCell>{post.authorName}</TableCell>
                     <TableCell>
                       <div className="flex gap-1">
-                        {post.categories.slice(0, 2).map((cat) => (
+                        {(Array.isArray(post.categories) ? post.categories.slice(0, 2) : []).map((cat) => (
                           <Badge key={cat} variant="outline" className="text-xs">
                             {cat}
                           </Badge>

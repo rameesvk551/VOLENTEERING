@@ -24,7 +24,7 @@ export const authMiddleware = async (
       });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key') as {
+  const decoded = jwt.verify(token, process.env.JWT_SECRET || 'volenteering-shared-secret') as {
       id: string;
       email: string;
       role: string;
@@ -49,7 +49,7 @@ export const optionalAuthMiddleware = async (
     const token = req.headers.authorization?.replace('Bearer ', '');
 
     if (token) {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key') as {
+  const decoded = jwt.verify(token, process.env.JWT_SECRET || 'volenteering-shared-secret') as {
         id: string;
         email: string;
         role: string;
@@ -79,7 +79,7 @@ export const adminAuthMiddleware = async (
       });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key') as {
+  const decoded = jwt.verify(token, process.env.JWT_SECRET || 'volenteering-shared-secret') as {
       id: string;
       email: string;
       role: string;
