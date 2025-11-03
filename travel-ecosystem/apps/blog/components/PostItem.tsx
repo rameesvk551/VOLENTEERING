@@ -40,7 +40,7 @@ const PostItem: React.FC<PostItemProps> = ({ post, onClick, onTagClick }) => {
 
   return (
     <article
-      className="relative rounded-3xl p-0 overflow-hidden cursor-pointer group animate-fade-in"
+      className="relative flex h-full w-full flex-col overflow-hidden rounded-3xl p-0 cursor-pointer group animate-fade-in"
       onClick={handleClick}
       style={{ minHeight: 440, background: 'linear-gradient(135deg, #e0e7ff 0%, #f0fdfa 100%)', boxShadow: '0 8px 32px rgba(60,60,120,0.12)' }}
     >
@@ -76,18 +76,18 @@ const PostItem: React.FC<PostItemProps> = ({ post, onClick, onTagClick }) => {
             {post.tags?.length ? <span>{post.tags[0]}</span> : null}
           </div>
 
-          <h2 className="text-2xl md:text-3xl font-extrabold mb-3 text-gray-900 dark:text-gray-100 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors leading-tight drop-shadow-sm">
+          <h2 className="mb-3 text-2xl font-extrabold leading-tight text-gray-900 transition-colors drop-shadow-sm break-words md:text-3xl dark:text-gray-100 group-hover:text-primary-600 dark:group-hover:text-primary-400">
             {post.title}
           </h2>
 
           {post.excerpt && (
-            <p className="text-gray-700 dark:text-gray-300 mb-4 line-clamp-3 text-base leading-relaxed font-medium">
+            <p className="mb-4 text-base font-medium leading-relaxed text-gray-700 break-words line-clamp-3 dark:text-gray-300">
               {truncate(post.excerpt, 180)}
             </p>
           )}
 
           {post.tags && post.tags.length > 0 && (
-            <div className="flex flex-wrap gap-2 mb-4">
+            <div className="mb-4 flex max-w-full flex-wrap gap-2">
               {post.tags.slice(0, 5).map(tag => (
                 <Tag
                   key={tag}

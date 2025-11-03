@@ -60,7 +60,7 @@ const PostList: React.FC<PostListProps> = ({
   };
 
   const renderSkeletons = () => (
-    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 auto-rows-fr">
       {[...Array(6)].map((_, i) => (
         <div key={i} className="card p-6 animate-pulse">
           <div className="bg-gray-300 dark:bg-gray-700 h-48 rounded-lg mb-4" />
@@ -81,7 +81,7 @@ const PostList: React.FC<PostListProps> = ({
     }
 
     return (
-      <div className="flex flex-wrap gap-2">
+      <div className="flex max-w-full flex-wrap items-center gap-2">
         <button
           type="button"
           className={`px-3 py-1 rounded-full text-sm font-medium border transition-colors ${
@@ -107,8 +107,8 @@ const PostList: React.FC<PostListProps> = ({
 
   return (
     <div className="space-y-8">
-      <div className="sticky top-16 z-10 bg-white dark:bg-gray-900 py-4 flex flex-col gap-4">
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+      <div className="sticky top-20 z-30 flex flex-col gap-4 border-b border-gray-100 bg-white py-4 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between lg:gap-6">
           <CategoryFilter
             categories={categories}
             loading={categoriesLoading}
@@ -117,7 +117,7 @@ const PostList: React.FC<PostListProps> = ({
             onSelectCategory={handleSelectCategory}
           />
 
-          <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-end">
+          <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center sm:justify-end">
             <input
               type="search"
               placeholder="Search posts"
@@ -154,7 +154,7 @@ const PostList: React.FC<PostListProps> = ({
       {loading && renderSkeletons()}
 
       {!loading && !error && posts.length > 0 && (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 auto-rows-fr">
           {posts.map(post => (
             <PostItem
               key={post._id}

@@ -25,7 +25,7 @@ const CategoryFilter: React.FC<CategoryFilterProps> = ({
   }
 
   return (
-    <div className="flex flex-wrap gap-3 justify-center items-center py-6 px-4 bg-gradient-to-r from-blue-50 via-white to-blue-50 dark:from-gray-800 dark:via-gray-900 dark:to-gray-800 rounded-2xl shadow border border-blue-100 dark:border-gray-700">
+  <div className="flex w-full flex-wrap items-center justify-center gap-3 overflow-x-auto rounded-2xl border border-blue-100 bg-gradient-to-r from-blue-50 via-white to-blue-50 px-4 py-5 shadow-sm dark:border-gray-700 dark:from-gray-800 dark:via-gray-900 dark:to-gray-800 sm:justify-start sm:overflow-visible lg:w-auto lg:max-w-2xl lg:self-start lg:px-5">
       <button
         className={`px-4 py-2 rounded-full text-sm font-semibold transition-all border ${
           !selectedCategory

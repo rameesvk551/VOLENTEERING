@@ -14,7 +14,7 @@ interface TagProps {
 }
 
 const Tag: React.FC<TagProps> = ({ name, onClick, variant = 'default', size = 'md' }) => {
-  const baseClasses = 'inline-flex items-center rounded-full font-medium transition-colors';
+  const baseClasses = 'inline-flex max-w-full items-center rounded-full font-medium transition-colors break-words';
 
   const variantClasses = {
     default: 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700',
@@ -32,8 +32,17 @@ const Tag: React.FC<TagProps> = ({ name, onClick, variant = 'default', size = 'm
     onClick ? 'cursor-pointer' : ''
   }`;
 
+  const handleClick = (event: React.MouseEvent<HTMLSpanElement>) => {
+    if (!onClick) {
+      return;
+    }
+
+    event.stopPropagation();
+    onClick(name);
+  };
+
   return (
-    <span className={className} onClick={() => onClick?.(name)}>
+    <span className={className} onClick={handleClick}>
       #{name}
     </span>
   );

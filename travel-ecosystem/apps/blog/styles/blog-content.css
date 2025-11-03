@@ -1,0 +1,138 @@
+/* Blog post content image styling */
+.prose img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 2rem auto;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.prose img:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.15), 0 10px 15px -8px rgba(0, 0, 0, 0.1);
+}
+
+/* Dark mode image styling */
+.dark .prose img {
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
+}
+
+.dark .prose img:hover {
+  box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.4), 0 10px 15px -8px rgba(0, 0, 0, 0.3);
+}
+
+/* Alignment support */
+.prose p img[style*="float: left"],
+.prose img[align="left"] {
+  float: left;
+  margin: 0.5rem 2rem 1.5rem 0;
+  max-width: 50%;
+}
+
+.prose p img[style*="float: right"],
+.prose img[align="right"] {
+  float: right;
+  margin: 0.5rem 0 1.5rem 2rem;
+  max-width: 50%;
+}
+
+.prose p img[style*="display: block"],
+.prose img[align="center"] {
+  margin-left: auto;
+  margin-right: auto;
+  display: block;
+  float: none;
+}
+
+/* Text alignment affects images */
+.prose p[style*="text-align: center"] img,
+.prose div[style*="text-align: center"] img {
+  margin-left: auto;
+  margin-right: auto;
+  float: none;
+}
+
+.prose p[style*="text-align: left"] img,
+.prose div[style*="text-align: left"] img {
+  float: left;
+  margin-right: 2rem;
+  max-width: 50%;
+}
+
+.prose p[style*="text-align: right"] img,
+.prose div[style*="text-align: right"] img {
+  float: right;
+  margin-left: 2rem;
+  max-width: 50%;
+}
+
+/* Clear floats */
+.prose p:has(img) {
+  clear: both;
+}
+
+.prose::after {
+  content: "";
+  display: table;
+  clear: both;
+}
+
+/* Image captions (em after img) */
+.prose img + em {
+  display: block;
+  text-align: center;
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin-top: -1rem;
+  margin-bottom: 2rem;
+  font-style: italic;
+}
+
+.dark .prose img + em {
+  color: #9ca3af;
+}
+
+/* Videos and iframes */
+.prose iframe,
+.prose video {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 2rem auto;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+/* Responsive images on mobile */
+@media (max-width: 768px) {
+  .prose img[style*="float"],
+  .prose img[align="left"],
+  .prose img[align="right"] {
+    float: none !important;
+    max-width: 100% !important;
+    margin: 1.5rem auto !important;
+  }
+}
+
+/* Figure elements */
+.prose figure {
+  margin: 2rem 0;
+}
+
+.prose figure img {
+  margin: 0;
+}
+
+.prose figcaption {
+  text-align: center;
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin-top: 0.75rem;
+  font-style: italic;
+}
+
+.dark .prose figcaption {
+  color: #9ca3af;
+}
