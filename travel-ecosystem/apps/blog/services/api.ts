@@ -4,24 +4,44 @@
  * Architecture: Fetch-based API service with error handling
  */
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:1001/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api';
+
+interface Author {
+  id: string;
+  name: string;
+  email: string;
+}
 
 interface Post {
   _id: string;
   title: string;
   slug: string;
-  summary?: string;
-  content: string;
-  coverImage?: string;
+  excerpt: string;
+  content?: string;
+  featuredImage?: string;
+  category: string;
   tags: string[];
-  categories: string[];
-  publishDate: string;
+  status: 'draft' | 'published' | 'archived';
   views: number;
-  readingTime: number;
+  likes: string[];
+  averageRating: number;
+  totalRatings: number;
+  isPublished: boolean;
+  isFeatured: boolean;
+  publishedAt?: string;
+  createdAt: string;
+  updatedAt: string;
+  author: Author;
+}
+
+interface PaginationMeta {
+  currentPage: number;
+  totalPages: number;
+  totalBlogs: number;
+  limit: number;
 }
 
 interface PaginatedResponse<T> {
-  status: string;
   data: T[];
   pagination: {
     currentPage: number;
@@ -32,10 +52,14 @@ interface PaginatedResponse<T> {
   };
 }
 
-interface ApiResponse<T> {
-  status: string;
-  data: T;
-  message?: string;
+interface CategoryMeta {
+  name: string;
+  count: number;
+}
+
+interface TagMeta {
+  name: string;
+  count: number;
 }
 
 /**
@@ -74,55 +98,109 @@ export async function getPosts(params?: {
   search?: string;
   sort?: 'date' | 'title' | 'popular';
 }): Promise<PaginatedResponse<Post>> {
-  const queryString = new URLSearchParams(
-    Object.entries(params || {})
-      .filter(([_, value]) => value !== undefined)
-      .map(([key, value]) => [key, String(value)])
-  ).toString();
+  const searchParams = new URLSearchParams();
 
-  const url = `/posts${queryString ? `?${queryString}` : ''}`;
-  return fetchAPI<PaginatedResponse<Post>>(url);
+  if (params?.page) searchParams.set('page', String(params.page));
+  if (params?.limit) searchParams.set('limit', String(params.limit));
+  if (params?.category) searchParams.set('category', params.category);
+  if (params?.tag) searchParams.set('tags', params.tag);
+  if (params?.search) searchParams.set('search', params.search);
+
+  if (params?.sort) {
+    const sortMap: Record<string, string> = {
+      date: '-publishedAt',
+      title: 'title',
+      popular: '-views',
+    };
+    searchParams.set('sort', sortMap[params.sort] || params.sort);
+  }
+
+  const queryString = searchParams.toString();
+  const url = `/blog${queryString ? `?${queryString}` : ''}`;
+
+  const response = await fetchAPI<{
+    success: boolean;
+    data: { blogs: Post[]; pagination: PaginationMeta };
+    message?: string;
+  }>(url);
+
+  const { blogs, pagination } = response.data;
+
+  return {
+    data: blogs,
+    pagination: {
+      currentPage: pagination.currentPage,
+      totalPages: pagination.totalPages,
+      totalPosts: pagination.totalBlogs,
+      hasNext: pagination.currentPage < pagination.totalPages,
+      hasPrev: pagination.currentPage > 1,
+    },
+  };
 }
 
 /**
  * Get single post by slug
  */
-export async function getPostBySlug(slug: string): Promise<ApiResponse<Post>> {
-  return fetchAPI<ApiResponse<Post>>(`/posts/${slug}`);
+export async function getPostBySlug(slug: string): Promise<Post> {
+  const response = await fetchAPI<{
+    success: boolean;
+    data: { blog: Post };
+    message?: string;
+  }>(`/blog/${slug}`);
+
+  return response.data.blog;
 }
 
 /**
  * Get single post by ID
  */
-export async function getPostById(id: string): Promise<ApiResponse<Post>> {
-  return fetchAPI<ApiResponse<Post>>(`/posts/id/${id}`);
+export async function getPostById(id: string): Promise<Post> {
+  const response = await fetchAPI<{
+    success: boolean;
+    data: { blog: Post };
+    message?: string;
+  }>(`/blog/id/${id}`);
+
+  return response.data.blog;
 }
 
 /**
  * Create new post (Admin)
  */
-export async function createPost(postData: Partial<Post>): Promise<ApiResponse<Post>> {
-  return fetchAPI<ApiResponse<Post>>('/posts', {
+export async function createPost(postData: Partial<Post>): Promise<Post> {
+  const response = await fetchAPI<{
+    success: boolean;
+    data: { blog: Post };
+    message?: string;
+  }>('/blog', {
     method: 'POST',
     body: JSON.stringify(postData),
   });
+
+  return response.data.blog;
 }
 
 /**
  * Update post (Admin)
  */
-export async function updatePost(id: string, postData: Partial<Post>): Promise<ApiResponse<Post>> {
-  return fetchAPI<ApiResponse<Post>>(`/posts/${id}`, {
+export async function updatePost(id: string, postData: Partial<Post>): Promise<Post> {
+  const response = await fetchAPI<{
+    success: boolean;
+    data: { blog: Post };
+    message?: string;
+  }>(`/blog/${id}`, {
     method: 'PUT',
     body: JSON.stringify(postData),
   });
+
+  return response.data.blog;
 }
 
 /**
  * Delete post (Admin)
  */
-export async function deletePost(id: string): Promise<ApiResponse<null>> {
-  return fetchAPI<ApiResponse<null>>(`/posts/${id}`, {
+export async function deletePost(id: string): Promise<void> {
+  await fetchAPI(`/blog/${id}`, {
     method: 'DELETE',
   });
 }
@@ -130,16 +208,36 @@ export async function deletePost(id: string): Promise<ApiResponse<null>> {
 /**
  * Get all categories
  */
-export async function getCategories(): Promise<ApiResponse<Array<{ name: string; count: number }>>> {
-  return fetchAPI<ApiResponse<Array<{ name: string; count: number }>>>('/posts/meta/categories');
+export async function getCategories(): Promise<CategoryMeta[]> {
+  const response = await fetchAPI<{
+    success: boolean;
+    data: { categories: Array<{ _id: string; count: number }> };
+  }>(`/blog/categories/list`);
+
+  return response.data.categories
+    .filter(category => Boolean(category._id))
+    .map(category => ({
+      name: category._id,
+      count: category.count,
+    }));
 }
 
 /**
  * Get all tags
  */
-export async function getTags(): Promise<ApiResponse<Array<{ name: string; count: number }>>> {
-  return fetchAPI<ApiResponse<Array<{ name: string; count: number }>>>('/posts/meta/tags');
+export async function getTags(): Promise<TagMeta[]> {
+  const response = await fetchAPI<{
+    success: boolean;
+    data: { tags: Array<{ _id: string; count: number }> };
+  }>(`/blog/tags/list`);
+
+  return response.data.tags
+    .filter(tag => Boolean(tag._id))
+    .map(tag => ({
+      name: tag._id,
+      count: tag.count,
+    }));
 }
 
 // Export types
-export type { Post, PaginatedResponse, ApiResponse };
+export type { Post, PaginatedResponse, CategoryMeta, TagMeta };

@@ -5,7 +5,7 @@
  */
 
 import { useState, useEffect } from 'react';
-import { getPosts, getPostBySlug, type Post, type PaginatedResponse } from '../services/api';
+import { getPosts, getPostBySlug, type Post } from '../services/api';
 
 interface UsePostsParams {
   page?: number;
@@ -43,9 +43,9 @@ export const usePosts = (params?: UsePostsParams): UsePostsReturn => {
     try {
       setLoading(true);
       setError(null);
-      const response = await getPosts(params);
-      setPosts(response.data);
-      setPagination(response.pagination);
+  const response = await getPosts(params);
+  setPosts(response.data);
+  setPagination(response.pagination);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch posts');
       console.error('Error fetching posts:', err);
@@ -87,8 +87,8 @@ export const usePost = (slug: string) => {
       try {
         setLoading(true);
         setError(null);
-        const response = await getPostBySlug(slug);
-        setPost(response.data);
+  const response = await getPostBySlug(slug);
+  setPost(response);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to fetch post');
         console.error('Error fetching post:', err);

@@ -4,10 +4,13 @@
  * Architecture: Container component with PostItem children
  */
 
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import PostItem from './PostItem';
 import CategoryFilter from './CategoryFilter';
-import { dummyPosts } from '../data/dummyPosts';
+import Tag from './Tag';
+import { usePosts } from '../hooks/usePosts';
+import { useCategories } from '../hooks/useCategories';
+import { useTags } from '../hooks/useTags';
 
 interface PostListProps {
   initialPage?: number;
@@ -26,52 +29,143 @@ const PostList: React.FC<PostListProps> = ({
   const [category, setCategory] = useState(initialCategory);
   const [tag, setTag] = useState(initialTag);
   const [sort, setSort] = useState<'date' | 'title' | 'popular'>('date');
+  const [searchTerm, setSearchTerm] = useState('');
 
-  // For demo: use dummy data instead of API
-  const posts = dummyPosts;
-  const loading = false;
-  const error = null;
-  const pagination = null as { totalPages: number; hasPrev: boolean; hasNext: boolean } | null;
+  const queryParams = useMemo(() => ({
+    page,
+    limit,
+    category: category || undefined,
+    tag: tag || undefined,
+    search: searchTerm || undefined,
+    sort,
+  }), [page, limit, category, tag, searchTerm, sort]);
 
-  if (error) {
+  const { posts, loading, error, pagination } = usePosts(queryParams);
+  const { categories, loading: categoriesLoading, error: categoriesError } = useCategories();
+  const { tags, loading: tagsLoading } = useTags();
+
+  const handleSelectCategory = (nextCategory?: string) => {
+    setCategory(nextCategory);
+    setPage(1);
+  };
+
+  const handleSelectTag = (nextTag?: string) => {
+    setTag(nextTag);
+    setPage(1);
+  };
+
+  const handleSortChange = (value: 'date' | 'title' | 'popular') => {
+    setSort(value);
+    setPage(1);
+  };
+
+  const renderSkeletons = () => (
+    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      {[...Array(6)].map((_, i) => (
+        <div key={i} className="card p-6 animate-pulse">
+          <div className="bg-gray-300 dark:bg-gray-700 h-48 rounded-lg mb-4" />
+          <div className="h-4 bg-gray-300 dark:bg-gray-700 rounded w-3/4 mb-2" />
+          <div className="h-4 bg-gray-300 dark:bg-gray-700 rounded w-1/2 mb-4" />
+        </div>
+      ))}
+    </div>
+  );
+
+  const renderTags = () => {
+    if (tagsLoading) {
+      return <span className="text-xs text-gray-500 dark:text-gray-400">Loading tags…</span>;
+    }
+
+    if (!tags.length) {
+      return null;
+    }
+
     return (
-      <div className="text-center py-12">
-        <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">Failed to load posts</h3>
-        <p className="text-gray-600 dark:text-gray-400">{error}</p>
+      <div className="flex flex-wrap gap-2">
+        <button
+          type="button"
+          className={`px-3 py-1 rounded-full text-sm font-medium border transition-colors ${
+            tag
+              ? 'border-gray-200 text-gray-700 hover:bg-blue-50 dark:border-gray-700 dark:text-gray-200'
+              : 'bg-primary-600 text-white border-primary-600 shadow'
+          }`}
+          onClick={() => handleSelectTag(undefined)}
+        >
+          All
+        </button>
+        {tags.map(({ name }) => (
+          <Tag
+            key={name}
+            name={name}
+            variant={tag === name ? 'primary' : 'default'}
+            onClick={() => handleSelectTag(tag === name ? undefined : name)}
+          />
+        ))}
       </div>
     );
-  }
+  };
 
   return (
     <div className="space-y-8">
-      <div className="sticky top-16 z-10 bg-white dark:bg-gray-900 py-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <CategoryFilter selectedCategory={category} onSelectCategory={setCategory} />
-        <select value={sort} onChange={(e) => setSort(e.target.value as any)} className="input text-sm">
-          <option value="date">Latest First</option>
-          <option value="title">Alphabetical</option>
-          <option value="popular">Most Popular</option>
-        </select>
+      <div className="sticky top-16 z-10 bg-white dark:bg-gray-900 py-4 flex flex-col gap-4">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          <CategoryFilter
+            categories={categories}
+            loading={categoriesLoading}
+            error={categoriesError}
+            selectedCategory={category}
+            onSelectCategory={handleSelectCategory}
+          />
+
+          <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-end">
+            <input
+              type="search"
+              placeholder="Search posts"
+              value={searchTerm}
+              onChange={(event) => {
+                setSearchTerm(event.target.value);
+                setPage(1);
+              }}
+              className="input text-sm sm:w-64"
+            />
+
+            <select
+              value={sort}
+              onChange={(event) => handleSortChange(event.target.value as 'date' | 'title' | 'popular')}
+              className="input text-sm"
+            >
+              <option value="date">Latest First</option>
+              <option value="title">Alphabetical</option>
+              <option value="popular">Most Popular</option>
+            </select>
+          </div>
+        </div>
+
+        {renderTags()}
       </div>
 
-      {loading && (
+      {error && (
+        <div className="text-center py-12">
+          <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">Failed to load posts</h3>
+          <p className="text-gray-600 dark:text-gray-400">{error}</p>
+        </div>
+      )}
+
+      {loading && renderSkeletons()}
+
+      {!loading && !error && posts.length > 0 && (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {[...Array(6)].map((_, i) => (
-            <div key={i} className="card p-6 animate-pulse">
-              <div className="bg-gray-300 dark:bg-gray-700 h-48 rounded-lg mb-4" />
-              <div className="h-4 bg-gray-300 dark:bg-gray-700 rounded w-3/4 mb-2" />
-              <div className="h-4 bg-gray-300 dark:bg-gray-700 rounded w-1/2 mb-4" />
-            </div>
+          {posts.map(post => (
+            <PostItem
+              key={post._id}
+              post={post}
+              onTagClick={(tagName) => handleSelectTag(tagName === tag ? undefined : tagName)}
+            />
           ))}
         </div>
       )}
 
-      {!loading && posts.length > 0 && (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {posts.map(post => <PostItem key={post.id} post={post} />)}
-        </div>
-      )}
-
-      {!loading && posts.length === 0 && (
+      {!loading && !error && posts.length === 0 && (
         <div className="text-center py-12">
           <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">No posts found</h3>
           <p className="text-gray-600 dark:text-gray-400">Try adjusting your filters.</p>
@@ -79,14 +173,22 @@ const PostList: React.FC<PostListProps> = ({
       )}
 
       {pagination && pagination.totalPages > 1 && (
-        <div className="flex justify-center items-center gap-2 mt-8">
-          <button onClick={() => setPage(page - 1)} disabled={!pagination.hasPrev} className="btn btn-secondary disabled:opacity-50">
+        <div className="flex flex-col sm:flex-row justify-center items-center gap-3 mt-8">
+          <button
+            onClick={() => setPage((current) => Math.max(current - 1, 1))}
+            disabled={!pagination.hasPrev || loading}
+            className="btn btn-secondary disabled:opacity-50"
+          >
             Previous
           </button>
           <span className="text-gray-700 dark:text-gray-300">
-            Page {page} of {pagination.totalPages}
+            Page {pagination.currentPage} of {pagination.totalPages}
           </span>
-          <button onClick={() => setPage(page + 1)} disabled={!pagination.hasNext} className="btn btn-secondary disabled:opacity-50">
+          <button
+            onClick={() => setPage((current) => current + 1)}
+            disabled={!pagination.hasNext || loading}
+            className="btn btn-secondary disabled:opacity-50"
+          >
             Next
           </button>
         </div>

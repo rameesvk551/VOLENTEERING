@@ -7,17 +7,15 @@
 import React from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useBasePath } from '../context/BasePathContext';
-import { dummyPosts } from '../data/dummyPosts';
 import { formatDate } from '../utils/format';
 import Tag from '../components/Tag';
 import Breadcrumbs from '../components/Breadcrumbs';
+import { usePost } from '../hooks/usePosts';
 
 const PostPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
   const basePath = useBasePath();
-  const post = dummyPosts.find(p => p.slug === slug);
-  const loading = false;
-  const error = !post ? 'Post not found' : null;
+  const { post, loading, error } = usePost(slug ?? '');
 
   if (loading) {
     return (
@@ -56,9 +54,9 @@ const PostPage: React.FC = () => {
         </div>
       </header>
 
-      {post.coverImage && (
+      {post.featuredImage && (
         <div className="w-full h-96 overflow-hidden">
-          <img src={post.coverImage} alt={post.title} className="w-full h-full object-cover" />
+          <img src={post.featuredImage} alt={post.title} className="w-full h-full object-cover" />
         </div>
       )}
 
@@ -68,13 +66,27 @@ const PostPage: React.FC = () => {
         </h1>
 
         <div className="flex flex-wrap items-center gap-4 text-gray-600 dark:text-gray-400 mb-8 pb-8 border-b border-gray-200 dark:border-gray-700">
-          <time dateTime={post.publishDate}>{formatDate(new Date(post.publishDate))}</time>
-          <span>•</span>
-          {/* Optionally add reading time and views if available in dummy data */}
+          {post.publishedAt && (
+            <>
+              <time dateTime={post.publishedAt}>{formatDate(new Date(post.publishedAt))}</time>
+              <span>•</span>
+            </>
+          )}
+          <span>{post.category}</span>
+          {typeof post.views === 'number' && (
+            <>
+              <span>•</span>
+              <span>{post.views} views</span>
+            </>
+          )}
         </div>
 
         <div className="prose prose-lg dark:prose-invert max-w-none mb-12">
-          {post.content}
+          {post.content ? (
+            <div dangerouslySetInnerHTML={{ __html: post.content }} />
+          ) : (
+            <p className="text-gray-700 dark:text-gray-300">No content available.</p>
+          )}
         </div>
 
         {post.tags && post.tags.length > 0 && (
