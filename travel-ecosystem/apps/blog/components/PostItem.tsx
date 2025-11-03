@@ -6,7 +6,6 @@
 
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useBasePath } from '../context/BasePathContext';
 import { formatDate, truncate } from '../utils/format';
 import Tag from './Tag';
 import type { Post } from '../services/api';
@@ -19,16 +18,21 @@ interface PostItemProps {
 
 const PostItem: React.FC<PostItemProps> = ({ post, onClick, onTagClick }) => {
   const navigate = useNavigate();
-  const basePath = useBasePath();
 
   const handleClick = () => {
-    if (onClick) {
-      onClick(post.slug);
+    if (!post.slug) {
+      console.warn('[PostItem] Missing slug for post', post);
       return;
     }
 
-    const slugPath = basePath === '/' ? `/${post.slug}` : `${basePath}/${post.slug}`;
-    navigate(slugPath);
+    const normalizedSlug = post.slug.replace(/^\/+/, '');
+
+    if (onClick) {
+      onClick(normalizedSlug);
+      return;
+    }
+
+    navigate(normalizedSlug, { relative: 'path' });
   };
 
   const coverImage = post.featuredImage;

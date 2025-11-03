@@ -46,8 +46,8 @@
               }
             },
             shareConfig: {
-              singleton: false,
-              requiredVersion: "^18.3.1",
+              singleton: true,
+              requiredVersion: "^18.2.0",
               
             }
           }
@@ -76,8 +76,8 @@
               }
             },
             shareConfig: {
-              singleton: false,
-              requiredVersion: "^18.3.1",
+              singleton: true,
+              requiredVersion: "^18.2.0",
               
             }
           }
@@ -106,8 +106,8 @@
               }
             },
             shareConfig: {
-              singleton: false,
-              requiredVersion: "^6.30.1",
+              singleton: true,
+              requiredVersion: "^6.20.0",
               
             }
           }

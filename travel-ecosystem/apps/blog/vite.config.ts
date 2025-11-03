@@ -26,10 +26,14 @@ export default defineConfig({
       filename: 'remoteEntry.js',
       // Expose the entire app for the shell to consume
       exposes: {
-        './App': './src/App',
+        './App': './src/App.tsx',
       },
       // Shared dependencies with host app
-      shared: ['react', 'react-dom', 'react-router-dom']
+      shared: {
+        'react': { singleton: true, requiredVersion: '^18.2.0' },
+        'react-dom': { singleton: true, requiredVersion: '^18.2.0' },
+        'react-router-dom': { singleton: true, requiredVersion: '^6.20.0' }
+      },
     }) as unknown as PluginOption[]),
 
     // PWA Plugin
@@ -109,12 +113,19 @@ export default defineConfig({
     port: 1002,
     strictPort: true,
     cors: true,
+    host: true,
+    hmr: {
+      protocol: 'ws',
+      host: 'localhost',
+      port: 1002,
+    },
   },
 
   // Preview configuration
   preview: {
     port: 1002,
     strictPort: true,
+    cors: true,
   },
 
   // Resolve aliases
