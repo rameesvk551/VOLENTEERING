@@ -12,7 +12,7 @@ const HomePage: React.FC = () => {
     <div className="min-h-screen bg-white dark:bg-gray-900">
       {/* Hero */}
       <section className="bg-gradient-to-r from-primary-600 to-secondary-600 text-white py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-12 text-center">
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-4">
             Travel Stories from Around the World
           </h1>
@@ -23,13 +23,13 @@ const HomePage: React.FC = () => {
       </section>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+  <main className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-12 py-12">
         <PostList limit={12} />
       </main>
 
       {/* Footer */}
       <footer className="bg-gray-100 dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 mt-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 text-center">
+  <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-12 py-12 text-center">
           <p className="text-gray-600 dark:text-gray-400">
             &copy; {new Date().getFullYear()} RAIH. All rights reserved.
           </p>

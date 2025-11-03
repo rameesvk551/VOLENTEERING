@@ -13,6 +13,7 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
+  { label: 'Home', href: '/' },
   { label: 'Travel Hub', href: '/travel-hub' },
   { label: 'Visa Explorer', href: '/visa-explorer' },
   { label: 'Trip Planner', href: '/trip-planner' },

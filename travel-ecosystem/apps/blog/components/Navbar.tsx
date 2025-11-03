@@ -37,7 +37,10 @@ export const Navbar: React.FC = () => {
   return (
     <header className="w-full bg-white dark:bg-gray-900 shadow-md fixed top-0 z-50">
       <div className="max-w-7xl mx-auto flex items-center justify-between px-4 py-3">
-        <div className="text-xl font-bold text-primary">RAIH</div>
+        <div className="flex items-center">
+          <img src="/images/logo.png" alt="RAIH Logo" className="h-10 mr-4" />
+          <div className="text-xl font-bold text-primary">RAIH</div>
+        </div>
         {/* Desktop Nav */}
         <nav className="hidden md:flex gap-6 items-center">
           {navItems.map((item) => (

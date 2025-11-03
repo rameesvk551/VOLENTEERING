@@ -132,7 +132,7 @@ const PostPage: React.FC = () => {
       <div className="pointer-events-none absolute inset-x-0 top-0 h-80 bg-[radial-gradient(40%_60%_at_50%_0%,rgba(79,70,229,0.18),rgba(5,5,15,0))] dark:bg-[radial-gradient(40%_60%_at_50%_0%,rgba(79,70,229,0.35),rgba(5,5,15,0))]" />
 
       <header className="relative border-b border-white/40 dark:border-gray-800/60">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-12">
+  <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-12 pt-16 pb-12">
           <Breadcrumbs items={breadcrumbItems} />
 
           <div className="mt-8 flex flex-wrap items-center gap-3 text-sm text-gray-600 dark:text-gray-400">
@@ -179,7 +179,7 @@ const PostPage: React.FC = () => {
       </header>
 
       {post.featuredImage && (
-        <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 -mt-12 mb-12">
+  <div className="relative z-10 max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-12 -mt-12 mb-12">
           <figure className="overflow-hidden rounded-3xl border border-white/70 bg-white shadow-2xl shadow-primary-900/10 dark:border-gray-800/80 dark:bg-gray-900">
             <img
               src={post.featuredImage}
@@ -191,7 +191,7 @@ const PostPage: React.FC = () => {
         </div>
       )}
 
-      <main className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pb-24">
+  <main className="relative z-10 max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-12 pb-24">
         <div className="grid gap-10 lg:grid-cols-[minmax(0,2fr)_minmax(260px,1fr)]">
           <article className="rounded-3xl border border-white/70 bg-white/90 p-8 shadow-xl shadow-primary-900/5 backdrop-blur-md dark:border-gray-800/70 dark:bg-gray-900/90 md:p-12">
             <div className="prose prose-lg max-w-none text-gray-700 dark:prose-invert dark:text-gray-300 break-words overflow-wrap-anywhere">

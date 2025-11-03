@@ -6,9 +6,10 @@ import LoadingFallback from './components/LoadingFallback';
 import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 
-// Auth pages - not lazy loaded
+// Auth pages and Home - not lazy loaded
 import Login from './pages/Login';
 import Signup from './pages/Signup';
+import Home from './pages/Home';
 
 // Lazy load micro-frontends
 const Blog = lazy(() => import('blog/App'));
@@ -47,10 +48,10 @@ function App() {
                 } 
               />
 
-              {/* Root redirect */}
+              {/* Home Route - Public */}
               <Route 
                 path="/" 
-                element={<Navigate to="/admin" replace />} 
+                element={<Home />} 
               />
 
               {/* Admin Dashboard - No MainLayout (uses its own layout) */}
