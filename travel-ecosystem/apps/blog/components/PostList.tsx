@@ -6,10 +6,9 @@
 
 import React, { useMemo, useState } from 'react';
 import PostItem from './PostItem';
-import CategoryFilter from './CategoryFilter';
 import Tag from './Tag';
 import { usePosts } from '../hooks/usePosts';
-import { useCategories } from '../hooks/useCategories';
+// categories removed: no longer showing category section in listing
 import { useTags } from '../hooks/useTags';
 
 interface PostListProps {
@@ -41,13 +40,9 @@ const PostList: React.FC<PostListProps> = ({
   }), [page, limit, category, tag, searchTerm, sort]);
 
   const { posts, loading, error, pagination } = usePosts(queryParams);
-  const { categories, loading: categoriesLoading, error: categoriesError } = useCategories();
   const { tags, loading: tagsLoading } = useTags();
 
-  const handleSelectCategory = (nextCategory?: string) => {
-    setCategory(nextCategory);
-    setPage(1);
-  };
+  // Category selection UI removed from this component; keep category state for query params if provided
 
   const handleSelectTag = (nextTag?: string) => {
     setTag(nextTag);
@@ -108,16 +103,14 @@ const PostList: React.FC<PostListProps> = ({
   return (
     <div className="space-y-8">
       <div className="sticky top-20 z-30 flex flex-col gap-4 border-b border-gray-100 bg-white py-4 shadow-sm dark:border-gray-800 dark:bg-gray-900">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between lg:gap-6">
-          <CategoryFilter
-            categories={categories}
-            loading={categoriesLoading}
-            error={categoriesError}
-            selectedCategory={category}
-            onSelectCategory={handleSelectCategory}
-          />
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between lg:gap-6">
+          {/* Left: tags (aligned left on desktop) */}
+          <div className="order-1 w-full lg:w-1/2 flex items-center justify-start">
+            {renderTags()}
+          </div>
 
-          <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center sm:justify-end">
+          {/* Right: search + sort (aligned right) */}
+          <div className="order-2 flex w-full flex-col gap-3 items-end sm:w-auto sm:flex-row sm:items-center sm:justify-end lg:w-auto">
             <input
               type="search"
               placeholder="Search posts"
@@ -126,7 +119,7 @@ const PostList: React.FC<PostListProps> = ({
                 setSearchTerm(event.target.value);
                 setPage(1);
               }}
-              className="input text-sm sm:w-64"
+              className="input text-sm sm:w-64 mr-2"
             />
 
             <select
@@ -140,8 +133,6 @@ const PostList: React.FC<PostListProps> = ({
             </select>
           </div>
         </div>
-
-        {renderTags()}
       </div>
 
       {error && (
