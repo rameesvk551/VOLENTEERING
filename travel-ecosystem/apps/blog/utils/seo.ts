@@ -12,12 +12,24 @@
 interface Post {
   title: string;
   slug: string;
+  excerpt?: string;
   summary?: string;
-  content: string;
-  coverImage?: string;
-  publishDate: string;
+  content?: string;
+  featuredImage?: string;
+  featuredImageAlt?: string;
+  publishedAt?: string | Date;
+  updatedAt?: string | Date;
   tags?: string[];
   categories?: string[];
+  canonicalUrl?: string;
+  seo?: {
+    metaTitle?: string;
+    metaDescription?: string;
+    keywords?: string[];
+  };
+  author?: {
+    name?: string;
+  };
 }
 
 interface MetaTags {
@@ -29,11 +41,27 @@ interface MetaTags {
   ogDescription?: string;
   ogImage?: string;
   ogUrl?: string;
+  ogType?: string;
+  ogImageAlt?: string;
   twitterCard?: string;
   twitterTitle?: string;
   twitterDescription?: string;
   twitterImage?: string;
+  twitterImageAlt?: string;
+  articlePublishedTime?: string;
+  articleModifiedTime?: string;
+  articleAuthor?: string;
 }
+
+const ensureAbsoluteUrl = (url: string | undefined, baseUrl: string): string | undefined => {
+  if (!url) return undefined;
+  if (/^https?:\/\//iu.test(url)) {
+    return url;
+  }
+  const trimmedBase = baseUrl.replace(/\/$/, '');
+  const normalizedPath = url.startsWith('/') ? url : `/${url}`;
+  return `${trimmedBase}${normalizedPath}`;
+};
 
 /**
  * Update document meta tags
@@ -52,11 +80,17 @@ export const updateMetaTags = (tags: MetaTags): void => {
     { property: 'og:title', content: tags.ogTitle || tags.title },
     { property: 'og:description', content: tags.ogDescription || tags.description },
     { property: 'og:image', content: tags.ogImage },
+  { property: 'og:image:alt', content: tags.ogImageAlt },
     { property: 'og:url', content: tags.ogUrl },
+    { property: 'og:type', content: tags.ogType || (tags.ogUrl ? 'article' : undefined) },
+    { property: 'article:published_time', content: tags.articlePublishedTime },
+    { property: 'article:modified_time', content: tags.articleModifiedTime },
+    { property: 'article:author', content: tags.articleAuthor },
     { name: 'twitter:card', content: tags.twitterCard || 'summary_large_image' },
     { name: 'twitter:title', content: tags.twitterTitle || tags.title },
     { name: 'twitter:description', content: tags.twitterDescription || tags.description },
     { name: 'twitter:image', content: tags.twitterImage || tags.ogImage },
+    { name: 'twitter:image:alt', content: tags.twitterImageAlt || tags.ogImageAlt },
   ];
 
   metaConfig.forEach(({ name, property, content }) => {
@@ -102,6 +136,7 @@ export const injectJsonLd = (data: object, id: string = 'json-ld'): void => {
   const script = document.createElement('script');
   script.id = id;
   script.type = 'application/ld+json';
+  script.setAttribute('data-seo-head-json-ld', 'true');
   script.text = JSON.stringify(data);
   document.head.appendChild(script);
 };
@@ -110,22 +145,38 @@ export const injectJsonLd = (data: object, id: string = 'json-ld'): void => {
  * Generate meta tags from post data
  */
 export const generatePostMetaTags = (post: Post, baseUrl: string): MetaTags => {
-  const url = `${baseUrl}/blog/${post.slug}`;
-  const description = post.summary || post.content.substring(0, 160);
+  const canonical = post.canonicalUrl || ensureAbsoluteUrl(`/blog/${post.slug}`, baseUrl) || `${baseUrl}/blog/${post.slug}`;
+  const description =
+    post.seo?.metaDescription ||
+    post.summary ||
+    post.excerpt ||
+    (post.content ? post.content.replace(/<[^>]+>/g, '').slice(0, 160) : undefined) ||
+    'Discover travel stories, tips, and guides.';
+  const keywords = post.seo?.keywords?.length ? post.seo.keywords : post.tags;
+  const ogImage = ensureAbsoluteUrl(post.featuredImage, baseUrl) || `${baseUrl}/images/default-og.jpg`;
+
+  const publishedTime = post.publishedAt ? new Date(post.publishedAt).toISOString() : undefined;
+  const modifiedTime = post.updatedAt ? new Date(post.updatedAt).toISOString() : publishedTime;
 
   return {
-    title: `${post.title} | RAIH Blog`,
+    title: post.seo?.metaTitle || `${post.title} | RAIH Blog`,
     description,
-    keywords: [...(post.tags || []), ...(post.categories || [])].join(', '),
-    canonical: url,
+    keywords: keywords?.join(', '),
+    canonical,
     ogTitle: post.title,
     ogDescription: description,
-    ogImage: post.coverImage || `${baseUrl}/images/default-og.jpg`,
-    ogUrl: url,
+    ogImage,
+  ogImageAlt: post.featuredImageAlt,
+    ogUrl: canonical,
+    ogType: 'article',
     twitterCard: 'summary_large_image',
     twitterTitle: post.title,
     twitterDescription: description,
-    twitterImage: post.coverImage || `${baseUrl}/images/default-twitter.jpg`,
+    twitterImage: ogImage,
+  twitterImageAlt: post.featuredImageAlt,
+    articlePublishedTime: publishedTime,
+    articleModifiedTime: modifiedTime,
+    articleAuthor: post.author?.name,
   };
 };
 

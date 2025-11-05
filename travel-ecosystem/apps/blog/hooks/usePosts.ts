@@ -81,6 +81,7 @@ export const usePost = (slug: string) => {
   const [post, setPost] = useState<Post | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [jsonLd, setJsonLd] = useState<unknown | null>(null);
 
   useEffect(() => {
     const fetchPost = async () => {
@@ -88,7 +89,8 @@ export const usePost = (slug: string) => {
         setLoading(true);
         setError(null);
   const response = await getPostBySlug(slug);
-  setPost(response);
+  setPost(response.blog);
+  setJsonLd(response.jsonLd ?? null);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to fetch post');
         console.error('Error fetching post:', err);
@@ -102,5 +104,5 @@ export const usePost = (slug: string) => {
     }
   }, [slug]);
 
-  return { post, loading, error };
+  return { post, loading, error, jsonLd };
 };

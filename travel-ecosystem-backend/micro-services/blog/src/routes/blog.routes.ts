@@ -17,7 +17,9 @@ import {
   deleteBlog,
   publishBlog,
   getBlogByIdForEdit,
-  getAllBlogsForAdmin
+  getAllBlogsForAdmin,
+  getSitemap,
+  getRobotsTxt
 } from '../controllers/blog.controller.js';
 
 const router = express.Router();
@@ -31,6 +33,8 @@ router.get('/trending', getTrendingBlogs);
 router.get('/categories/list', getCategories);
 router.get('/tags/list', getTags);
 router.get('/category/:category', getBlogsByCategory);
+router.get('/sitemap.xml', getSitemap);
+router.get('/robots.txt', getRobotsTxt);
 
 // Admin/Internal routes for CRUD operations
 router.post('/', createBlog);  // Create blog

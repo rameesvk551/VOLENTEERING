@@ -19,6 +19,7 @@ interface Post {
   excerpt: string;
   content?: string;
   featuredImage?: string;
+  featuredImageAlt?: string;
   category: string;
   tags: string[];
   status: 'draft' | 'published' | 'archived';
@@ -32,6 +33,12 @@ interface Post {
   createdAt: string;
   updatedAt: string;
   author: Author;
+  canonicalUrl?: string;
+  seo?: {
+    metaTitle?: string;
+    metaDescription?: string;
+    keywords?: string[];
+  };
 }
 
 interface PaginationMeta {
@@ -141,14 +148,17 @@ export async function getPosts(params?: {
 /**
  * Get single post by slug
  */
-export async function getPostBySlug(slug: string): Promise<Post> {
+export async function getPostBySlug(slug: string): Promise<{ blog: Post; jsonLd?: unknown }> {
   const response = await fetchAPI<{
     success: boolean;
-    data: { blog: Post };
+    data: { blog: Post; jsonLd?: unknown };
     message?: string;
   }>(`/blog/${slug}`);
 
-  return response.data.blog;
+  return {
+    blog: response.data.blog,
+    jsonLd: response.data.jsonLd,
+  };
 }
 
 /**

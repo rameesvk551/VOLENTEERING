@@ -155,6 +155,11 @@ blogSchema.pre('save', async function (next) {
   if (this.isModified('title') && !this.slug) {
     this.slug = slug(this.title) + '-' + Date.now();
   }
+
+  if (this.isModified('content') && typeof this.content === 'string') {
+    // Remove any meta refresh tags to prevent unintended redirects or refresh behaviour
+    this.content = this.content.replace(/<meta[^>]*http-equiv=["']?refresh["']?[^>]*>/giu, '');
+  }
   
   // Update publishedAt when status changes to published
   if (this.isModified('status') && this.status === 'published' && !this.publishedAt) {

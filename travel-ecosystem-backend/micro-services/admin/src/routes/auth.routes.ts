@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
+import jwt, { type Secret, type SignOptions } from 'jsonwebtoken';
+import type { StringValue } from 'ms';
 import { User } from '../models/User.js';
 import { AppError } from '../middleware/errorHandler.js';
 
@@ -20,10 +21,13 @@ router.post('/login', async (req, res, next) => {
       throw new AppError('Invalid credentials', 401);
     }
 
+    const secret: Secret = process.env.JWT_SECRET ?? 'secret';
+    const expiresIn: SignOptions['expiresIn'] = (process.env.JWT_EXPIRES_IN ?? '7d') as StringValue;
+
     const token = jwt.sign(
       { id: user._id, role: user.role },
-      process.env.JWT_SECRET || 'secret',
-      { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
+      secret,
+      { expiresIn }
     );
 
     user.lastLogin = new Date();

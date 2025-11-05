@@ -1,4 +1,5 @@
 import type { Response } from 'express';
+import type { Document } from 'mongoose';
 import type { IBlog } from '../models/Blog.js';
 
 const DEFAULT_BASE_URL = 'https://travel-ecosystem.example.com';
@@ -43,10 +44,24 @@ export const deriveFeaturedImageAlt = (blog: Pick<IBlog, 'title' | 'seo' | 'cate
   return `${blog.title} – ${blog.category}`;
 };
 
-export const mapBlogForResponse = (blogDocument: IBlog | (IBlog & { _id?: any })) => {
-  const plain = typeof (blogDocument as IBlog).toObject === 'function'
-    ? (blogDocument as IBlog).toObject({ getters: true, virtuals: true })
-    : blogDocument;
+type BlogPlain = Omit<IBlog, keyof Document> & { _id?: unknown; __v?: unknown };
+
+export type BlogResponse = BlogPlain & {
+  _id?: string;
+  canonicalUrl: string;
+  featuredImage?: string;
+  featuredImageAlt: string;
+};
+
+const toPlainBlog = (blogDocument: unknown): BlogPlain => {
+  if (typeof (blogDocument as { toObject?: unknown })?.toObject === 'function') {
+    return (blogDocument as { toObject: (options?: unknown) => BlogPlain }).toObject({ getters: true, virtuals: true });
+  }
+  return blogDocument as BlogPlain;
+};
+
+export const mapBlogForResponse = (blogDocument: unknown): BlogResponse => {
+  const plain = toPlainBlog(blogDocument);
 
   const canonicalUrl = buildCanonicalUrl(plain.slug, plain.canonicalUrl);
   const featuredImage = ensureAbsoluteUrl(plain.featuredImage) || plain.featuredImage;
@@ -57,13 +72,17 @@ export const mapBlogForResponse = (blogDocument: IBlog | (IBlog & { _id?: any })
     featuredImageAlt: plain.featuredImageAlt,
   });
 
+  const normalizedId = typeof plain._id === 'object' && plain._id !== null && 'toString' in plain._id
+    ? (plain._id as { toString: () => string }).toString()
+    : (plain._id as string | undefined);
+
   return {
     ...plain,
-    _id: plain._id?.toString?.() ?? plain._id,
+    _id: normalizedId,
     canonicalUrl,
     featuredImage,
     featuredImageAlt,
-  };
+  } as BlogResponse;
 };
 
 export const buildBlogJsonLd = (blog: ReturnType<typeof mapBlogForResponse>) => {
@@ -108,4 +127,37 @@ export const setResponseCacheHeaders = (res: Response, maxAgeSeconds = 300, stal
   ];
 
   res.setHeader('Cache-Control', directives.join(', '));
+};
+
+export interface SitemapUrlEntry {
+  loc: string;
+  lastmod?: string | Date;
+  changefreq?: 'always' | 'hourly' | 'daily' | 'weekly' | 'monthly' | 'yearly' | 'never';
+  priority?: number;
+}
+
+export const buildSitemapXml = (entries: SitemapUrlEntry[]): string => {
+  const urlset = entries
+    .filter((entry) => Boolean(entry.loc))
+    .map((entry) => {
+      const lastmod = entry.lastmod
+        ? new Date(entry.lastmod).toISOString()
+        : undefined;
+
+      return [
+        '  <url>',
+        `    <loc>${entry.loc}</loc>`,
+        lastmod ? `    <lastmod>${lastmod}</lastmod>` : undefined,
+        entry.changefreq ? `    <changefreq>${entry.changefreq}</changefreq>` : undefined,
+        typeof entry.priority === 'number' ? `    <priority>${entry.priority.toFixed(1)}</priority>` : undefined,
+        '  </url>'
+      ]
+        .filter(Boolean)
+        .join('\n');
+    })
+    .join('\n');
+
+  return ['<?xml version="1.0" encoding="UTF-8"?>', '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">', urlset, '</urlset>']
+    .filter(Boolean)
+    .join('\n');
 };

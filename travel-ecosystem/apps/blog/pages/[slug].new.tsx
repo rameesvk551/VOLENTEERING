@@ -111,7 +111,7 @@ const PostPage: React.FC = () => {
               <div className="mb-8 overflow-hidden rounded-2xl shadow-lg">
                 <img
                   src={post.featuredImage}
-                  alt={post.title}
+                  alt={post.featuredImageAlt || post.title}
                   className="w-full h-auto object-cover"
                   style={{ maxHeight: '500px' }}
                   loading="lazy"

@@ -11,6 +11,7 @@ import { formatDate } from '../utils/format';
 import Tag from '../components/Tag';
 import Breadcrumbs from '../components/Breadcrumbs';
 import { usePost, usePosts } from '../hooks/usePosts';
+import SEOHead from '../SEOHead';
 
 const PostPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -18,7 +19,7 @@ const PostPage: React.FC = () => {
   const navigate = useNavigate();
   
   // All hooks must be called before any early returns
-  const { post, loading, error } = usePost(slug ?? '');
+  const { post, loading, error, jsonLd } = usePost(slug ?? '');
   
   // Fetch related posts - must be called before early returns
   const { posts: relatedPosts, loading: relatedLoading } = usePosts({
@@ -72,14 +73,78 @@ const PostPage: React.FC = () => {
   }, [wordCount]);
 
   const shareUrl = useMemo(() => {
+    if (post?.canonicalUrl) {
+      return post.canonicalUrl;
+    }
     if (typeof window === 'undefined') return '';
     const normalizedBase = normalizePath(basePath);
     const normalizedSlug = post?.slug?.startsWith('/') ? post.slug : `/${post?.slug || ''}`;
     return `${window.location.origin}${normalizedBase}${normalizedSlug}`;
-  }, [basePath, post?.slug]);
+  }, [basePath, post?.slug, post?.canonicalUrl]);
 
   const encodedShareUrl = useMemo(() => encodeURIComponent(shareUrl), [shareUrl]);
   const encodedTitle = useMemo(() => encodeURIComponent(post?.title ?? ''), [post?.title]);
+
+  const breadcrumbItems = useMemo(() => {
+  const blogHomeHref = basePath === '/' ? '/' : basePath || '/blog';
+    return [
+      { label: 'Home', href: '/' },
+      { label: 'Blog', href: blogHomeHref },
+      { label: post?.title ?? '' },
+    ];
+  }, [basePath, post?.title]);
+
+  const breadcrumbJsonLd = useMemo(() => {
+    if (!post || !shareUrl) return null;
+
+    let blogListUrl = shareUrl;
+    try {
+      const url = new URL(shareUrl);
+      const segments = url.pathname.split('/').filter(Boolean);
+      const blogIndex = segments.indexOf('blog');
+      const blogPath = blogIndex >= 0 ? segments.slice(0, blogIndex + 1) : segments;
+      url.pathname = `/${blogPath.join('/')}`;
+      url.search = '';
+      url.hash = '';
+      blogListUrl = url.toString();
+    } catch (err) {
+      console.warn('[PostPage] Unable to normalise blog list URL for breadcrumbs', err);
+    }
+
+    const homeUrl = blogListUrl.replace(/\/?blog\/?$/, '/');
+
+    return {
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        {
+          '@type': 'ListItem',
+          position: 1,
+          name: 'Home',
+          item: homeUrl,
+        },
+        {
+          '@type': 'ListItem',
+          position: 2,
+          name: 'Blog',
+          item: blogListUrl,
+        },
+        {
+          '@type': 'ListItem',
+          position: 3,
+          name: post.title,
+          item: shareUrl,
+        },
+      ],
+    };
+  }, [post, shareUrl]);
+
+  const structuredData = useMemo(() => {
+    const payloads: object[] = [];
+    if (jsonLd) payloads.push(jsonLd as object);
+    if (breadcrumbJsonLd) payloads.push(breadcrumbJsonLd);
+    return payloads;
+  }, [jsonLd, breadcrumbJsonLd]);
 
   if (loading) {
     return (
@@ -104,12 +169,6 @@ const PostPage: React.FC = () => {
     );
   }
 
-  const breadcrumbItems = [
-    { label: 'Home', href: '/' },
-    { label: 'Blog', href: '/blog' },
-    { label: post.title },
-  ];
-
   const handleCopyLink = async () => {
     if (!shareUrl) return;
 
@@ -128,7 +187,9 @@ const PostPage: React.FC = () => {
   };
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950">
+    <>
+      <SEOHead post={post as any} jsonLd={structuredData} />
+      <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950">
       <div className="pointer-events-none absolute inset-x-0 top-0 h-80 bg-[radial-gradient(40%_60%_at_50%_0%,rgba(79,70,229,0.18),rgba(5,5,15,0))] dark:bg-[radial-gradient(40%_60%_at_50%_0%,rgba(79,70,229,0.35),rgba(5,5,15,0))]" />
 
       <header className="relative border-b border-white/40 dark:border-gray-800/60">
@@ -183,7 +244,7 @@ const PostPage: React.FC = () => {
           <figure className="overflow-hidden rounded-3xl border border-white/70 bg-white shadow-2xl shadow-primary-900/10 dark:border-gray-800/80 dark:bg-gray-900">
             <img
               src={post.featuredImage}
-              alt={post.title}
+              alt={post.featuredImageAlt || post.title}
               className="h-96 w-full object-cover transition-transform duration-700 hover:scale-[1.02]"
               loading="lazy"
             />
@@ -341,6 +402,7 @@ const PostPage: React.FC = () => {
         </div>
       </main>
     </div>
+    </>
   );
 };
 

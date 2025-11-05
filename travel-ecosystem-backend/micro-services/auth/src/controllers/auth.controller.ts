@@ -1,24 +1,31 @@
 import { Request, Response, NextFunction } from 'express';
-import jwt from 'jsonwebtoken';
+import jwt, { type SignOptions, type Secret } from 'jsonwebtoken';
+import type { StringValue } from 'ms';
 import crypto from 'crypto';
 import { User } from '../models/User.js';
 import { sendEmail } from '../utils/email.js';
 
 // Generate JWT Token
 const generateToken = (userId: number, email: string, role: string) => {
+  const secret: Secret = process.env.JWT_SECRET ?? 'your-secret-key';
+  const expiresIn: SignOptions['expiresIn'] = (process.env.JWT_EXPIRES_IN ?? '7d') as StringValue;
+
   return jwt.sign(
     { id: userId, email, role },
-    process.env.JWT_SECRET || 'your-secret-key',
-    { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
+    secret,
+    { expiresIn }
   );
 };
 
 // Generate Refresh Token
 const generateRefreshToken = (userId: number) => {
+  const secret: Secret = process.env.JWT_REFRESH_SECRET ?? 'your-refresh-secret';
+  const expiresIn: SignOptions['expiresIn'] = (process.env.JWT_REFRESH_EXPIRES_IN ?? '30d') as StringValue;
+
   return jwt.sign(
     { id: userId, type: 'refresh' },
-    process.env.JWT_REFRESH_SECRET || 'your-refresh-secret',
-    { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '30d' }
+    secret,
+    { expiresIn }
   );
 };
 

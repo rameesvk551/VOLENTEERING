@@ -51,7 +51,7 @@ const PostItem: React.FC<PostItemProps> = ({ post, onClick, onTagClick }) => {
             <div className="mb-4 overflow-hidden rounded-2xl relative h-56 shadow-lg">
               <img
                 src={coverImage}
-                alt={post.title}
+                alt={post.featuredImageAlt || post.title}
                 className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 group-hover:brightness-90"
                 loading="lazy"
                 style={{ boxShadow: '0 8px 32px rgba(60,60,120,0.16)' }}

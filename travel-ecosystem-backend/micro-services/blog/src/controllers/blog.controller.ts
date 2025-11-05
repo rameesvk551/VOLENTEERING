@@ -7,7 +7,11 @@ import {
   setResponseCacheHeaders,
   buildCanonicalUrl,
   getBaseUrl,
+  buildSitemapXml,
 } from '../utils/seo.js';
+
+const sitemapCache: { xml: string; expiresAt: number } = { xml: '', expiresAt: 0 };
+const robotsCache: { text: string; expiresAt: number } = { text: '', expiresAt: 0 };
 
 // @route   GET /api/blog
 // @desc    Get all published blogs with pagination, search, and filters
@@ -458,6 +462,107 @@ export const getTags = async (req: Request, res: Response, next: NextFunction) =
       success: true,
       data: { tags }
     });
+  } catch (error: any) {
+    next(error);
+  }
+};
+
+// @route   GET /api/blog/sitemap.xml
+// @desc    Generate sitemap for published blog content
+// @access  Public
+export const getSitemap = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const now = Date.now();
+
+    if (sitemapCache.xml && sitemapCache.expiresAt > now) {
+      setResponseCacheHeaders(res, 3600, 604800);
+      return res.type('application/xml').send(sitemapCache.xml);
+    }
+
+    const baseUrl = getBaseUrl();
+
+    const blogs = await Blog.find({ status: 'published', isPublished: true })
+      .select('slug canonicalUrl updatedAt publishedAt')
+      .lean({ getters: true });
+
+    const staticEntries = [
+      {
+        loc: `${baseUrl}/blog`,
+        changefreq: 'daily' as const,
+        priority: 0.9,
+        lastmod: new Date(),
+      },
+    ];
+
+    const dynamicEntries = blogs.map((blog: any) => ({
+      loc: buildCanonicalUrl(blog.slug, blog.canonicalUrl),
+      changefreq: 'weekly' as const,
+      priority: 0.7,
+      lastmod: blog.updatedAt || blog.publishedAt || new Date(),
+    }));
+
+    const xml = buildSitemapXml([...staticEntries, ...dynamicEntries]);
+
+    sitemapCache.xml = xml;
+    sitemapCache.expiresAt = now + 60 * 60 * 1000; // 1 hour cache
+
+    setResponseCacheHeaders(res, 3600, 604800);
+    return res.type('application/xml').send(xml);
+  } catch (error: any) {
+    next(error);
+  }
+};
+
+// @route   GET /api/blog/robots.txt
+// @desc    Serve robots.txt referencing sitemap
+// @access  Public
+export const getRobotsTxt = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const now = Date.now();
+
+    if (robotsCache.text && robotsCache.expiresAt > now) {
+      setResponseCacheHeaders(res, 86400, 604800);
+      return res.type('text/plain').send(robotsCache.text);
+    }
+
+    const baseUrl = getBaseUrl();
+
+    let blogSitemapUrl = `${baseUrl}/blog/sitemap.xml`;
+    let apiSitemapUrl = `${baseUrl}/api/blog/sitemap.xml`;
+
+    try {
+      const blogUrl = new URL(baseUrl);
+      blogUrl.pathname = '/blog/sitemap.xml';
+      blogUrl.search = '';
+      blogUrl.hash = '';
+      blogSitemapUrl = blogUrl.toString();
+
+      const apiUrl = new URL(baseUrl);
+      apiUrl.pathname = '/api/blog/sitemap.xml';
+      apiUrl.search = '';
+      apiUrl.hash = '';
+      apiSitemapUrl = apiUrl.toString();
+    } catch (err) {
+      // If base URL is not a valid absolute URL we fall back to string concatenation
+    }
+
+    const lines = [
+      'User-agent: *',
+      'Allow: /',
+      'Disallow: /admin/',
+      'Disallow: /dashboard/',
+      `Sitemap: ${blogSitemapUrl}`,
+      `Sitemap: ${apiSitemapUrl}`,
+      '',
+    ];
+
+    const robotsText = lines.join('\n');
+
+    robotsCache.text = robotsText;
+    robotsCache.expiresAt = now + 12 * 60 * 60 * 1000; // 12 hours cache
+
+    setResponseCacheHeaders(res, 86400, 604800);
+    return res.type('text/plain').send(robotsText);
   } catch (error: any) {
     next(error);
   }

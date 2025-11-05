@@ -9,7 +9,6 @@ import { BrowserRouter, Routes, Route, Navigate, useInRouterContext } from 'reac
 import '../styles/index.css';
 import HomePage from '../pages/index';
 import PostPage from '../pages/[slug]';
-import SEOHead from '../SEOHead';
 import { BasePathProvider } from '../context/BasePathContext';
 
 interface BlogAppProps {
@@ -30,7 +29,6 @@ interface BlogRoutesProps {
 
 const BlogRoutes: React.FC<BlogRoutesProps> = ({ basePath, nested }) => (
   <BasePathProvider value={basePath}>
-    <SEOHead />
     <Routes>
       {nested ? (
         <>

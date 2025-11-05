@@ -13,6 +13,7 @@ export interface Blog {
   content: string;
   excerpt: string;
   featuredImage: string;
+  featuredImageAlt?: string;
   author: {
     id: string;
     name: string;
@@ -30,6 +31,12 @@ export interface Blog {
   publishedAt?: Date;
   createdAt: Date;
   updatedAt: Date;
+  canonicalUrl?: string;
+  seo?: {
+    metaTitle?: string;
+    metaDescription?: string;
+    keywords?: string[];
+  };
 }
 
 export interface Comment {
@@ -104,7 +111,7 @@ export const getAllBlogs = async (params?: {
 /**
  * Get blog by slug
  */
-export const getBlogBySlug = async (slug: string): Promise<Blog> => {
+export const getBlogBySlug = async (slug: string): Promise<{ blog: Blog; jsonLd?: unknown }> => {
   const response = await fetch(`${BLOG_API_URL}/${slug}`, {
     headers: getAuthHeaders(),
   });
@@ -114,7 +121,10 @@ export const getBlogBySlug = async (slug: string): Promise<Blog> => {
   }
 
   const data = await response.json();
-  return data.data.blog;
+  return {
+    blog: data.data.blog,
+    jsonLd: data.data.jsonLd,
+  };
 };
 
 /**
