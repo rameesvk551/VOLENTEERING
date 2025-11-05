@@ -1,6 +1,13 @@
 import { Request, Response, NextFunction } from 'express';
 import { Blog } from '../models/Blog.js';
 import { Rating } from '../models/Rating.js';
+import {
+  mapBlogForResponse,
+  buildBlogJsonLd,
+  setResponseCacheHeaders,
+  buildCanonicalUrl,
+  getBaseUrl,
+} from '../utils/seo.js';
 
 // @route   GET /api/blog
 // @desc    Get all published blogs with pagination, search, and filters
@@ -53,14 +60,19 @@ export const getAllBlogs = async (req: Request, res: Response, next: NextFunctio
         .sort(sort as string)
         .skip(skip)
         .limit(limitNum)
-        .select('-content'),
+        .select('-content')
+        .lean({ getters: true }),
       Blog.countDocuments(query)
     ]);
+
+    const normalizedBlogs = blogs.map(mapBlogForResponse);
+
+    setResponseCacheHeaders(res);
 
     res.json({
       success: true,
       data: {
-        blogs,
+        blogs: normalizedBlogs,
         pagination: {
           currentPage: pageNum,
           totalPages: Math.ceil(total / limitNum),
@@ -94,9 +106,17 @@ export const getBlogBySlug = async (req: Request, res: Response, next: NextFunct
     blog.views += 1;
     await blog.save();
 
+    const mappedBlog = mapBlogForResponse(blog);
+    const jsonLd = buildBlogJsonLd(mappedBlog);
+
+    setResponseCacheHeaders(res);
+
     res.json({
       success: true,
-      data: { blog }
+      data: {
+        blog: mappedBlog,
+        jsonLd
+      }
     });
   } catch (error: any) {
     next(error);
@@ -119,9 +139,13 @@ export const getBlogById = async (req: Request, res: Response, next: NextFunctio
       });
     }
 
+    const mappedBlog = mapBlogForResponse(blog);
+
+    setResponseCacheHeaders(res);
+
     res.json({
       success: true,
-      data: { blog }
+      data: { blog: mappedBlog }
     });
   } catch (error: any) {
     next(error);
@@ -145,14 +169,19 @@ export const getBlogsByCategory = async (req: Request, res: Response, next: Next
         .sort('-createdAt')
         .skip(skip)
         .limit(limitNum)
-        .select('-content'),
+        .select('-content')
+        .lean({ getters: true }),
       Blog.countDocuments({ category, status: 'published' })
     ]);
+
+    const normalizedBlogs = blogs.map(mapBlogForResponse);
+
+    setResponseCacheHeaders(res);
 
     res.json({
       success: true,
       data: {
-        blogs,
+        blogs: normalizedBlogs,
         pagination: {
           currentPage: pageNum,
           totalPages: Math.ceil(total / limitNum),
@@ -179,11 +208,16 @@ export const getFeaturedBlogs = async (req: Request, res: Response, next: NextFu
     })
       .sort('-createdAt')
       .limit(parseInt(limit as string))
-      .select('-content');
+      .select('-content')
+      .lean({ getters: true });
+
+    const normalizedBlogs = blogs.map(mapBlogForResponse);
+
+    setResponseCacheHeaders(res, 600);
 
     res.json({
       success: true,
-      data: { blogs }
+      data: { blogs: normalizedBlogs }
     });
   } catch (error: any) {
     next(error);
@@ -200,11 +234,16 @@ export const getPopularBlogs = async (req: Request, res: Response, next: NextFun
     const blogs = await Blog.find({ status: 'published' })
       .sort('-views')
       .limit(parseInt(limit as string))
-      .select('-content');
+      .select('-content')
+      .lean({ getters: true });
+
+    const normalizedBlogs = blogs.map(mapBlogForResponse);
+
+    setResponseCacheHeaders(res, 300);
 
     res.json({
       success: true,
-      data: { blogs }
+      data: { blogs: normalizedBlogs }
     });
   } catch (error: any) {
     next(error);
@@ -228,11 +267,16 @@ export const getTrendingBlogs = async (req: Request, res: Response, next: NextFu
     })
       .sort('-views -averageRating')
       .limit(parseInt(limit as string))
-      .select('-content');
+      .select('-content')
+      .lean({ getters: true });
+
+    const normalizedBlogs = blogs.map(mapBlogForResponse);
+
+    setResponseCacheHeaders(res, 300);
 
     res.json({
       success: true,
-      data: { blogs }
+      data: { blogs: normalizedBlogs }
     });
   } catch (error: any) {
     next(error);
@@ -384,6 +428,8 @@ export const getCategories = async (req: Request, res: Response, next: NextFunct
       { $sort: { count: -1 } }
     ]);
 
+    setResponseCacheHeaders(res, 3600, 604800);
+
     res.json({
       success: true,
       data: { categories }
@@ -405,6 +451,8 @@ export const getTags = async (req: Request, res: Response, next: NextFunction) =
       { $sort: { count: -1 } },
       { $limit: 50 }
     ]);
+
+    setResponseCacheHeaders(res, 3600, 604800);
 
     res.json({
       success: true,

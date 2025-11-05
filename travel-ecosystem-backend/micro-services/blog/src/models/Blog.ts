@@ -7,6 +7,8 @@ export interface IBlog extends Document {
   content: string;
   excerpt: string;
   featuredImage: string;
+  featuredImageAlt?: string;
+  canonicalUrl?: string;
   author: {
     id: string;
     name: string;
@@ -59,6 +61,14 @@ const blogSchema = new Schema<IBlog>(
     featuredImage: {
       type: String,
       required: false // Made optional to allow blog creation without image
+    },
+    featuredImageAlt: {
+      type: String,
+      default: ''
+    },
+    canonicalUrl: {
+      type: String,
+      default: ''
     },
     author: {
       id: {
