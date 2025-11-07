@@ -4,8 +4,11 @@
  * Architecture: Service layer connecting to admin microservice (port 4000)
  */
 
-const ADMIN_API_URL = import.meta.env.VITE_ADMIN_API_URL || 'http://localhost:4000/api/admin';
+const rawAdminBase = import.meta.env.VITE_ADMIN_API_URL || 'http://localhost:4000/api';
+const ADMIN_API_URL = rawAdminBase.replace(/\/admin\/?$/, '').replace(/\/$/, '');
+const ADMIN_BLOG_API_URL = `${ADMIN_API_URL}/admin`;
 const BLOG_API_URL = import.meta.env.VITE_BLOG_API_URL || 'http://localhost:4003/api/blog';
+const isDev = import.meta.env.DEV;
 
 export interface CreateBlogInput {
   title: string;
@@ -46,7 +49,7 @@ const getAuthHeaders = () => {
   // Check both possible token locations
   const token = localStorage.getItem('token') || localStorage.getItem('auth_token');
 
-  if (!token) {
+  if (!token && isDev) {
     console.warn('⚠️ No authentication token found in localStorage');
   }
 
@@ -71,7 +74,9 @@ const decodeToken = (token: string) => {
     }).join(''));
     return JSON.parse(jsonPayload);
   } catch (error) {
-    console.error('Failed to decode token:', error);
+    if (isDev) {
+      console.error('Failed to decode token:', error);
+    }
     return null;
   }
 };
@@ -92,22 +97,29 @@ const getUserInfo = () => {
   // Check both possible user locations
   const userStr = localStorage.getItem('user') || localStorage.getItem('auth_user');
   
-  // Debug logging
-  console.log('🔍 Checking localStorage for user...');
-  console.log('  - localStorage.getItem("user"):', localStorage.getItem('user'));
-  console.log('  - localStorage.getItem("auth_user"):', localStorage.getItem('auth_user'));
-  console.log('  - localStorage.getItem("token"):', localStorage.getItem('token') ? '✓ exists' : '✗ missing');
+  if (isDev) {
+    console.log('🔍 Checking localStorage for user...');
+    console.log('  - localStorage.getItem("user"):', localStorage.getItem('user'));
+    console.log('  - localStorage.getItem("auth_user"):', localStorage.getItem('auth_user'));
+    console.log('  - localStorage.getItem("token"):', localStorage.getItem('token') ? '✓ exists' : '✗ missing');
+  }
   
   if (!userStr) {
-    console.warn('⚠️ No user found in localStorage. Available keys:', Object.keys(localStorage));
+    if (isDev) {
+      console.warn('⚠️ No user found in localStorage. Available keys:', Object.keys(localStorage));
+    }
     
     // Fallback: try to decode user info from JWT token
     const token = localStorage.getItem('token') || localStorage.getItem('auth_token');
     if (token) {
-      console.log('🔄 Attempting to extract user info from JWT token...');
+      if (isDev) {
+        console.log('🔄 Attempting to extract user info from JWT token...');
+      }
       const decoded = decodeToken(token);
       if (decoded) {
-        console.log('✅ Extracted user from token:', decoded);
+        if (isDev) {
+          console.log('✅ Extracted user from token:', decoded);
+        }
         // JWT payload typically has: userId, email, role, etc.
         return {
           id: decoded.userId || decoded.id || decoded.sub,
@@ -124,10 +136,14 @@ const getUserInfo = () => {
   
   try {
     const parsed = JSON.parse(userStr);
-    console.log('✅ Successfully parsed user:', parsed);
+    if (isDev) {
+      console.log('✅ Successfully parsed user:', parsed);
+    }
     return parsed;
   } catch (error) {
-    console.error('❌ Failed to parse user from localStorage:', error);
+    if (isDev) {
+      console.error('❌ Failed to parse user from localStorage:', error);
+    }
     return null;
   }
 };
@@ -153,8 +169,8 @@ export const getAllBlogsAdmin = async (params?: {
   if (params?.category) queryParams.append('category', params.category);
   if (params?.status) queryParams.append('status', params.status);
 
-  // Call blog microservice directly
-  const response = await fetch(`${BLOG_API_URL}/all?${queryParams}`, {
+  // Call admin microservice (forwards to blog service)
+  const response = await fetch(`${ADMIN_BLOG_API_URL}/posts?${queryParams}`, {
     headers: getAuthHeaders(),
   });
 
@@ -169,8 +185,8 @@ export const getAllBlogsAdmin = async (params?: {
  * Get blog by ID for editing
  */
 export const getBlogByIdAdmin = async (id: string): Promise<any> => {
-  // Call blog microservice directly
-  const response = await fetch(`${BLOG_API_URL}/edit/${id}`, {
+  // Call admin microservice (forwards to blog service)
+  const response = await fetch(`${ADMIN_BLOG_API_URL}/posts/${id}`, {
     headers: getAuthHeaders(),
   });
 
@@ -196,18 +212,26 @@ export const createBlog = async (blogData: CreateBlogInput): Promise<any> => {
         name: user.name || user.username || 'Admin',
         email: user.email || 'admin@example.com',
       };
-      console.log('📝 Including author data in payload:', payload.author);
+      if (isDev) {
+        console.log('📝 Including author data in payload:', payload.author);
+      }
     } else {
-      console.warn('⚠️ User found but missing id fields. Backend will populate author.');
+      if (isDev) {
+        console.warn('⚠️ User found but missing id fields. Backend will populate author.');
+      }
     }
   } else {
-    console.warn('⚠️ No user info available locally. Relying on backend headers for author data.');
+    if (isDev) {
+      console.warn('⚠️ No user info available locally. Relying on backend headers for author data.');
+    }
   }
 
-  console.log('📦 Full payload being sent to API:', JSON.stringify(payload, null, 2));
+  if (isDev) {
+    console.log('📦 Full payload being sent to API:', JSON.stringify(payload, null, 2));
+  }
   
   // Call admin microservice which forwards to blog service with proper headers
-  const response = await fetch(`${ADMIN_API_URL}/posts`, {
+  const response = await fetch(`${ADMIN_BLOG_API_URL}/posts`, {
     method: 'POST',
     headers: getAuthHeaders(),
     body: JSON.stringify(payload),
@@ -215,12 +239,16 @@ export const createBlog = async (blogData: CreateBlogInput): Promise<any> => {
 
   if (!response.ok) {
     const error = await response.json();
-    console.error('❌ API Error Response:', error);
+    if (isDev) {
+      console.error('❌ API Error Response:', error);
+    }
     throw new Error(error.message || 'Failed to create blog');
   }
 
   const result = await response.json();
-  console.log('✅ Blog created successfully:', result);
+  if (isDev) {
+    console.log('✅ Blog created successfully:', result);
+  }
   return result;
 };
 
@@ -228,8 +256,7 @@ export const createBlog = async (blogData: CreateBlogInput): Promise<any> => {
  * Update a blog
  */
 export const updateBlog = async (id: string, blogData: Partial<CreateBlogInput>): Promise<any> => {
-  // Call blog microservice directly
-  const response = await fetch(`${BLOG_API_URL}/${id}`, {
+  const response = await fetch(`${ADMIN_BLOG_API_URL}/posts/${id}`, {
     method: 'PUT',
     headers: getAuthHeaders(),
     body: JSON.stringify(blogData),
@@ -247,8 +274,7 @@ export const updateBlog = async (id: string, blogData: Partial<CreateBlogInput>)
  * Delete a blog
  */
 export const deleteBlog = async (id: string): Promise<void> => {
-  // Call blog microservice directly
-  const response = await fetch(`${BLOG_API_URL}/${id}`, {
+  const response = await fetch(`${ADMIN_BLOG_API_URL}/posts/${id}`, {
     method: 'DELETE',
     headers: getAuthHeaders(),
   });
@@ -263,8 +289,7 @@ export const deleteBlog = async (id: string): Promise<void> => {
  * Publish a blog
  */
 export const publishBlog = async (id: string): Promise<any> => {
-  // Call blog microservice directly
-  const response = await fetch(`${BLOG_API_URL}/${id}/publish`, {
+  const response = await fetch(`${ADMIN_BLOG_API_URL}/posts/${id}/publish`, {
     method: 'POST',
     headers: getAuthHeaders(),
   });
@@ -417,7 +442,7 @@ export const deleteUser = async (id: string): Promise<void> => {
  * Get categories
  */
 export const getCategories = async (): Promise<string[]> => {
-  const response = await fetch(`${ADMIN_API_URL}/categories`, {
+  const response = await fetch(`${ADMIN_BLOG_API_URL}/categories`, {
     headers: getAuthHeaders(),
   });
 
@@ -433,7 +458,7 @@ export const getCategories = async (): Promise<string[]> => {
  * Get tags
  */
 export const getTags = async (): Promise<string[]> => {
-  const response = await fetch(`${ADMIN_API_URL}/tags`, {
+  const response = await fetch(`${ADMIN_BLOG_API_URL}/tags`, {
     headers: getAuthHeaders(),
   });
 

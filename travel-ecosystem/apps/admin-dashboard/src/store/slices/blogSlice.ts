@@ -23,46 +23,46 @@ const initialState: BlogState = {
 };
 
 export const fetchPosts = createAsyncThunk('blog/fetchPosts', async (params?: any) => {
-  const response = await api.get('/blog/posts', { params });
-  // Backend returns: { success: true, data: { blogs: [], pagination: {...} } }
-  return response.data.data;
+  const response = await api.get('/admin/posts', { params });
+  // Admin service returns { blogs: [], pagination: {...} }
+  return response.data;
 });
 
 export const fetchPostById = createAsyncThunk('blog/fetchPostById', async (id: string) => {
-  const response = await api.get<BlogPost>(`/blog/posts/${id}`);
+  const response = await api.get<BlogPost>(`/admin/posts/${id}`);
   return response.data;
 });
 
 export const createPost = createAsyncThunk('blog/createPost', async (post: Partial<BlogPost>) => {
-  const response = await api.post<BlogPost>('/blog/posts', post);
+  const response = await api.post<BlogPost>('/admin/posts', post);
   return response.data;
 });
 
 export const updatePost = createAsyncThunk(
   'blog/updatePost',
   async ({ id, data }: { id: string; data: Partial<BlogPost> }) => {
-    const response = await api.put<BlogPost>(`/blog/posts/${id}`, data);
+    const response = await api.put<BlogPost>(`/admin/posts/${id}`, data);
     return response.data;
   }
 );
 
 export const deletePost = createAsyncThunk('blog/deletePost', async (id: string) => {
-  await api.delete(`/blog/posts/${id}`);
+  await api.delete(`/admin/posts/${id}`);
   return id;
 });
 
 export const publishPost = createAsyncThunk('blog/publishPost', async (id: string) => {
-  const response = await api.post<BlogPost>(`/blog/posts/${id}/publish`);
+  const response = await api.post<BlogPost>(`/admin/posts/${id}/publish`);
   return response.data;
 });
 
 export const fetchCategories = createAsyncThunk('blog/fetchCategories', async () => {
-  const response = await api.get<string[]>('/blog/categories');
+  const response = await api.get<string[]>('/admin/categories');
   return response.data;
 });
 
 export const fetchTags = createAsyncThunk('blog/fetchTags', async () => {
-  const response = await api.get<string[]>('/blog/tags');
+  const response = await api.get<string[]>('/admin/tags');
   return response.data;
 });
 

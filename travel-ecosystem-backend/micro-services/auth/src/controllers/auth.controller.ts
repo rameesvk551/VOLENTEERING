@@ -5,29 +5,26 @@ import crypto from 'crypto';
 import { User } from '../models/User.js';
 import { sendEmail } from '../utils/email.js';
 
-// Generate JWT Token
-const generateToken = (userId: number, email: string, role: string) => {
-  const secret: Secret = process.env.JWT_SECRET ?? 'your-secret-key';
-  const expiresIn: SignOptions['expiresIn'] = (process.env.JWT_EXPIRES_IN ?? '7d') as StringValue;
+const JWT_SECRET: Secret = (process.env.JWT_SECRET ?? process.env.AUTH_JWT_SECRET ?? 'volenteering-shared-secret');
+const JWT_EXPIRES_IN: SignOptions['expiresIn'] = (process.env.JWT_EXPIRES_IN ?? '7d') as StringValue;
+const JWT_REFRESH_SECRET: Secret = process.env.JWT_REFRESH_SECRET ?? 'volenteering-refresh-secret';
+const JWT_REFRESH_EXPIRES_IN: SignOptions['expiresIn'] = (process.env.JWT_REFRESH_EXPIRES_IN ?? '30d') as StringValue;
 
-  return jwt.sign(
+// Generate JWT Token
+const generateToken = (userId: number, email: string, role: string) =>
+  jwt.sign(
     { id: userId, email, role },
-    secret,
-    { expiresIn }
+    JWT_SECRET,
+    { expiresIn: JWT_EXPIRES_IN }
   );
-};
 
 // Generate Refresh Token
-const generateRefreshToken = (userId: number) => {
-  const secret: Secret = process.env.JWT_REFRESH_SECRET ?? 'your-refresh-secret';
-  const expiresIn: SignOptions['expiresIn'] = (process.env.JWT_REFRESH_EXPIRES_IN ?? '30d') as StringValue;
-
-  return jwt.sign(
+const generateRefreshToken = (userId: number) =>
+  jwt.sign(
     { id: userId, type: 'refresh' },
-    secret,
-    { expiresIn }
+    JWT_REFRESH_SECRET,
+    { expiresIn: JWT_REFRESH_EXPIRES_IN }
   );
-};
 
 // @route   POST /api/auth/signup
 // @desc    Register a new user
@@ -76,8 +73,8 @@ export const signup = async (req: Request, res: Response, next: NextFunction) =>
     });
 
     // Generate tokens
-    const token = generateToken(user.id, user.email, user.role);
-    const refreshToken = generateRefreshToken(user.id);
+  const token = generateToken(user.id, user.email, user.role);
+  const refreshToken = generateRefreshToken(user.id);
 
     // Save refresh token
     user.refreshTokens = user.refreshTokens || [];
@@ -196,7 +193,7 @@ export const refreshToken = async (req: Request, res: Response, next: NextFuncti
     // Verify refresh token
     const decoded = jwt.verify(
       refreshToken,
-      process.env.JWT_REFRESH_SECRET || 'your-refresh-secret'
+      JWT_REFRESH_SECRET
     ) as { id: number; type: string };
 
     if (decoded.type !== 'refresh') {
@@ -216,8 +213,8 @@ export const refreshToken = async (req: Request, res: Response, next: NextFuncti
     }
 
     // Generate new tokens
-    const newToken = generateToken(user.id, user.email, user.role);
-    const newRefreshToken = generateRefreshToken(user.id);
+  const newToken = generateToken(user.id, user.email, user.role);
+  const newRefreshToken = generateRefreshToken(user.id);
 
     // Replace old refresh token with new one
     user.refreshTokens = user.refreshTokens.filter((t: string) => t !== refreshToken);

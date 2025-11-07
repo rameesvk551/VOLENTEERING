@@ -19,9 +19,11 @@ type Config = {
  * Only works in production and over HTTPS
  */
 export function register(config?: Config): void {
-  if (process.env.NODE_ENV === 'production' && 'serviceWorker' in navigator) {
+  if (import.meta.env.PROD && 'serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-      const swUrl = `${process.env.PUBLIC_URL}/service-worker.js`;
+      const base = (import.meta.env.BASE_URL ?? '/').replace(/\/$/, '');
+      const swPath = `${base || ''}/service-worker.js`;
+      const swUrl = new URL(swPath, window.location.origin).toString();
 
       registerValidSW(swUrl, config);
     });

@@ -6,6 +6,15 @@
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api';
 
+const resolveAuthHeaders = (): Record<string, string> => {
+  if (typeof window === 'undefined') {
+    return {};
+  }
+
+  const token = localStorage.getItem('token') || localStorage.getItem('auth_token');
+  return token ? { Authorization: `Bearer ${token}` } : {};
+};
+
 interface Author {
   id: string;
   name: string;
@@ -184,6 +193,7 @@ export async function createPost(postData: Partial<Post>): Promise<Post> {
     message?: string;
   }>('/blog', {
     method: 'POST',
+    headers: resolveAuthHeaders(),
     body: JSON.stringify(postData),
   });
 
@@ -200,6 +210,7 @@ export async function updatePost(id: string, postData: Partial<Post>): Promise<P
     message?: string;
   }>(`/blog/${id}`, {
     method: 'PUT',
+    headers: resolveAuthHeaders(),
     body: JSON.stringify(postData),
   });
 
@@ -212,6 +223,7 @@ export async function updatePost(id: string, postData: Partial<Post>): Promise<P
 export async function deletePost(id: string): Promise<void> {
   await fetchAPI(`/blog/${id}`, {
     method: 'DELETE',
+    headers: resolveAuthHeaders(),
   });
 }
 

@@ -1,0 +1,140 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  install-and-cache:
+    name: Setup
+    runs-on: ubuntu-latest
+    outputs:
+      cache-key: ${{ steps.cache-install.outputs.cache-key }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Cache npm
+        id: cache-install
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json', '**/pnpm-lock.yaml', '**/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Install root deps
+        run: npm install
+
+      - name: Install client deps
+        working-directory: client
+        run: npm install
+
+      - name: Install server deps
+        working-directory: server
+        run: npm install
+
+      - name: Install travel-ecosystem deps
+        working-directory: travel-ecosystem
+        run: npm install
+
+  lint-and-typecheck:
+    name: Lint & Typecheck
+    needs: install-and-cache
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Restore npm cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: ${{ needs.install-and-cache.outputs.cache-key }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Install dependencies
+        run: |
+          npm install
+          npm install --prefix client
+          npm install --prefix server
+          npm install --prefix travel-ecosystem
+
+      - name: Client lint
+        working-directory: client
+        run: npm run lint
+
+      - name: Client typecheck
+        working-directory: client
+        run: npm run build -- --dry-run
+
+  unit-tests:
+    name: Unit Tests
+    needs: install-and-cache
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Restore npm cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: ${{ needs.install-and-cache.outputs.cache-key }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Install dependencies
+        run: |
+          npm install
+          npm install --prefix client
+          npm install --prefix server
+          npm install --prefix travel-ecosystem
+
+      - name: Client unit tests
+        if: ${{ hashFiles('client/**/*.test.*') != '' }}
+        working-directory: client
+        run: npm test -- --watch=false
+
+      - name: Server tests placeholder
+        run: echo "TODO: add server test command"
+
+  e2e-playwright:
+    name: Playwright (Placeholder)
+    needs: [lint-and-typecheck, unit-tests]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: TODO Playwright setup
+        run: echo "TODO: configure Playwright"
+
+  lighthouse:
+    name: Lighthouse (Placeholder)
+    needs: [lint-and-typecheck]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: TODO Lighthouse setup
+        run: echo "TODO: configure Lighthouse CI"

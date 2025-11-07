@@ -3,14 +3,18 @@ import { useAppSelector } from '@/store';
 
 export function AuthRedirect() {
   const { isAuthenticated, token } = useAppSelector((state) => state.auth);
+  const loginUrl = import.meta.env.VITE_SHELL_LOGIN_URL || '/login';
 
   useEffect(() => {
     // Check if user is not authenticated
     if (!isAuthenticated && !token) {
       // Redirect to shell login page
-  window.location.href = 'http://localhost:1001/login';
+      const target = loginUrl.startsWith('http')
+        ? loginUrl
+        : new URL(loginUrl.startsWith('/') ? loginUrl : `/${loginUrl}`, window.location.origin).toString();
+      window.location.href = target;
     }
-  }, [isAuthenticated, token]);
+  }, [isAuthenticated, loginUrl, token]);
 
   // Show loading while checking authentication
   if (!isAuthenticated && !token) {

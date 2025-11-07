@@ -24,7 +24,10 @@ export const authMiddleware = async (
       });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key') as {
+    const decoded = jwt.verify(
+      token,
+      process.env.JWT_SECRET || process.env.AUTH_JWT_SECRET || 'volenteering-shared-secret'
+    ) as {
       id: number;
       email: string;
       role: string;

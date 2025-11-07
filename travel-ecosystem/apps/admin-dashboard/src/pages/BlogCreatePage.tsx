@@ -335,7 +335,9 @@ export function BlogCreatePage() {
     try {
       // Debug: Check localStorage for user
       const authUser = localStorage.getItem('auth_user');
-      console.log('🔍 Auth user from localStorage:', authUser);
+      if (import.meta.env.DEV) {
+        console.log('🔍 Auth user from localStorage:', authUser);
+      }
       
       const blogData: any = {
         title: formData.title,
@@ -351,7 +353,9 @@ export function BlogCreatePage() {
         status: 'draft' as const
       };
 
-      console.log('📤 Sending blog data:', blogData);
+      if (import.meta.env.DEV) {
+        console.log('📤 Sending blog data:', blogData);
+      }
       await createBlog(blogData);
       
       localStorage.removeItem('blog_draft');

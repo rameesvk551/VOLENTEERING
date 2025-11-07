@@ -1,4 +1,4 @@
-import express, { Request, Response, NextFunction } from 'express';
+import express, { Request, Response } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
@@ -6,7 +6,7 @@ import compression from 'compression';
 import dotenv from 'dotenv';
 import { createProxyMiddleware } from 'http-proxy-middleware';
 import rateLimit from 'express-rate-limit';
-import { authMiddleware, optionalAuthMiddleware } from './middleware/auth.middleware.js';
+import { authMiddleware, optionalAuthMiddleware, type AuthRequest } from './middleware/auth.middleware.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { loggerMiddleware } from './middleware/logger.middleware.js';
 import { validateAdminBlogQuery } from './middleware/validation.middleware.js';
@@ -15,6 +15,9 @@ dotenv.config();
 
 const app = express();
 const PORT = Number(process.env.PORT) || 4000;
+const AUTH_SERVICE_URL = process.env.AUTH_SERVICE_URL || 'http://localhost:4001';
+const BLOG_SERVICE_URL = process.env.BLOG_SERVICE_URL || 'http://localhost:4003';
+const ADMIN_SERVICE_URL = process.env.ADMIN_SERVICE_URL || 'http://localhost:4002';
 
 // Middleware
 app.use(helmet());
@@ -76,7 +79,7 @@ app.get('/', (req: Request, res: Response) => {
 
 // Auth Service - Public routes (no auth required)
 app.use('/api/auth', createProxyMiddleware({
-  target: process.env.AUTH_SERVICE_URL || 'http://localhost:4001',
+  target: AUTH_SERVICE_URL,
   changeOrigin: true,
   pathRewrite: {
     '^/api/auth': '/api/auth'
@@ -101,7 +104,7 @@ app.use('/api/auth', createProxyMiddleware({
 
 // Blog Service - Public routes with optional auth
 app.use('/api/blog', optionalAuthMiddleware, createProxyMiddleware({
-  target: process.env.BLOG_SERVICE_URL || 'http://localhost:4003',
+  target: BLOG_SERVICE_URL,
   changeOrigin: true,
   pathRewrite: {
     '^/api/blog': '/api/blog'
@@ -125,27 +128,51 @@ app.use('/api/blog', optionalAuthMiddleware, createProxyMiddleware({
 }));
 
 // Admin Service - Protected routes (auth required)
-app.use('/api/admin', authMiddleware, validateAdminBlogQuery, createProxyMiddleware({
-  target: process.env.ADMIN_SERVICE_URL || 'http://localhost:4002',
-  changeOrigin: true,
-  pathRewrite: {
-    '^/api/admin': '/api/admin'
-  },
-  onProxyReq: (proxyReq, req: any) => {
-    // Forward authenticated user info
-    proxyReq.setHeader('X-User-Id', req.user.id);
-    proxyReq.setHeader('X-User-Email', req.user.email);
-    proxyReq.setHeader('X-User-Role', req.user.role);
-  },
-  onError: (err, req, res) => {
-    console.error('Admin Service Proxy Error:', err);
-    res.status(503).json({ 
-      success: false, 
+const forwardAdminHeaders = (proxyReq: any, req: AuthRequest) => {
+  if (!req.user) {
+    return;
+  }
+
+  proxyReq.setHeader('X-User-Id', req.user.id);
+  proxyReq.setHeader('X-User-Email', req.user.email);
+  proxyReq.setHeader('X-User-Role', req.user.role);
+};
+
+const onAdminProxyError = (err: Error, req: Request, res: Response) => {
+  console.error('Admin Service Proxy Error:', err);
+  if (!res.headersSent) {
+    res.status(503).json({
+      success: false,
       message: 'Admin service unavailable',
-      error: err.message 
+      error: err.message
     });
   }
-}));
+};
+
+const adminServiceProxy = createProxyMiddleware({
+  target: ADMIN_SERVICE_URL,
+  changeOrigin: true,
+  timeout: 30000,
+  proxyTimeout: 30000,
+  onProxyReq: (proxyReq, req: AuthRequest) => forwardAdminHeaders(proxyReq, req),
+  onError: onAdminProxyError
+});
+
+app.use('/api/admin', authMiddleware, validateAdminBlogQuery, adminServiceProxy);
+
+const adminServicePaths = [
+  '/api/users',
+  '/api/trips',
+  '/api/hosts',
+  '/api/gear',
+  '/api/bookings',
+  '/api/finance',
+  '/api/analytics'
+];
+
+adminServicePaths.forEach((path) => {
+  app.use(path, authMiddleware, adminServiceProxy);
+});
 
 // 404 Handler
 app.use((req: Request, res: Response) => {
@@ -162,9 +189,9 @@ app.use(errorHandler);
 const server = app.listen(PORT, () => {
   console.log(`🚀 API Gateway running on port ${PORT}`);
   console.log(`📍 Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`🔗 Auth Service: ${process.env.AUTH_SERVICE_URL}`);
-  console.log(`🔗 Blog Service: ${process.env.BLOG_SERVICE_URL}`);
-  console.log(`🔗 Admin Service: ${process.env.ADMIN_SERVICE_URL}`);
+  console.log(`🔗 Auth Service: ${AUTH_SERVICE_URL}`);
+  console.log(`🔗 Blog Service: ${BLOG_SERVICE_URL}`);
+  console.log(`🔗 Admin Service: ${ADMIN_SERVICE_URL}`);
 });
 
 // Graceful error handling for server startup
