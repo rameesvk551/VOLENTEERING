@@ -1,27 +1,19 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { useRoutes } from 'react-router-dom';
 import AdvancedTripPlanner from './pages/AdvancedTripPlanner';
 import { DiscoveryPage } from './pages/DiscoveryPage';
 import RouteOptimizationPage from './pages/RouteOptimizationPage';
 
 const App: React.FC = () => {
-  return (
-    <Router
-      future={{
-        v7_startTransition: true,
-        v7_relativeSplatPath: true,
-      }}
-    >
-      <Routes>
-        <Route path="/" element={<AdvancedTripPlanner />} />
-        <Route path="/trip-planner/*" element={<AdvancedTripPlanner />} />
-        <Route path="/discover" element={<DiscoveryPage />} />
-        <Route path="/ai-discovery" element={<DiscoveryPage />} />
-        <Route path="/route-optimizer" element={<RouteOptimizationPage />} />
-        <Route path="/optimize-route" element={<RouteOptimizationPage />} />
-      </Routes>
-    </Router>
-  );
+  const element = useRoutes([
+    { index: true, element: <AdvancedTripPlanner /> },
+    { path: 'discover', element: <DiscoveryPage /> },
+    { path: 'ai-discovery', element: <DiscoveryPage /> },
+    { path: 'route-optimizer', element: <RouteOptimizationPage /> },
+    { path: 'optimize-route', element: <RouteOptimizationPage /> },
+    { path: '*', element: <AdvancedTripPlanner /> },
+  ]);
+  return element ?? null;
 };
 
 export default App;

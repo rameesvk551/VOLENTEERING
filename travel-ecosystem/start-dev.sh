@@ -34,22 +34,22 @@ fi
 
 if [ ! -d "apps/blog/node_modules" ]; then
     echo "📦 Installing blog dependencies..."
-    cd apps/blog && npm install && cd ../.. 
+    cd apps/blog && npm install && cd ../..
 fi
 
 if [ ! -d "apps/visa-explorer/node_modules" ]; then
     echo "📦 Installing visa-explorer dependencies..."
-    cd apps/visa-explorer && npm install && cd ../.. 
+    cd apps/visa-explorer && npm install && cd ../..
 fi
 
 if [ ! -d "apps/trip-planner/node_modules" ]; then
     echo "📦 Installing trip-planner dependencies..."
-    cd apps/trip-planner && npm install && cd ../.. 
+    cd apps/trip-planner && npm install && cd ../..
 fi
 
 if [ ! -d "apps/volunteering/node_modules" ]; then
     echo "📦 Installing volunteering dependencies..."
-    cd apps/volunteering && npm install && cd ../.. 
+    cd apps/volunteering && npm install && cd ../..
 fi
 
 echo ""

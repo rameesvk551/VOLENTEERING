@@ -5,7 +5,7 @@ import { federation } from '@module-federation/vite';
 const sharedDeps = {
   react: { singleton: true, eager: true, requiredVersion: '^18.2.0' },
   'react-dom': { singleton: true, eager: true, requiredVersion: '^18.2.0' },
-  'react-router-dom': { singleton: true, eager: true, requiredVersion: '^6.30.1' },
+  'react-router-dom': { singleton: true, eager: true, requiredVersion: '^6.20.0' },
   'react-redux': { singleton: true, eager: true, requiredVersion: '^9.0.4' },
   '@reduxjs/toolkit': { singleton: true, requiredVersion: '^2.0.1' }
 } satisfies Record<string, Record<string, unknown>>;

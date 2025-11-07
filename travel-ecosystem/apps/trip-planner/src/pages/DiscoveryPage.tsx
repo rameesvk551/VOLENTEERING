@@ -26,7 +26,7 @@ export const DiscoveryPage: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <button
-              onClick={() => navigate('/')}
+              onClick={() => navigate('..', { replace: false, relative: 'path' })}
               className="p-2 rounded-xl hover:bg-white/50 dark:hover:bg-gray-800/50
                 transition-all duration-300"
             >
@@ -44,7 +44,7 @@ export const DiscoveryPage: React.FC = () => {
           </div>
 
           <button
-            onClick={() => navigate('/')}
+            onClick={() => navigate('..', { replace: false, relative: 'path' })}
             className="px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-purple-500
               text-white font-medium hover:shadow-lg transition-all duration-300"
           >
