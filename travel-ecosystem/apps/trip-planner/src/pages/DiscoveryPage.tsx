@@ -15,53 +15,61 @@ export const DiscoveryPage: React.FC = () => {
   };
 
   return (
-    <div className="discovery-page min-h-screen bg-gradient-to-br from-gray-50 to-gray-100
-      dark:from-gray-900 dark:to-gray-800 transition-colors duration-300">
+    <div className="discovery-page min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-purple-50
+      dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 transition-colors duration-300">
       {/* Header */}
       <motion.header
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="sticky top-0 z-50 glass-border backdrop-blur-xl shadow-sm"
+        className="sticky top-0 z-50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl 
+          shadow-sm border-b border-gray-200 dark:border-gray-700"
       >
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
+          <div className="flex items-center justify-between gap-2 sm:gap-4">
+            <div className="flex items-center gap-2 sm:gap-4 min-w-0">
+              <button
+                onClick={() => navigate('..', { replace: false, relative: 'path' })}
+                className="p-2 rounded-xl hover:bg-white dark:hover:bg-gray-800 
+                  transition-all duration-300 flex-shrink-0"
+                aria-label="Go back"
+              >
+                <ArrowLeft className="w-5 h-5 sm:w-6 sm:h-6 text-gray-700 dark:text-gray-300" />
+              </button>
+              <div className="min-w-0">
+                <h1 className="text-base sm:text-lg md:text-xl font-bold bg-gradient-to-r 
+                  from-cyan-600 to-purple-600 dark:from-cyan-400 dark:to-purple-400 
+                  bg-clip-text text-transparent truncate">
+                  AI Travel Discovery
+                </h1>
+                <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 truncate">
+                  Powered by LangChain & LangGraph
+                </p>
+              </div>
+            </div>
+
             <button
               onClick={() => navigate('..', { replace: false, relative: 'path' })}
-              className="p-2 rounded-xl hover:bg-white/50 dark:hover:bg-gray-800/50
-                transition-all duration-300"
+              className="px-3 py-2 sm:px-4 sm:py-2 rounded-xl bg-gradient-to-r 
+                from-cyan-500 to-purple-500 text-white font-medium text-sm sm:text-base
+                hover:shadow-lg hover:scale-105 transition-all duration-300 flex-shrink-0"
             >
-              <ArrowLeft className="w-6 h-6 text-gray-700 dark:text-gray-300" />
+              <span className="hidden sm:inline">View My Trip</span>
+              <span className="sm:hidden">My Trip</span>
             </button>
-            <div>
-              <h1 className="text-xl font-bold bg-gradient-to-r from-cyan-600 to-purple-600
-                dark:from-cyan-400 dark:to-purple-400 bg-clip-text text-transparent">
-                AI Travel Discovery
-              </h1>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                Powered by LangChain & LangGraph
-              </p>
-            </div>
           </div>
-
-          <button
-            onClick={() => navigate('..', { replace: false, relative: 'path' })}
-            className="px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-purple-500
-              text-white font-medium hover:shadow-lg transition-all duration-300"
-          >
-            View My Trip
-          </button>
         </div>
       </motion.header>
 
       {/* Main Content */}
-      <main className="pt-8 pb-16">
+      <main className="pt-4 sm:pt-6 md:pt-8 pb-16 px-4 sm:px-6 lg:px-8">
         <DiscoverySearch onResultSelect={handleResultSelect} />
       </main>
 
       {/* Footer */}
-      <footer className="glass-border py-6">
-        <div className="max-w-7xl mx-auto px-4 text-center">
-          <p className="text-sm text-gray-600 dark:text-gray-400">
+      <footer className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl 
+        border-t border-gray-200 dark:border-gray-700 py-6 mt-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
             Powered by OpenAI, LangChain, LangGraph, and Weaviate
           </p>
           <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">

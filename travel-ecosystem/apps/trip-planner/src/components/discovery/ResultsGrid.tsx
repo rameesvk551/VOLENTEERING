@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Filter, Grid3x3, List } from 'lucide-react';
+import { Grid3x3, List } from 'lucide-react';
 import { ResultCard } from './ResultCard';
 import type { DiscoveryEntity } from '../../hooks/useDiscovery';
 
@@ -46,21 +46,24 @@ export const ResultsGrid: React.FC<ResultsGridProps> = ({ results, onResultSelec
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0 }}
-      className="results-grid-container"
+      className="results-grid-container mt-6 sm:mt-8"
     >
       {/* Header */}
-      <div className="flex items-center justify-between mb-6 flex-wrap gap-4">
-        <div>
-          <h2 className="text-2xl font-bold dark:text-white mb-1">
-            Discover {filteredResults.length} Amazing {activeFilter === 'all' ? 'Experiences' : activeFilter}
+      <div className="flex items-start sm:items-center justify-between mb-4 sm:mb-6 
+        flex-col sm:flex-row gap-3 sm:gap-4">
+        <div className="w-full sm:w-auto">
+          <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 
+            dark:text-white mb-1">
+            {filteredResults.length} Amazing {activeFilter === 'all' ? 'Experiences' : activeFilter}
           </h2>
-          <p className="text-gray-600 dark:text-gray-400 text-sm">
+          <p className="text-gray-600 dark:text-gray-400 text-xs sm:text-sm">
             Curated recommendations just for you
           </p>
         </div>
 
         {/* View Mode Toggle */}
-        <div className="flex items-center gap-2 glass px-2 py-2 rounded-xl">
+        <div className="flex items-center gap-2 bg-white/60 dark:bg-gray-800/60 
+          backdrop-blur-sm px-2 py-2 rounded-xl border border-gray-200 dark:border-gray-700">
           <button
             onClick={() => setViewMode('grid')}
             className={`p-2 rounded-lg transition-all duration-300 ${
@@ -68,8 +71,9 @@ export const ResultsGrid: React.FC<ResultsGridProps> = ({ results, onResultSelec
                 ? 'bg-gradient-to-r from-cyan-500 to-purple-500 text-white shadow-lg'
                 : 'text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
             }`}
+            aria-label="Grid view"
           >
-            <Grid3x3 className="w-5 h-5" />
+            <Grid3x3 className="w-4 h-4 sm:w-5 sm:h-5" />
           </button>
           <button
             onClick={() => setViewMode('list')}
@@ -78,29 +82,32 @@ export const ResultsGrid: React.FC<ResultsGridProps> = ({ results, onResultSelec
                 ? 'bg-gradient-to-r from-cyan-500 to-purple-500 text-white shadow-lg'
                 : 'text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
             }`}
+            aria-label="List view"
           >
-            <List className="w-5 h-5" />
+            <List className="w-4 h-4 sm:w-5 sm:h-5" />
           </button>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="filters mb-6 flex gap-3 flex-wrap">
+      <div className="filters mb-4 sm:mb-6 flex gap-2 sm:gap-3 flex-wrap overflow-x-auto 
+        scrollbar-hide pb-2">
         {filterOptions.map((option) => (
           <motion.button
             key={option.id}
             onClick={() => setActiveFilter(option.id)}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            className={`px-5 py-2.5 rounded-xl font-medium transition-all duration-300 shadow-sm
+            className={`px-3 py-2 sm:px-4 sm:py-2.5 rounded-lg sm:rounded-xl font-medium 
+              text-xs sm:text-sm transition-all duration-300 shadow-sm whitespace-nowrap
               ${activeFilter === option.id
                 ? 'bg-gradient-to-r from-cyan-500 to-purple-500 text-white shadow-lg'
-                : 'glass hover:bg-white/50 dark:hover:bg-gray-800/50 text-gray-700 dark:text-gray-300'
+                : 'bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-gray-200 dark:border-gray-700 hover:bg-white dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300'
               }`}
           >
             {option.label}
             {option.count > 0 && (
-              <span className={`ml-2 px-2 py-0.5 rounded-full text-xs
+              <span className={`ml-1.5 sm:ml-2 px-1.5 sm:px-2 py-0.5 rounded-full text-xs
                 ${activeFilter === option.id
                   ? 'bg-white/30'
                   : 'bg-gray-200 dark:bg-gray-700'
@@ -116,8 +123,8 @@ export const ResultsGrid: React.FC<ResultsGridProps> = ({ results, onResultSelec
       <motion.div
         layout
         className={viewMode === 'grid'
-          ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'
-          : 'flex flex-col gap-4'
+          ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6'
+          : 'flex flex-col gap-3 sm:gap-4'
         }
       >
         {filteredResults.map((result, index) => (

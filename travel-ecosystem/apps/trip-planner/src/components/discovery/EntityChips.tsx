@@ -57,9 +57,9 @@ export const EntityChips: React.FC<EntityChipsProps> = ({ entities }) => {
       initial={{ opacity: 0, height: 0 }}
       animate={{ opacity: 1, height: 'auto' }}
       exit={{ opacity: 0, height: 0 }}
-      className="entity-chips mb-8"
+      className="entity-chips mb-6 sm:mb-8"
     >
-      <div className="flex gap-3 flex-wrap">
+      <div className="flex gap-2 sm:gap-3 flex-wrap">
         {chips.map((chip, idx) => (
           <motion.div
             key={`${chip.type}-${chip.label}`}
@@ -67,12 +67,12 @@ export const EntityChips: React.FC<EntityChipsProps> = ({ entities }) => {
             animate={{ scale: 1, rotate: 0 }}
             exit={{ scale: 0, rotate: 10 }}
             transition={{ delay: idx * 0.05, type: 'spring' }}
-            className={`inline-flex items-center gap-2 px-4 py-2 rounded-full
-              bg-gradient-to-r ${chip.gradient} text-white shadow-lg
-              hover:shadow-xl transition-shadow duration-300`}
+            className={`inline-flex items-center gap-1.5 sm:gap-2 px-3 py-1.5 sm:px-4 sm:py-2 
+              rounded-full bg-gradient-to-r ${chip.gradient} text-white shadow-lg
+              hover:shadow-xl transition-shadow duration-300 text-xs sm:text-sm`}
           >
-            {chip.icon}
-            <span className="font-medium">{chip.label}</span>
+            <span className="flex-shrink-0">{chip.icon}</span>
+            <span className="font-medium whitespace-nowrap">{chip.label}</span>
           </motion.div>
         ))}
       </div>

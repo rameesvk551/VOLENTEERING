@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { MapPin, Calendar, Star, Plus, ExternalLink, Check } from 'lucide-react';
+import { Calendar, Plus, Check } from 'lucide-react';
 import { useTripStore } from '../../store/tripStore';
 import type { DiscoveryEntity } from '../../hooks/useDiscovery';
 
@@ -79,132 +79,134 @@ export const ResultCard: React.FC<ResultCardProps> = ({ result, index, onSelect 
       onHoverStart={() => setIsHovered(true)}
       onHoverEnd={() => setIsHovered(false)}
       onClick={onSelect}
-      className="result-card glass rounded-2xl overflow-hidden cursor-pointer
-        hover:shadow-2xl transition-all duration-300 group"
+      className="result-card group relative bg-white dark:bg-gray-800 
+        rounded-xl sm:rounded-2xl overflow-hidden cursor-pointer
+        shadow-lg hover:shadow-2xl transition-all duration-300"
     >
-      {/* Image */}
-      <div className="relative h-52 overflow-hidden bg-gray-200 dark:bg-gray-800">
+      {/* Image Container */}
+      <div className="relative h-56 sm:h-64 overflow-hidden">
         <img
-          src={result.media.images[0] || 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=400&h=300&fit=crop'}
+          src={result.media.images[0] || 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=800'}
           alt={result.title}
-          className="w-full h-full object-cover transition-transform duration-500"
-          style={{ transform: isHovered ? 'scale(1.1)' : 'scale(1)' }}
+          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+          loading="lazy"
           onError={(e) => {
-            (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=400&h=300&fit=crop';
+            (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=800';
           }}
         />
 
-        {/* Gradient Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+        {/* Overlay Gradient */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
 
-        {/* Type Badge */}
-        <div className={`absolute top-3 left-3 px-3 py-1.5 rounded-full
-          bg-gradient-to-r ${config.gradient} text-white text-sm font-medium
-          shadow-lg backdrop-blur-sm`}>
-          <span className="mr-1">{config.emoji}</span>
-          {result.type}
-        </div>
-
-        {/* Popularity Score */}
+        {/* Rating Badge */}
         {result.metadata.popularity && (
-          <div className="absolute top-3 right-3 flex items-center gap-1 px-2.5 py-1.5
-            rounded-full bg-black/50 backdrop-blur-md text-white text-sm">
-            <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-            <span className="font-medium">
+          <div className="absolute top-3 sm:top-4 right-3 sm:right-4 
+            bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-full 
+            px-2.5 py-1 sm:px-3 sm:py-1 flex items-center gap-1 shadow-lg">
+            <span className="text-yellow-500">⭐</span>
+            <span className="font-semibold text-gray-800 dark:text-white text-xs sm:text-sm">
               {(result.metadata.popularity * 5).toFixed(1)}
             </span>
           </div>
         )}
 
-        {/* Add to Trip Button */}
+        {/* Type Badge */}
+        <div className={`absolute top-3 sm:top-4 left-3 sm:left-4 
+          bg-gradient-to-r ${config.gradient} backdrop-blur-sm rounded-full 
+          px-2.5 py-1 sm:px-3 sm:py-1 text-white text-xs sm:text-sm font-semibold shadow-lg`}>
+          <span className="mr-1">{config.emoji}</span>
+          <span className="hidden sm:inline">{result.type}</span>
+        </div>
+
+        {/* Add to Trip Button - Shows on hover */}
         <motion.button
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: isHovered ? 1 : 0, y: isHovered ? 0 : 10 }}
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ 
+            opacity: isHovered ? 1 : 0, 
+            scale: isHovered ? 1 : 0.8 
+          }}
           onClick={handleAddToTrip}
           disabled={isAlreadyAdded}
-          className={`absolute bottom-3 right-3 p-3 rounded-full shadow-xl
-            transition-all duration-300 ${
-              isAlreadyAdded
-                ? 'bg-green-500 cursor-not-allowed'
-                : 'bg-white hover:scale-110'
+          className={`absolute bottom-3 sm:bottom-4 right-3 sm:right-4 
+            p-2.5 sm:p-3 rounded-full shadow-xl transition-all duration-300 
+            ${isAlreadyAdded
+              ? 'bg-green-500 cursor-not-allowed'
+              : 'bg-white dark:bg-gray-800 hover:scale-110'
             }`}
+          aria-label={isAlreadyAdded ? 'Already added' : 'Add to trip'}
         >
           {isAlreadyAdded ? (
-            <Check className="w-5 h-5 text-white" />
+            <Check className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
           ) : (
-            <Plus className="w-5 h-5 text-cyan-600" />
+            <Plus className="w-4 h-4 sm:w-5 sm:h-5 text-cyan-600 dark:text-cyan-400" />
           )}
         </motion.button>
       </div>
 
       {/* Content */}
-      <div className="p-5">
-        <h3 className="text-xl font-bold mb-2 line-clamp-2 dark:text-white
+      <div className="p-5 sm:p-6">
+        <h3 className="text-xl sm:text-2xl font-bold text-gray-800 dark:text-white mb-1 
           group-hover:text-cyan-600 dark:group-hover:text-cyan-400 transition-colors">
           {result.title}
         </h3>
 
-        <p className="text-gray-600 dark:text-gray-400 text-sm mb-4 line-clamp-3 leading-relaxed">
+        <p className="text-gray-500 dark:text-gray-400 mb-3 flex items-center gap-1 text-sm">
+          <span>📍</span> {result.location.city}
+          {result.location.country && `, ${result.location.country}`}
+        </p>
+
+        <p className="text-gray-600 dark:text-gray-300 leading-relaxed mb-4 
+          text-sm sm:text-base line-clamp-2 sm:line-clamp-3">
           {result.description}
         </p>
 
-        {/* Metadata */}
-        <div className="space-y-2 mb-4">
-          {/* Location */}
-          <div className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
-            <MapPin className="w-4 h-4 text-cyan-500 flex-shrink-0" />
-            <span className="line-clamp-1">
-              {result.location.city}
-              {result.location.country && `, ${result.location.country}`}
+        {/* Date Information */}
+        {result.dates && (
+          <div className="flex items-center gap-1.5 mb-3 text-gray-600 dark:text-gray-400 text-sm">
+            <Calendar className="w-4 h-4 text-purple-500 flex-shrink-0" />
+            <span>
+              {new Date(result.dates.start).toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric'
+              })}
+              {' - '}
+              {new Date(result.dates.end).toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric'
+              })}
             </span>
           </div>
+        )}
 
-          {/* Dates */}
-          {result.dates && (
-            <div className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
-              <Calendar className="w-4 h-4 text-purple-500 flex-shrink-0" />
-              <span className="line-clamp-1">
-                {new Date(result.dates.start).toLocaleDateString('en-US', {
-                  month: 'short',
-                  day: 'numeric'
-                })}
-                {' - '}
-                {new Date(result.dates.end).toLocaleDateString('en-US', {
-                  month: 'short',
-                  day: 'numeric',
-                  year: 'numeric'
-                })}
-              </span>
-            </div>
-          )}
-
-          {/* Cost */}
-          {result.metadata.cost && (
-            <div className="flex items-center gap-2 text-sm">
-              <span className="font-semibold text-green-600 dark:text-green-400">
-                {result.metadata.cost}
-              </span>
-            </div>
-          )}
-        </div>
-
-        {/* Tags */}
-        <div className="flex gap-2 flex-wrap">
-          {result.metadata.tags.slice(0, 3).map((tag) => (
-            <span
-              key={tag}
-              className="px-2.5 py-1 rounded-full bg-gray-100 dark:bg-gray-800
-                text-xs font-medium text-gray-700 dark:text-gray-300"
-            >
-              {tag}
+        {/* Cost */}
+        {result.metadata.cost && (
+          <div className="mb-4">
+            <span className="font-semibold text-green-600 dark:text-green-400 text-sm">
+              {result.metadata.cost}
             </span>
-          ))}
-          {result.metadata.tags.length > 3 && (
-            <span className="px-2.5 py-1 text-xs text-gray-500">
-              +{result.metadata.tags.length - 3} more
+          </div>
+        )}
+
+        {/* Explore Button */}
+        <button 
+          className="w-full py-3 bg-gradient-to-r from-blue-500 to-purple-600 
+            text-white rounded-xl font-semibold hover:shadow-lg transition-all 
+            hover:scale-105 text-sm sm:text-base"
+          onClick={(e) => {
+            e.stopPropagation();
+            handleAddToTrip(e);
+          }}
+          disabled={isAlreadyAdded}
+        >
+          {isAlreadyAdded ? (
+            <span className="flex items-center justify-center gap-2">
+              <Check className="w-5 h-5" /> Added to Trip
             </span>
+          ) : (
+            <span>Explore {result.title}</span>
           )}
-        </div>
+        </button>
       </div>
 
       {/* Added Toast */}
