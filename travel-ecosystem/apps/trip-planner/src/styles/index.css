@@ -11,6 +11,7 @@
     box-sizing: border-box;
   }
 
+  /* #54, #76: Typography foundation */
   body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
       'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
@@ -18,9 +19,59 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     overflow-x: hidden;
+    /* #73: Minimum 16px font size to avoid iOS zoom */
+    font-size: 16px;
+    /* #75: Optimal line height */
+    line-height: 1.5;
   }
 
-  /* Custom scrollbar */
+  /* #161: Proper heading hierarchy */
+  h1, h2, h3, h4, h5, h6 {
+    font-weight: 600;
+    line-height: 1.25;
+    margin: 0;
+  }
+
+  /* #74: Readable text width */
+  p {
+    max-width: 65ch;
+  }
+
+  /* #168: Focus styles for keyboard navigation */
+  *:focus {
+    outline: 2px solid theme('colors.primary.500');
+    outline-offset: 2px;
+  }
+
+  /* #177: Focus-visible for modern browsers */
+  *:focus:not(:focus-visible) {
+    outline: none;
+  }
+
+  *:focus-visible {
+    @apply ring-2 ring-primary-500 ring-offset-2;
+  }
+
+  /* #191: Respect reduced motion preference */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+
+  /* #196: High contrast mode support */
+  @media (prefers-contrast: high) {
+    * {
+      outline-width: 2px;
+    }
+  }
+
+  /* Custom scrollbar - #47 */
   ::-webkit-scrollbar {
     width: 8px;
     height: 8px;
@@ -37,9 +88,117 @@
   ::-webkit-scrollbar-thumb:hover {
     @apply bg-gray-400 dark:bg-gray-500;
   }
+
+  /* #189: Screen reader only utility */
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+  }
+
+  .sr-only-focusable:focus {
+    position: static;
+    width: auto;
+    height: auto;
+    padding: inherit;
+    margin: inherit;
+    overflow: visible;
+    clip: auto;
+    white-space: normal;
+  }
+}
+
+@layer components {
+  /* #93: Glassmorphism */
+  .glass {
+    @apply bg-white/60 dark:bg-gray-900/60 backdrop-blur-lg;
+  }
+
+  .glass-border {
+    @apply border border-white/20 dark:border-gray-700/50;
+  }
+
+  /* #81: Touch target sizes */
+  .btn {
+    @apply min-h-[44px] min-w-[44px] px-4 py-2 rounded-lg font-medium
+           transition-all duration-300 focus-visible:outline-none
+           focus-visible:ring-2 focus-visible:ring-primary-500
+           focus-visible:ring-offset-2 disabled:opacity-50
+           disabled:cursor-not-allowed;
+  }
+
+  .btn-primary {
+    @apply bg-gradient-to-r from-primary-500 to-primary-600
+           text-white hover:shadow-lg active:scale-95;
+  }
+
+  .btn-secondary {
+    @apply bg-gray-100 dark:bg-gray-800 text-gray-900
+           dark:text-gray-100 hover:bg-gray-200
+           dark:hover:bg-gray-700;
+  }
+
+  .btn-ghost {
+    @apply bg-transparent hover:bg-gray-100 dark:hover:bg-gray-800;
+  }
+
+  /* #85: Card component with consistent spacing */
+  .card {
+    @apply bg-white dark:bg-gray-900 rounded-2xl shadow-md
+           border border-gray-100 dark:border-gray-800
+           p-6 transition-all duration-300;
+  }
+
+  .card:hover {
+    @apply shadow-lg;
+  }
+
+  /* #162: Proper form controls */
+  .input {
+    @apply w-full min-h-[44px] px-4 py-2 rounded-lg
+           border-2 border-gray-300 dark:border-gray-700
+           bg-white dark:bg-gray-900
+           text-gray-900 dark:text-gray-100
+           placeholder:text-gray-500
+           focus:border-primary-500 focus:ring-2
+           focus:ring-primary-500/20 focus:outline-none
+           disabled:opacity-50 disabled:cursor-not-allowed
+           transition-all duration-300;
+  }
+
+  .input[aria-invalid="true"] {
+    @apply border-error focus:border-error focus:ring-error/20;
+  }
+
+  /* #24: Empty state */
+  .empty-state {
+    @apply flex flex-col items-center justify-center
+           p-12 text-center;
+  }
+
+  /* #128: Loading skeleton */
+  .skeleton {
+    @apply animate-pulse bg-gray-200 dark:bg-gray-700 rounded;
+  }
+
+  /* #98: Hover effects */
+  .hover-lift {
+    @apply transition-transform duration-300 hover:-translate-y-1;
+  }
+
+  .hover-glow {
+    @apply transition-shadow duration-300 hover:shadow-glow;
+  }
 }
 
 @layer utilities {
+  /* #101-120: Animation utilities */
   .animate-fade-in {
     animation: fadeIn 0.5s ease-in-out;
   }
@@ -72,16 +231,13 @@
     }
   }
 
-  /* Glassmorphism */
-  .glass {
-    @apply bg-white/60 dark:bg-gray-900/60 backdrop-blur-lg;
+  /* #116: 60fps animations (use transform and opacity only) */
+  .gpu-accelerated {
+    will-change: transform;
+    transform: translateZ(0);
   }
 
-  .glass-border {
-    @apply border border-white/20 dark:border-gray-700/50;
-  }
-
-  /* Hide scrollbar */
+  /* Hide scrollbar but keep functionality */
   .scrollbar-hide {
     -ms-overflow-style: none;
     scrollbar-width: none;
@@ -90,13 +246,67 @@
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }
+
+  /* #87: White space utilities */
+  .content-spacing > * + * {
+    margin-top: 1rem;
+  }
+
+  /* #85: Aspect ratio utilities */
+  .aspect-video {
+    aspect-ratio: 16 / 9;
+  }
+
+  .aspect-square {
+    aspect-ratio: 1 / 1;
+  }
+
+  .aspect-photo {
+    aspect-ratio: 4 / 3;
+  }
+
+  /* #199: RTL support */
+  [dir="rtl"] .rtl\:rotate-180 {
+    transform: rotate(180deg);
+  }
 }
 
-/* Leaflet custom styles */
+/* Leaflet custom styles with accessibility improvements */
 .leaflet-container {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
     'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
     sans-serif;
+}
+
+/* #109: Map controls with proper touch targets */
+.leaflet-control-zoom a {
+  min-width: 44px !important;
+  min-height: 44px !important;
+}
+
+/* #198: Prevent flashing content */
+@keyframes no-flash {
+  0%, 100% { opacity: 1; }
+}
+
+/* Dark mode transitions */
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+  }
+}
+
+/* #221: Image optimization hints */
+img {
+  content-visibility: auto;
+}
+
+/* #247: Use idle callback for non-critical animations */
+@supports (content-visibility: auto) {
+  .lazy-content {
+    content-visibility: auto;
+    contain-intrinsic-size: 500px;
+  }
 }
 
 .leaflet-popup-content-wrapper {

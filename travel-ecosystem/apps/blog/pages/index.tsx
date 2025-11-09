@@ -60,13 +60,7 @@ const HomePage: React.FC = () => {
       </main>
 
       {/* Footer */}
-      <footer className="bg-gray-100 dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 mt-20">
-  <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-12 py-12 text-center">
-          <p className="text-gray-600 dark:text-gray-400">
-            &copy; {new Date().getFullYear()} RAIH. All rights reserved.
-          </p>
-        </div>
-      </footer>
+   
       </div>
     </>
   );

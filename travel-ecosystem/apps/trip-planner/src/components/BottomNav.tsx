@@ -1,17 +1,29 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Map, Calendar, FileText, Users } from 'lucide-react';
+import { Map, Calendar, FileText, Users, Compass } from 'lucide-react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useTripStore } from '../store/tripStore';
+
+type TabItem = {
+  id: string;
+  label: string;
+  icon: typeof Map;
+  isRoute?: boolean;
+  route?: string;
+};
 
 const BottomNav: React.FC = () => {
   const { currentView, setCurrentView } = useTripStore();
+  const navigate = useNavigate();
+  const location = useLocation();
 
-  const tabs = [
+  const tabs: TabItem[] = [
+    { id: 'plan', label: 'Plan', icon: Compass, isRoute: true, route: '/trip-planner/discover' },
     { id: 'map', label: 'Map', icon: Map },
     { id: 'calendar', label: 'Calendar', icon: Calendar },
     { id: 'summary', label: 'Summary', icon: FileText },
     { id: 'collaborate', label: 'Share', icon: Users },
-  ] as const;
+  ];
 
   return (
     <nav
@@ -23,12 +35,22 @@ const BottomNav: React.FC = () => {
         <div className="flex justify-around items-center h-16">
           {tabs.map((tab) => {
             const Icon = tab.icon;
-            const isActive = currentView === tab.id;
+            const isActive = tab.isRoute 
+              ? location.pathname.includes(tab.route!) 
+              : currentView === tab.id;
+
+            const handleClick = () => {
+              if (tab.isRoute && tab.route) {
+                navigate(tab.route);
+              } else {
+                setCurrentView(tab.id as 'map' | 'calendar' | 'summary' | 'collaborate');
+              }
+            };
 
             return (
               <button
                 key={tab.id}
-                onClick={() => setCurrentView(tab.id)}
+                onClick={handleClick}
                 className={`
                   relative flex flex-col items-center justify-center w-full h-full
                   transition-colors duration-200
