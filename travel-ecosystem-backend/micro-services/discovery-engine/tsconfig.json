@@ -32,10 +32,10 @@
       "@/chains/*": ["src/chains/*"],
       "@/graph/*": ["src/graph/*"],
       "@/database/*": ["src/database/*"],
-      "@/crawlers/*": ["src/crawlers/*"],
+      "@/crawlers/*": ["../travel-data-service/src/crawlers/*"],
       "@/utils/*": ["src/utils/*"]
     }
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "../travel-data-service/src/crawlers", "../travel-data-service/url-scraper.ts"],
   "exclude": ["node_modules", "dist", "**/*.test.ts"]
 }

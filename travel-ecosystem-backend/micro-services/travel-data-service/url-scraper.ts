@@ -7,7 +7,7 @@
  */
 
 import { chromium, Browser, Page } from 'playwright';
-import { logger } from './logger';
+import { logger } from '../discovery-engine/src/utils/logger';
 
 export interface ScrapedPlace {
   name: string;

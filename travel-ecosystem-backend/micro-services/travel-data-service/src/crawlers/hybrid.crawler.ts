@@ -3,10 +3,10 @@
  * Uses Tavily for real-time search, falls back to Playwright for specific sites
  */
 
-import { tavilyService } from '../services/tavily.service';
+import { tavilyService } from '../../../discovery-engine/src/services/tavily.service';
 import { EventCrawler } from './event.crawler';
-import { logger } from '../utils/logger';
-import type { CrawlResult } from '../types';
+import { logger } from '../../../discovery-engine/src/utils/logger';
+import type { CrawlResult } from '../../../discovery-engine/src/types';
 
 export interface HybridCrawlOptions {
   preferTavily?: boolean; // Use Tavily first, fallback to Playwright

@@ -1,31 +1,19 @@
-// API Routes for Discovery Engine
+// API Routes for Discovery Engine - NO AI, ONLY API ORCHESTRATION
 
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import { DiscoveryChain } from '@/chains/discovery.chain';
-import { KnowledgeGraph } from '@/graph/knowledge.graph';
+import { DiscoveryOrchestrator } from '@/orchestrator/discovery.orchestrator';
 import { Place } from '@/database/models';
 import { logger } from '@/utils/logger';
 import { z } from 'zod';
-import type {
-  DiscoveryRequest,
-  EntityDetailRequest,
-  RecommendationRequest
-} from '@/types';
 
-// Request validation schemas
+// Request validation schemas - Simplified for direct API calls
 const DiscoveryRequestSchema = z.object({
-  query: z.string().min(1).max(500),
-  filters: z.object({
-    types: z.array(z.string()).optional(),
-    budget: z.string().optional(),
-    duration: z.number().optional(),
-    startDate: z.string().optional(),
-    endDate: z.string().optional()
-  }).optional(),
-  preferences: z.object({
-    interests: z.array(z.string()).optional(),
-    pace: z.enum(['relaxed', 'moderate', 'fast']).optional()
-  }).optional()
+  city: z.string().min(1).max(100),
+  country: z.string().min(1).max(100),
+  month: z.string().optional(),
+  interests: z.array(z.string()).optional(),
+  duration: z.number().optional(),
+  fromCountryCode: z.string().length(2).optional() // For visa requirements (e.g., 'US', 'IN')
 });
 
 const RecommendationRequestSchema = z.object({
@@ -39,64 +27,86 @@ const RecommendationRequestSchema = z.object({
 });
 
 export async function registerRoutes(fastify: FastifyInstance) {
-  const discoveryChain = new DiscoveryChain();
-  // Temporarily disabled until LangGraph compatibility is fixed
-  // const knowledgeGraph = new KnowledgeGraph();
+  const orchestrator = new DiscoveryOrchestrator();
+  await orchestrator.initialize();
 
   /**
    * POST /api/v1/discover
-   * Main discovery endpoint with natural language query
+   * Main discovery endpoint - Orchestrates multiple API calls
+   * Returns: Attractions, Weather, Hotels, Visa Info, Travel Data
    */
-  fastify.post<{ Body: DiscoveryRequest }>(
+  fastify.post(
     '/api/v1/discover',
     {
       schema: {
-        description: 'Discover travel destinations and experiences',
+        description: 'Discover travel information: attractions, weather, hotels, visa, travel data',
         tags: ['discovery'],
         body: {
           type: 'object',
-          required: ['query'],
+          required: ['city', 'country'],
           properties: {
-            query: { type: 'string' },
-            filters: { type: 'object' },
-            preferences: { type: 'object' }
+            city: { type: 'string', description: 'City name (e.g., "Delhi", "Paris")' },
+            country: { type: 'string', description: 'Country name (e.g., "India", "France")' },
+            month: { type: 'string', description: 'Optional month (e.g., "October")' },
+            interests: { 
+              type: 'array', 
+              items: { type: 'string' },
+              description: 'Optional interests (e.g., ["food", "culture", "history"])'
+            },
+            duration: { type: 'number', description: 'Optional trip duration in days' },
+            fromCountryCode: { 
+              type: 'string', 
+              description: 'Optional 2-letter country code for visa check (e.g., "US", "IN")'
+            }
+          }
+        },
+        response: {
+          200: {
+            type: 'object',
+            properties: {
+              query: { type: 'object' },
+              attractions: { type: 'array' },
+              weather: { type: 'object' },
+              visa: { type: 'object' },
+              hotels: { type: 'array' },
+              travelData: { type: 'object' },
+              metadata: { type: 'object' }
+            }
           }
         }
       }
     },
-    async (request: FastifyRequest<{ Body: DiscoveryRequest }>, reply: FastifyReply) => {
+    async (request, reply) => {
       try {
         // Validate request
         const validated = DiscoveryRequestSchema.parse(request.body);
 
-        logger.info('📨 API Request - Discovery Endpoint', {
-          query: validated.query,
-          filters: validated.filters || {},
-          preferences: validated.preferences || {},
+        logger.info('📨 API Request - Discovery Orchestrator', {
+          city: validated.city,
+          country: validated.country,
+          interests: validated.interests || [],
+          fromCountry: validated.fromCountryCode,
           ip: request.ip,
-          userAgent: request.headers['user-agent'],
           timestamp: new Date().toISOString()
         });
 
-        // Execute discovery pipeline
-        const result = await discoveryChain.execute(validated.query);
+        // Execute orchestrator - fetches from all APIs
+        const result = await orchestrator.discover(validated);
 
-        // Get recommendations from knowledge graph
-        // Temporarily disabled until LangGraph compatibility is fixed
-        // const recommendations = await knowledgeGraph.query(result.entities);
-        // result.recommendations = recommendations;
-
-        logger.info('📤 API Response - Discovery Endpoint', {
-          query: validated.query,
-          totalResults: result.metadata.totalResults,
+        logger.info('📤 API Response - Discovery Orchestrator', {
+          city: validated.city,
+          attractions: result.attractions.length,
+          hotels: result.hotels.length,
+          hasWeather: !!result.weather,
+          hasVisa: !!result.visa,
           processingTime: result.metadata.processingTime,
-          cached: result.metadata.cached,
+          sources: result.metadata.sources,
           statusCode: 200
         });
 
         return reply.code(200).send(result);
       } catch (error: any) {
-        logger.error('❌ API Error - Discovery Endpoint', { 
+        logger.error('❌ API Error - Discovery Orchestrator', { 
           error: error.message,
           stack: error.stack,
           body: request.body
@@ -110,9 +120,288 @@ export async function registerRoutes(fastify: FastifyInstance) {
         }
 
         return reply.code(500).send({
-          error: 'Discovery failed',
+          error: 'Discovery orchestration failed',
           message: error.message
         });
+      }
+    }
+  );
+
+  /**
+   * GET /api/v1/attractions
+   * Get attractions for a city using Google Places API
+   */
+  fastify.get(
+    '/api/v1/attractions',
+    {
+      schema: {
+        description: 'Get real attractions from Google Places',
+        tags: ['attractions'],
+        querystring: {
+          type: 'object',
+          required: ['city', 'country'],
+          properties: {
+            city: { type: 'string' },
+            country: { type: 'string' },
+            interests: { type: 'array', items: { type: 'string' } }
+          }
+        }
+      }
+    },
+    async (request: any, reply) => {
+      try {
+        const { city, country, interests } = request.query;
+        logger.info('Attractions request', { city, country });
+
+        const { GooglePlacesService } = await import('@/services/google-places.service');
+        const placesService = new GooglePlacesService();
+        
+        const attractions = await placesService.getPopularAttractions(city, country);
+        const all = [...attractions.monuments, ...attractions.museums, ...attractions.parks, ...attractions.religious];
+
+        return reply.code(200).send({ city, country, attractions: all, count: all.length });
+      } catch (error: any) {
+        logger.error('Attractions request failed:', error);
+        return reply.code(500).send({ error: 'Failed to fetch attractions', message: error.message });
+      }
+    }
+  );
+
+  /**
+   * GET /api/v1/weather
+   * Get weather data for a city
+   */
+  fastify.get(
+    '/api/v1/weather',
+    {
+      schema: {
+        description: 'Get weather data from OpenWeather API',
+        tags: ['weather'],
+        querystring: {
+          type: 'object',
+          required: ['city'],
+          properties: {
+            city: { type: 'string' },
+            country: { type: 'string' }
+          }
+        }
+      }
+    },
+    async (request: any, reply) => {
+      try {
+        const { city, country } = request.query;
+        logger.info('Weather request', { city, country });
+
+        const { WeatherService } = await import('@/services/weather.service');
+        const weatherService = new WeatherService();
+        
+        const weather = await weatherService.getWeatherData(city, country);
+
+        if (!weather) {
+          return reply.code(404).send({ error: 'Weather data not found' });
+        }
+
+        return reply.code(200).send(weather);
+      } catch (error: any) {
+        logger.error('Weather request failed:', error);
+        return reply.code(500).send({ error: 'Failed to fetch weather', message: error.message });
+      }
+    }
+  );
+
+  /**
+   * GET /api/v1/visa
+   * Get visa requirements
+   */
+  fastify.get(
+    '/api/v1/visa',
+    {
+      schema: {
+        description: 'Get visa requirements',
+        tags: ['visa'],
+        querystring: {
+          type: 'object',
+          required: ['from', 'to'],
+          properties: {
+            from: { type: 'string', description: 'From country code (e.g., US, IN)' },
+            to: { type: 'string', description: 'To country code (e.g., IN, FR)' }
+          }
+        }
+      }
+    },
+    async (request: any, reply) => {
+      try {
+        const { from, to } = request.query;
+        logger.info('Visa request', { from, to });
+
+        const { VisaService } = await import('@/services/visa.service');
+        const visaService = new VisaService();
+        
+        const visa = await visaService.getVisaRequirements(from, to);
+
+        if (!visa) {
+          return reply.code(404).send({ error: 'Visa information not found' });
+        }
+
+        return reply.code(200).send(visa);
+      } catch (error: any) {
+        logger.error('Visa request failed:', error);
+        return reply.code(500).send({ error: 'Failed to fetch visa info', message: error.message });
+      }
+    }
+  );
+
+  /**
+   * GET /api/v1/hotels
+   * Get hotels for a city
+   */
+  fastify.get(
+    '/api/v1/hotels',
+    {
+      schema: {
+        description: 'Get hotel listings',
+        tags: ['hotels'],
+        querystring: {
+          type: 'object',
+          required: ['city', 'country'],
+          properties: {
+            city: { type: 'string' },
+            country: { type: 'string' },
+            limit: { type: 'number' }
+          }
+        }
+      }
+    },
+    async (request: any, reply) => {
+      try {
+        const { city, country, limit } = request.query;
+        logger.info('Hotels request', { city, country });
+
+        const { HotelService } = await import('@/services/hotel.service');
+        const hotelService = new HotelService();
+        
+        const hotels = await hotelService.searchHotels(city, country, { limit: limit || 10 });
+
+        return reply.code(200).send({ city, country, hotels, count: hotels.length });
+      } catch (error: any) {
+        logger.error('Hotels request failed:', error);
+        return reply.code(500).send({ error: 'Failed to fetch hotels', message: error.message });
+      }
+    }
+  );
+
+  /**
+   * GET /api/v1/travel-articles
+   * Get travel articles and guides
+   */
+  fastify.get(
+    '/api/v1/travel-articles',
+    {
+      schema: {
+        description: 'Get travel articles and guides',
+        tags: ['travel-data'],
+        querystring: {
+          type: 'object',
+          required: ['city', 'country'],
+          properties: {
+            city: { type: 'string' },
+            country: { type: 'string' },
+            limit: { type: 'number' }
+          }
+        }
+      }
+    },
+    async (request: any, reply) => {
+      try {
+        const { city, country, limit } = request.query;
+        logger.info('Travel articles request', { city, country });
+
+        const { TravelCrawlerService } = await import('@/services/travel-crawler.service');
+        const crawlerService = new TravelCrawlerService();
+        
+        const articles = await crawlerService.crawlTravelArticles(city, country, { limit: limit || 10 });
+
+        return reply.code(200).send({ city, country, articles, count: articles.length });
+      } catch (error: any) {
+        logger.error('Travel articles request failed:', error);
+        return reply.code(500).send({ error: 'Failed to fetch articles', message: error.message });
+      }
+    }
+  );
+
+  /**
+   * GET /api/v1/travel-tips
+   * Get travel tips
+   */
+  fastify.get(
+    '/api/v1/travel-tips',
+    {
+      schema: {
+        description: 'Get travel tips for a destination',
+        tags: ['travel-data'],
+        querystring: {
+          type: 'object',
+          required: ['city', 'country'],
+          properties: {
+            city: { type: 'string' },
+            country: { type: 'string' }
+          }
+        }
+      }
+    },
+    async (request: any, reply) => {
+      try {
+        const { city, country } = request.query;
+        logger.info('Travel tips request', { city, country });
+
+        const { TravelCrawlerService } = await import('@/services/travel-crawler.service');
+        const crawlerService = new TravelCrawlerService();
+        
+        const tips = await crawlerService.getTravelTips(city, country);
+
+        return reply.code(200).send({ city, country, tips, count: tips.length });
+      } catch (error: any) {
+        logger.error('Travel tips request failed:', error);
+        return reply.code(500).send({ error: 'Failed to fetch tips', message: error.message });
+      }
+    }
+  );
+
+  /**
+   * GET /api/v1/local-experiences
+   * Get local experiences and activities
+   */
+  fastify.get(
+    '/api/v1/local-experiences',
+    {
+      schema: {
+        description: 'Get local experiences and activities',
+        tags: ['travel-data'],
+        querystring: {
+          type: 'object',
+          required: ['city', 'country'],
+          properties: {
+            city: { type: 'string' },
+            country: { type: 'string' },
+            type: { type: 'string', description: 'food, activity, cultural, shopping' }
+          }
+        }
+      }
+    },
+    async (request: any, reply) => {
+      try {
+        const { city, country, type } = request.query;
+        logger.info('Local experiences request', { city, country, type });
+
+        const { TravelCrawlerService } = await import('@/services/travel-crawler.service');
+        const crawlerService = new TravelCrawlerService();
+        
+        const experiences = await crawlerService.getLocalExperiences(city, country, type);
+
+        return reply.code(200).send({ city, country, experiences, count: experiences.length });
+      } catch (error: any) {
+        logger.error('Local experiences request failed:', error);
+        return reply.code(500).send({ error: 'Failed to fetch experiences', message: error.message });
       }
     }
   );
@@ -164,8 +453,6 @@ export async function registerRoutes(fastify: FastifyInstance) {
         };
 
         if (includeRecommendations) {
-          // Temporarily disabled until LangGraph compatibility is fixed
-          // result.recommendations = await knowledgeGraph.getRelatedEntities(id, 10);
           result.recommendations = [];
         }
 
