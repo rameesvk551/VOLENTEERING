@@ -1,9 +1,8 @@
 // Custom hook for AI-powered discovery
 
 import { useState, useCallback } from 'react';
-import axios from 'axios';
-
-const API_BASE_URL = import.meta.env.VITE_DISCOVERY_API_URL || 'http://localhost:3000/api/v1';
+import { discoveryService } from '../services/discovery.service';
+import type { DiscoveryResponse } from '../services/discovery.service';
 
 export interface QueryEntities {
   city: string;
@@ -397,6 +396,98 @@ const getDummyData = (query: string): DiscoveryResult => {
   };
 };
 
+// Transform backend response to frontend format
+const transformBackendResponse = (backendResponse: DiscoveryResponse, query: string): DiscoveryResult => {
+  const { attractions, weather, hotels, travelData } = backendResponse;
+
+  // Extract entities from query
+  const queryParts = query.split(',').map(part => part.trim());
+  const city = queryParts[0] || query;
+  const country = queryParts[1] || '';
+
+  // Transform attractions to the frontend format
+  const transformedAttractions: DiscoveryEntity[] = attractions.map(attr => ({
+    id: attr.id,
+    type: 'attraction' as const,
+    title: attr.name,
+    description: attr.description || 'No description available',
+    location: {
+      city: attr.address.split(',')[0] || city,
+      country,
+      coordinates: attr.location,
+    },
+    metadata: {
+      category: attr.types || [attr.category],
+      tags: attr.types || [],
+      popularity: attr.rating || 0,
+      cost: attr.priceLevel ? `${'$'.repeat(attr.priceLevel)}` : 'Free',
+      duration: '1-2 hours',
+    },
+    media: {
+      images: attr.photos || [],
+    },
+  }));
+
+  // Transform hotels to places
+  const transformedHotels: DiscoveryEntity[] = hotels.map(hotel => ({
+    id: hotel.id,
+    type: 'place' as const,
+    title: hotel.name,
+    description: `${hotel.rating}-star hotel`,
+    location: {
+      city,
+      country,
+      coordinates: hotel.location,
+    },
+    metadata: {
+      category: ['hotel', 'accommodation'],
+      tags: ['hotel', 'stay'],
+      popularity: hotel.rating || 0,
+      cost: '$'.repeat(hotel.priceLevel || 2),
+    },
+    media: {
+      images: hotel.photos || [],
+    },
+  }));
+
+  return {
+    query,
+    entities: {
+      city,
+      country,
+      interests: [],
+      eventType: [],
+    },
+    summary: {
+      headline: `Discover ${city}${country ? ', ' + country : ''}`,
+      overview: weather?.current.description 
+        ? `Current weather: ${weather.current.description}, ${weather.current.temp}°C. Perfect time to explore!`
+        : `Explore the best attractions and experiences in ${city}.`,
+      highlights: [
+        `${attractions.length} top attractions`,
+        `${hotels.length} recommended hotels`,
+        weather ? `Current temperature: ${weather.current.temp}°C` : '',
+        travelData?.bestTimeToVisit?.[0] || 'Great destination year-round',
+      ].filter(Boolean),
+      bestTime: travelData?.bestTimeToVisit?.join(', '),
+      tips: travelData?.safety.tips || [],
+    },
+    results: {
+      festivals: [],
+      attractions: transformedAttractions,
+      places: transformedHotels,
+      events: [],
+    },
+    recommendations: [],
+    metadata: {
+      totalResults: attractions.length + hotels.length,
+      processingTime: backendResponse.metadata.processingTime || 0,
+      cached: false,
+      sources: backendResponse.metadata.sources || ['Discovery Engine'],
+    },
+  };
+};
+
 export const useDiscovery = () => {
   const [results, setResults] = useState<DiscoveryResult | null>(null);
   const [entities, setEntities] = useState<QueryEntities | null>(null);
@@ -410,14 +501,24 @@ export const useDiscovery = () => {
       setIsLoading(true);
       setError(null);
 
-      // Call the real backend API
-      const response = await axios.post(`${API_BASE_URL}/discover`, {
-        query,
-        filters: filters || {},
-        preferences: {}
+      // Parse the query to extract city and country
+      // You can implement a more sophisticated parser
+      const queryParts = query.split(',').map(part => part.trim());
+      const city = queryParts[0] || query;
+      const country = queryParts[1] || '';
+
+      // Call the discovery service
+      const response = await discoveryService.discover({
+        city,
+        country,
+        month: filters?.month,
+        interests: filters?.interests || [],
+        duration: filters?.duration,
+        fromCountryCode: filters?.fromCountryCode,
       });
 
-      const data: DiscoveryResult = response.data;
+      // Transform the backend response to match the frontend DiscoveryResult format
+      const data: DiscoveryResult = transformBackendResponse(response, query);
 
       setResults(data);
       setEntities(data.entities);
@@ -426,7 +527,7 @@ export const useDiscovery = () => {
 
       return data;
     } catch (err: any) {
-      const errorMessage = err.response?.data?.message || err.message || 'Search failed';
+      const errorMessage = err.message || 'Search failed';
       setError(errorMessage);
       
       // Fallback to dummy data if API fails (for development)
@@ -445,33 +546,28 @@ export const useDiscovery = () => {
 
   const getEntityDetails = useCallback(async (entityId: string) => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/entity/${entityId}`);
-      return response.data;
+      return await discoveryService.getEntityDetails(entityId);
     } catch (err: any) {
-      throw new Error(err.response?.data?.message || 'Failed to fetch entity details');
+      throw new Error(err.message || 'Failed to fetch entity details');
     }
   }, []);
 
   const getRecommendations = useCallback(async (baseEntityId: string, context?: any) => {
     try {
-      const response = await axios.post(`${API_BASE_URL}/recommendations`, {
+      return await discoveryService.getRecommendations({
         baseEntity: baseEntityId,
         context
       });
-      return response.data.recommendations;
     } catch (err: any) {
-      throw new Error(err.response?.data?.message || 'Failed to fetch recommendations');
+      throw new Error(err.message || 'Failed to fetch recommendations');
     }
   }, []);
 
   const getTrending = useCallback(async (city: string, limit: number = 20) => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/trending/${city}`, {
-        params: { limit }
-      });
-      return response.data.trending;
+      return await discoveryService.getTrending(city, limit);
     } catch (err: any) {
-      throw new Error(err.response?.data?.message || 'Failed to fetch trending');
+      throw new Error(err.message || 'Failed to fetch trending');
     }
   }, []);
 

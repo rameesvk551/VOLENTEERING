@@ -23,8 +23,10 @@ export async function createServer() {
 
   // Register CORS
   await fastify.register(cors, {
-    origin: process.env.ALLOWED_ORIGINS?.split(',') || '*',
-    credentials: true
+    origin: true, // Allow all origins in development
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
   });
 
   // Register rate limiting

@@ -99,8 +99,10 @@ async function startSimpleServer() {
 
     // Register CORS
     await fastify.register(cors, {
-      origin: '*',
-      credentials: true
+      origin: true,
+      credentials: true,
+      methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+      allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
     });
 
     // Health check

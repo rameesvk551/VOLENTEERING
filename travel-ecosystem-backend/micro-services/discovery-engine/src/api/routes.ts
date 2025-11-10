@@ -22,7 +22,7 @@ import { truncateDescription } from '@/utils/data-transformers';
 // Request validation schemas - Simplified for direct API calls
 const DiscoveryRequestSchema = z.object({
   city: z.string().min(1).max(100),
-  country: z.string().min(1).max(100),
+  country: z.string().max(100).optional(),
   month: z.string().optional(),
   interests: z.array(z.string()).optional(),
   duration: z.number().optional(),
