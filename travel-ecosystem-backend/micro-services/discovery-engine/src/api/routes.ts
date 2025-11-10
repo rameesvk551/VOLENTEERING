@@ -1,10 +1,23 @@
 // API Routes for Discovery Engine - NO AI, ONLY API ORCHESTRATION
+// Refactored to use constants and helper functions - Follows DRY and SoC principles
 
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { DiscoveryOrchestrator } from '@/orchestrator/discovery.orchestrator';
 import { Place } from '@/database/models';
 import { logger } from '@/utils/logger';
 import { z } from 'zod';
+import {
+  HTTP_STATUS_OK,
+  HTTP_STATUS_BAD_REQUEST,
+  HTTP_STATUS_NOT_FOUND,
+  HTTP_STATUS_SERVER_ERROR,
+  DEFAULT_HOTEL_LIMIT,
+  DEFAULT_ARTICLE_LIMIT,
+  DEFAULT_TRENDING_LIMIT,
+  DEFAULT_SEARCH_LIMIT,
+  MAX_DESCRIPTION_LENGTH
+} from '@/constants';
+import { truncateDescription } from '@/utils/data-transformers';
 
 // Request validation schemas - Simplified for direct API calls
 const DiscoveryRequestSchema = z.object({
@@ -104,7 +117,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
           statusCode: 200
         });
 
-        return reply.code(200).send(result);
+        return reply.code(HTTP_STATUS_OK).send(result);
       } catch (error: any) {
         logger.error('❌ API Error - Discovery Orchestrator', { 
           error: error.message,
@@ -113,13 +126,13 @@ export async function registerRoutes(fastify: FastifyInstance) {
         });
 
         if (error.name === 'ZodError') {
-          return reply.code(400).send({
+          return reply.code(HTTP_STATUS_BAD_REQUEST).send({
             error: 'Invalid request',
             details: error.errors
           });
         }
 
-        return reply.code(500).send({
+        return reply.code(HTTP_STATUS_SERVER_ERROR).send({
           error: 'Discovery orchestration failed',
           message: error.message
         });

@@ -1,23 +1,30 @@
 // Discovery Orchestrator - Coordinates all API services (NO AI)
 // Fetches data from: Google Places, Weather, Visa, Hotels, Travel Data microservices
+// Refactored to use centralized configuration - Follows DRY and SoC principles
 
 import axios from 'axios';
 import { Kafka, logLevel, type Consumer, type Producer, type EachMessagePayload } from 'kafkajs';
 import { randomUUID } from 'crypto';
 import { GooglePlacesService, PlaceResult } from '@/services/google-places.service';
 import { logger } from '@/utils/logger';
+import { getServiceUrls, isKafkaEnabled, getKafkaTopics, getKafkaTimeout } from '@/utils/env-config';
 
-const WEATHER_SERVICE_URL = process.env.WEATHER_SERVICE_URL || 'http://localhost:4001';
-const HOTEL_SERVICE_URL = process.env.HOTEL_SERVICE_URL || 'http://localhost:4002';
-const VISA_SERVICE_URL = process.env.VISA_SERVICE_URL || 'http://localhost:4003';
-const TRAVEL_DATA_SERVICE_URL = process.env.TRAVEL_DATA_SERVICE_URL || 'http://localhost:4004';
-const KAFKA_ENABLED_DEFAULT = (process.env.KAFKA_ENABLED ?? 'true') !== 'false';
-const WEATHER_REQUEST_TOPIC = process.env.WEATHER_REQUEST_TOPIC || 'weather.requests';
-const HOTEL_REQUEST_TOPIC = process.env.HOTEL_REQUEST_TOPIC || 'hotel.requests';
-const VISA_REQUEST_TOPIC = process.env.VISA_REQUEST_TOPIC || 'visa.requests';
-const TRAVEL_DATA_REQUEST_TOPIC = process.env.TRAVEL_DATA_REQUEST_TOPIC || 'travel-data.requests';
-const DISCOVERY_REPLY_TOPIC = process.env.DISCOVERY_REPLY_TOPIC || 'discovery.responses';
-const KAFKA_REQUEST_TIMEOUT_MS = Number(process.env.KAFKA_REQUEST_TIMEOUT_MS || '8000');
+// Get service URLs from centralized configuration - Avoids magic strings
+const serviceUrls = getServiceUrls();
+const WEATHER_SERVICE_URL = serviceUrls.weather;
+const HOTEL_SERVICE_URL = serviceUrls.hotel;
+const VISA_SERVICE_URL = serviceUrls.visa;
+const TRAVEL_DATA_SERVICE_URL = serviceUrls.travelData;
+
+// Get Kafka configuration from centralized utilities
+const KAFKA_ENABLED_DEFAULT = isKafkaEnabled();
+const kafkaTopics = getKafkaTopics();
+const WEATHER_REQUEST_TOPIC = kafkaTopics.weatherRequests;
+const HOTEL_REQUEST_TOPIC = kafkaTopics.hotelRequests;
+const VISA_REQUEST_TOPIC = kafkaTopics.visaRequests;
+const TRAVEL_DATA_REQUEST_TOPIC = kafkaTopics.travelDataRequests;
+const DISCOVERY_REPLY_TOPIC = kafkaTopics.discoveryResponses;
+const KAFKA_REQUEST_TIMEOUT_MS = getKafkaTimeout();
 
 export interface WeatherData {
   city: string;

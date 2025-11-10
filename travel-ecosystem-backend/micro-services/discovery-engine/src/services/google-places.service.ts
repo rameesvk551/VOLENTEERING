@@ -1,7 +1,18 @@
 // Google Places API Service for Real Attractions with Images & Coordinates
+// Refactored to use constants and utility functions - Follows DRY and SoC principles
 
 import axios from 'axios';
 import { logger } from '@/utils/logger';
+import { getEnvVar, isGooglePlacesConfigured } from '@/utils/env-config';
+import {
+  DEFAULT_SEARCH_RADIUS_METERS,
+  DEFAULT_PLACE_LIMIT,
+  SEARCH_KEYWORD_MONUMENTS,
+  SEARCH_KEYWORD_PARKS,
+  SEARCH_KEYWORD_RELIGIOUS,
+  GOOGLE_PLACES_PHOTO_MAX_WIDTH,
+  MAX_PHOTOS_PER_PLACE
+} from '@/constants';
 
 export interface PlaceResult {
   name: string;
@@ -27,29 +38,34 @@ export interface PlaceResult {
 
 export class GooglePlacesService {
   private apiKey: string;
-  private baseUrl = 'https://maps.googleapis.com/maps/api/place';
+  private readonly baseUrl = 'https://maps.googleapis.com/maps/api/place';
 
   constructor() {
-    this.apiKey = process.env.GOOGLE_PLACES_API_KEY || '';
+    // Use centralized environment configuration
+    this.apiKey = getEnvVar('GOOGLE_PLACES_API_KEY');
     
-    if (!this.apiKey || this.apiKey === 'your_google_places_api_key_here') {
+    if (!isGooglePlacesConfigured()) {
       logger.warn('⚠️ Google Places API key not configured');
     }
   }
 
+  /**
+   * Check if Google Places API is properly configured
+   */
   isEnabled(): boolean {
-    return !!this.apiKey && this.apiKey !== 'your_google_places_api_key_here';
+    return isGooglePlacesConfigured();
   }
 
   /**
    * Search for tourist attractions in a city
+   * Refactored to use constants instead of magic values
    */
   async searchAttractions(
     city: string,
     country: string,
     options?: {
       type?: string; // 'tourist_attraction', 'museum', 'park', 'point_of_interest'
-      radius?: number; // in meters, default 50000 (50km)
+      radius?: number; // in meters
       keyword?: string;
       limit?: number;
     }
@@ -60,7 +76,7 @@ export class GooglePlacesService {
     }
 
     try {
-      // First, get the city coordinates
+      // Get city coordinates first
       const cityCoords = await this.getCityCoordinates(city, country);
       
       if (!cityCoords) {
@@ -74,10 +90,11 @@ export class GooglePlacesService {
         coordinates: cityCoords 
       });
 
-      // Search for nearby attractions
+      // Use constants for default values instead of hardcoded magic numbers
       const type = options?.type || 'tourist_attraction';
-      const radius = options?.radius || 50000;
-      const keyword = options?.keyword || 'famous landmarks monuments';
+      const radius = options?.radius || DEFAULT_SEARCH_RADIUS_METERS;
+      const keyword = options?.keyword || SEARCH_KEYWORD_MONUMENTS;
+      const limit = options?.limit || DEFAULT_PLACE_LIMIT;
       
       const searchUrl = `${this.baseUrl}/nearbysearch/json`;
       const searchParams = {
@@ -92,6 +109,7 @@ export class GooglePlacesService {
 
       const response = await axios.get(searchUrl, { params: searchParams });
 
+      // Check response status
       if (response.data.status !== 'OK' && response.data.status !== 'ZERO_RESULTS') {
         logger.error('Google Places API error', { 
           status: response.data.status,
@@ -105,7 +123,6 @@ export class GooglePlacesService {
       logger.info(`✅ Found ${places.length} attractions from Google Places`);
 
       // Get detailed information for each place
-      const limit = options?.limit || 10;
       const detailedPlaces = await this.getPlaceDetails(
         places.slice(0, limit).map((p: any) => p.place_id)
       );
@@ -209,13 +226,14 @@ export class GooglePlacesService {
 
   /**
    * Convert Google Places photo references to URLs
+   * Refactored to use constant for max width instead of magic number
    */
-  private getPhotoUrls(photos: any[], maxPhotos: number = 5): string[] {
+  private getPhotoUrls(photos: any[], maxPhotos: number = MAX_PHOTOS_PER_PLACE): string[] {
     const urls: string[] = [];
 
     for (const photo of photos.slice(0, maxPhotos)) {
       if (photo.photo_reference) {
-        const photoUrl = `${this.baseUrl}/photo?maxwidth=800&photoreference=${photo.photo_reference}&key=${this.apiKey}`;
+        const photoUrl = `${this.baseUrl}/photo?maxwidth=${GOOGLE_PLACES_PHOTO_MAX_WIDTH}&photoreference=${photo.photo_reference}&key=${this.apiKey}`;
         urls.push(photoUrl);
       }
     }
@@ -265,6 +283,7 @@ export class GooglePlacesService {
 
   /**
    * Get popular attractions for a city with proper categorization
+   * Refactored to use constants for search keywords instead of hardcoded strings
    */
   async getPopularAttractions(
     city: string,
@@ -282,10 +301,11 @@ export class GooglePlacesService {
     try {
       logger.info('🏛️ Fetching popular attractions by category', { city, country });
 
+      // Fetch attractions in parallel using defined search keywords
       const [monuments, museums, parks, religious] = await Promise.all([
         this.searchAttractions(city, country, { 
           type: 'tourist_attraction',
-          keyword: 'monument landmark historical',
+          keyword: SEARCH_KEYWORD_MONUMENTS,
           limit: 5
         }),
         this.searchAttractions(city, country, { 
@@ -294,12 +314,12 @@ export class GooglePlacesService {
         }),
         this.searchAttractions(city, country, { 
           type: 'park',
-          keyword: 'famous park garden',
+          keyword: SEARCH_KEYWORD_PARKS,
           limit: 5
         }),
         this.searchAttractions(city, country, { 
           type: 'place_of_worship',
-          keyword: 'famous temple mosque church',
+          keyword: SEARCH_KEYWORD_RELIGIOUS,
           limit: 5
         })
       ]);

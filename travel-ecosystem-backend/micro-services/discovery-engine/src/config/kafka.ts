@@ -1,8 +1,18 @@
+// Kafka configuration - Refactored to use centralized utilities
+// Follows DRY principle by using shared environment config utilities
+
 import { logger } from '@/utils/logger';
-
-type EnvRecord = Record<string, string | undefined>;
-
-const env: EnvRecord = ((globalThis as { process?: { env?: EnvRecord } }).process?.env) ?? {};
+import {
+  getEnvVar,
+  isKafkaEnabled,
+  getKafkaBrokers,
+  getKafkaTopics,
+  getKafkaTimeout
+} from '@/utils/env-config';
+import {
+  KAFKA_DEFAULT_CLIENT_ID,
+  KAFKA_DEFAULT_RPC_GROUP_ID
+} from '@/constants';
 
 export interface KafkaTopicsConfig {
   weatherRequests: string;
@@ -21,27 +31,30 @@ export interface KafkaConfig {
   topics: KafkaTopicsConfig;
 }
 
-const defaultEnabled = (env.KAFKA_ENABLED ?? 'true') !== 'false';
-const brokerList = (env.KAFKA_BROKERS ?? '')
-  .split(',')
-  .map((broker) => broker.trim())
-  .filter(Boolean);
+// Check Kafka availability - Simplified using utility functions
+const kafkaEnabled = isKafkaEnabled();
+const brokerList = getKafkaBrokers();
 
-if (defaultEnabled && brokerList.length === 0) {
+// Warn if Kafka is enabled but no brokers configured
+if (kafkaEnabled && brokerList.length === 0) {
   logger.warn('Kafka enabled but KAFKA_BROKERS is empty; RPC client will stay disabled.');
 }
 
+// Get Kafka topics configuration
+const topics = getKafkaTopics();
+
+// Build Kafka configuration object - All values from centralized utilities
 export const kafkaConfig: KafkaConfig = {
-  enabled: defaultEnabled && brokerList.length > 0,
-  clientId: env.KAFKA_CLIENT_ID || 'discovery-engine',
-  groupId: env.KAFKA_GROUP_ID || 'discovery-engine-rpc',
+  enabled: kafkaEnabled && brokerList.length > 0,
+  clientId: getEnvVar('KAFKA_CLIENT_ID', KAFKA_DEFAULT_CLIENT_ID),
+  groupId: getEnvVar('KAFKA_GROUP_ID', KAFKA_DEFAULT_RPC_GROUP_ID),
   brokers: brokerList,
-  replyTopic: env.DISCOVERY_REPLY_TOPIC || 'discovery.responses',
-  requestTimeoutMs: Number(env.KAFKA_REQUEST_TIMEOUT_MS || '8000'),
+  replyTopic: topics.discoveryResponses,
+  requestTimeoutMs: getKafkaTimeout(),
   topics: {
-    weatherRequests: env.WEATHER_REQUEST_TOPIC || 'weather.requests',
-    hotelRequests: env.HOTEL_REQUEST_TOPIC || 'hotel.requests',
-    visaRequests: env.VISA_REQUEST_TOPIC || 'visa.requests',
-    travelDataRequests: env.TRAVEL_DATA_REQUEST_TOPIC || 'travel-data.requests'
+    weatherRequests: topics.weatherRequests,
+    hotelRequests: topics.hotelRequests,
+    visaRequests: topics.visaRequests,
+    travelDataRequests: topics.travelDataRequests
   }
 };

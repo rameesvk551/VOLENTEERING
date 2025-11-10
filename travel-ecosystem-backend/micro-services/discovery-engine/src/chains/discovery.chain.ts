@@ -33,28 +33,30 @@ export class DiscoveryChain {
 
   /**
    * Step 2: Generate cache key from entities
+   * Refactored to use helper function for normalization
    */
   generateCacheKey(entities: QueryEntities): string {
-    const normalized = {
-      city: entities.city?.toLowerCase(),
-      country: entities.country?.toLowerCase(),
-      month: entities.month?.toLowerCase(),
-      interests: entities.interests?.sort(),
-      eventType: entities.eventType?.sort()
-    };
+    const { normalizeEntities } = require('@/utils/query-helpers');
+    const normalized = normalizeEntities(entities);
     return crypto.SHA256(JSON.stringify(normalized)).toString();
   }
 
   /**
    * Step 3: Check cache for existing results
+   * Refactored to use constants instead of magic strings
    */
   async checkCache(cacheKey: string): Promise<DiscoveryResponse | null> {
-    if (process.env.ENABLE_CACHING !== 'true') {
+    const { isCachingEnabled } = require('@/utils/env-config');
+    const { CACHE_KEY_PREFIX_QUERY, CACHE_KEY_VERSION } = require('@/constants');
+    
+    if (!isCachingEnabled()) {
       return null;
     }
 
     try {
-      const cached = await this.redis.get(`query:${cacheKey}:v1`);
+      const cacheKeyWithPrefix = `${CACHE_KEY_PREFIX_QUERY}${cacheKey}:${CACHE_KEY_VERSION}`;
+      const cached = await this.redis.get(cacheKeyWithPrefix);
+      
       if (cached) {
         logger.info('Cache hit', { cacheKey });
         const result = JSON.parse(cached);
@@ -71,87 +73,50 @@ export class DiscoveryChain {
  
   /**
    * Keyword search using MongoDB
+   * Refactored to use query helper functions - Follows DRY and SoC principles
    */
   private async keywordSearch(entities: QueryEntities): Promise<StructuredData[]> {
+    const { 
+      buildCityQuery, 
+      buildDateRangeQuery, 
+      buildInterestsQuery,
+      buildEventTypeQuery,
+      combineQueryFragments 
+    } = require('@/utils/query-helpers');
+    const { convertMongoDocToStructuredData } = require('@/utils/data-transformers');
+    const { MAX_SEARCH_RESULTS, MAX_EVENT_TYPES_FOR_SPECIFIC_FILTER } = require('@/constants');
+    
     try {
-      const query: any = {
-        'location.city': new RegExp(entities.city, 'i')
-      };
+      // Build query fragments using helper functions
+      const cityQuery = buildCityQuery(entities.city);
+      const dateQuery = buildDateRangeQuery(entities.month || '', entities.year || 0);
+      const interestsQuery = buildInterestsQuery(entities.interests);
+      const eventTypeQuery = buildEventTypeQuery(entities.eventType, MAX_EVENT_TYPES_FOR_SPECIFIC_FILTER);
 
-      // Add month filter
-      if (entities.month && entities.year) {
-        const monthNum = new Date(`${entities.month} 1, ${entities.year}`).getMonth() + 1;
-        const startDate = new Date(entities.year, monthNum - 1, 1);
-        const endDate = new Date(entities.year, monthNum, 0);
-
-        query['dates.start'] = { $gte: startDate };
-        query['dates.end'] = { $lte: endDate };
-      }
-
-      // Add interests filter - check both interests and categories
-      if (entities.interests.length > 0) {
-        query.$or = query.$or || [];
-        query.$or.push({ 'metadata.category': { $in: entities.interests } });
-        query.$or.push({ 'metadata.tags': { $in: entities.interests } });
-      }
-
-      // Add event type filter - but make it flexible
-      // Don't filter if no specific type, or if it's too restrictive
-      if (entities.eventType.length > 0 && entities.eventType.length < 3) {
-        // Only apply type filter if it's specific (not too many types)
-        const typeQuery = { type: { $in: entities.eventType } };
-        if (query.$or) {
-          query.$or.push(typeQuery);
-        } else {
-          query.type = { $in: entities.eventType };
-        }
-      }
+      // Combine all query fragments
+      const query = combineQueryFragments([cityQuery, dateQuery, interestsQuery, eventTypeQuery]);
 
       const documents = await Place.find(query)
         .sort({ 'metadata.popularity': -1 })
-        .limit(30)
+        .limit(MAX_SEARCH_RESULTS)
         .lean();
 
-      // If no results with strict filters, try a broader search with just city
+      // If no results with strict filters, try broader search with just city
       if (documents.length === 0) {
         logger.info('🔍 No results with filters, trying broader city search', { city: entities.city });
-        const broadQuery = {
-          'location.city': new RegExp(entities.city, 'i')
-        };
         
+        const broadQuery = buildCityQuery(entities.city);
         const broadDocs = await Place.find(broadQuery)
           .sort({ 'metadata.popularity': -1 })
-          .limit(30)
+          .limit(MAX_SEARCH_RESULTS)
           .lean();
           
         logger.info(`📊 Broad search found ${broadDocs.length} results`, { city: entities.city });
         
-        return broadDocs.map((doc: any) => ({
-          id: doc._id.toString(),
-          type: doc.type,
-          title: doc.title,
-          description: doc.description,
-          location: doc.location,
-          dates: doc.dates,
-          metadata: doc.metadata,
-          media: doc.media,
-          source: doc.source,
-          confidence: doc.confidence
-        }));
+        return broadDocs.map(convertMongoDocToStructuredData);
       }
 
-      return documents.map((doc: any) => ({
-        id: doc._id.toString(),
-        type: doc.type,
-        title: doc.title,
-        description: doc.description,
-        location: doc.location,
-        dates: doc.dates,
-        metadata: doc.metadata,
-        media: doc.media,
-        source: doc.source,
-        confidence: doc.confidence
-      }));
+      return documents.map(convertMongoDocToStructuredData);
     } catch (error) {
       logger.error('Keyword search failed:', error);
       return [];
@@ -256,44 +221,23 @@ export class DiscoveryChain {
 
   /**
    * Categorize Google Place by its types
+   * Refactored to use shared utility function - Follows DRY principle
    */
   private categorizeGooglePlace(types: string[]): string {
-    if (types.includes('museum')) return 'museum';
-    if (types.includes('park')) return 'park';
-    if (types.includes('place_of_worship')) return 'religious';
-    if (types.includes('tourist_attraction')) return 'monument';
-    if (types.includes('point_of_interest')) return 'attraction';
-    return 'place';
+    const { categorizeGooglePlaceByTypes } = require('@/utils/data-transformers');
+    return categorizeGooglePlaceByTypes(types);
   }
-
 
   /**
    * Merge and deduplicate search results
+   * Refactored to use shared utility function - Follows DRY principle
    */
   private mergeResults(
     vectorResults: StructuredData[],
     keywordResults: StructuredData[]
   ): StructuredData[] {
-    const seen = new Set<string>();
-    const merged: StructuredData[] = [];
-
-    // Add vector results first (higher priority)
-    for (const item of vectorResults) {
-      if (!seen.has(item.id)) {
-        seen.add(item.id);
-        merged.push(item);
-      }
-    }
-
-    // Add keyword results
-    for (const item of keywordResults) {
-      if (!seen.has(item.id)) {
-        seen.add(item.id);
-        merged.push(item);
-      }
-    }
-
-    return merged;
+    const { mergeAndDeduplicateDocuments } = require('@/utils/data-transformers');
+    return mergeAndDeduplicateDocuments(vectorResults, keywordResults);
   }
 
   /**
@@ -357,15 +301,17 @@ Example output: ["doc1", "doc3", "doc2", ...]
 
   /**
    * Format documents for summary generation
+   * Refactored to use shared utility function - Follows DRY principle
    */
   private formatDocumentsForSummary(documents: StructuredData[]): string {
-    return documents.map((doc, idx) =>
-      `${idx + 1}. ${doc.title} (${doc.type})\n   ${doc.description.substring(0, 150)}...`
-    ).join('\n\n');
+    const { formatDocumentsForSummary } = require('@/utils/data-transformers');
+    const { MAX_DESCRIPTION_LENGTH } = require('@/constants');
+    return formatDocumentsForSummary(documents, MAX_DESCRIPTION_LENGTH);
   }
 
   /**
    * Step 8: Categorize results by type
+   * Refactored to use shared utility function - Follows DRY principle
    */
   private categorizeResults(documents: StructuredData[]): {
     festivals: StructuredData[];
@@ -373,26 +319,28 @@ Example output: ["doc1", "doc3", "doc2", ...]
     places: StructuredData[];
     events: StructuredData[];
   } {
-    return {
-      festivals: documents.filter(d => d.type === 'festival'),
-      attractions: documents.filter(d => d.type === 'attraction'),
-      places: documents.filter(d => d.type === 'place'),
-      events: documents.filter(d => d.type === 'event')
-    };
+    const { categorizeDocumentsByType } = require('@/utils/data-transformers');
+    return categorizeDocumentsByType(documents);
   }
 
   /**
    * Step 9: Store result in cache
+   * Refactored to use constants and utility functions - Avoids magic strings/numbers
    */
   async cacheResult(cacheKey: string, result: DiscoveryResponse): Promise<void> {
-    if (process.env.ENABLE_CACHING !== 'true') {
+    const { isCachingEnabled, getCacheTTL } = require('@/utils/env-config');
+    const { CACHE_KEY_PREFIX_QUERY, CACHE_KEY_VERSION } = require('@/constants');
+    
+    if (!isCachingEnabled()) {
       return;
     }
 
     try {
-      const ttl = parseInt(process.env.CACHE_TTL_QUERY_RESULT || '3600');
+      const ttl = getCacheTTL();
+      const cacheKeyWithPrefix = `${CACHE_KEY_PREFIX_QUERY}${cacheKey}:${CACHE_KEY_VERSION}`;
+      
       await this.redis.setex(
-        `query:${cacheKey}:v1`,
+        cacheKeyWithPrefix,
         ttl,
         JSON.stringify(result)
       );
@@ -546,6 +494,9 @@ Example output: ["doc1", "doc3", "doc2", ...]
       const categorized = this.categorizeResults(rankedDocs);
 
       // 8. Build response
+      // Extract unique sources using helper function
+      const { extractUniqueSources } = require('@/utils/data-transformers');
+      
       const response: DiscoveryResponse = {
         query,
         entities,
@@ -556,7 +507,7 @@ Example output: ["doc1", "doc3", "doc2", ...]
           totalResults: documents.length,
           processingTime: Date.now() - startTime,
           cached: false,
-          sources: [...new Set(documents.map(d => d.source.domain))],
+          sources: extractUniqueSources(documents),
           generatedAt: new Date().toISOString()
         }
       };
