@@ -1,7 +1,7 @@
 // MongoDB Models using Mongoose
 
 import mongoose, { Schema, Document } from 'mongoose';
-import type { PlaceDocument, QueryCacheDocument, CrawlLogDocument } from '@/types';
+import type { PlaceDocument, QueryCacheDocument, CrawlLogDocument, AttractionCacheDocument } from '@/types';
 
 // Place Schema
 const LocationSchema = new Schema({
@@ -141,3 +141,28 @@ const CrawlLogSchema = new Schema<CrawlLogDocument>({
 CrawlLogSchema.index({ startedAt: -1 });
 
 export const CrawlLog = mongoose.model<CrawlLogDocument>('CrawlLog', CrawlLogSchema);
+
+// Attraction Cache Schema
+const AttractionCacheSchema = new Schema<AttractionCacheDocument>({
+  city: { type: String, required: true },
+  country: { type: String },
+  cityKey: { type: String, required: true, index: true },
+  countryKey: { type: String, required: true, index: true },
+  data: {
+    monuments: { type: [Schema.Types.Mixed], default: [] },
+    museums: { type: [Schema.Types.Mixed], default: [] },
+    parks: { type: [Schema.Types.Mixed], default: [] },
+    religious: { type: [Schema.Types.Mixed], default: [] }
+  },
+  fetchedAt: { type: Date, required: true, default: Date.now },
+  expiresAt: { type: Date, required: true },
+  hitCount: { type: Number, default: 0 }
+}, {
+  collection: 'attraction_cache',
+  timestamps: true
+});
+
+AttractionCacheSchema.index({ cityKey: 1, countryKey: 1 }, { unique: true });
+AttractionCacheSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
+
+export const AttractionCache = mongoose.model<AttractionCacheDocument>('AttractionCache', AttractionCacheSchema);

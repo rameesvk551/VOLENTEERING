@@ -138,3 +138,10 @@ export function isGooglePlacesConfigured(): boolean {
   const apiKey = getEnvVar('GOOGLE_PLACES_API_KEY');
   return !!apiKey && apiKey !== 'your_google_places_api_key_here';
 }
+
+/**
+ * Determine if discovery should operate in attractions-only mode
+ */
+export function isAttractionsOnlyMode(): boolean {
+  return getEnvVarAsBoolean('DISCOVERY_ATTRACTIONS_ONLY', false);
+}

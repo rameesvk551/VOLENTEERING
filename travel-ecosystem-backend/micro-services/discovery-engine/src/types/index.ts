@@ -72,6 +72,28 @@ export interface Summary {
   tips?: string[];
 }
 
+export interface PlaceResult {
+  name: string;
+  description: string;
+  placeId: string;
+  coordinates: {
+    lat: number;
+    lng: number;
+  };
+  address: string;
+  rating?: number;
+  userRatingsTotal?: number;
+  photos: string[];
+  types: string[];
+  url: string;
+  website?: string;
+  phoneNumber?: string;
+  openingHours?: {
+    open_now: boolean;
+    weekday_text?: string[];
+  };
+}
+
 export interface DiscoveryResponse {
   query: string;
   entities: QueryEntities;
@@ -257,4 +279,23 @@ export interface CrawlLogDocument {
   duration: number;
   startedAt: Date;
   completedAt: Date;
+}
+
+export interface AttractionCacheDocument {
+  _id: string;
+  city: string;
+  country?: string;
+  cityKey: string;
+  countryKey: string;
+  data: {
+    monuments: PlaceResult[];
+    museums: PlaceResult[];
+    parks: PlaceResult[];
+    religious: PlaceResult[];
+  };
+  fetchedAt: Date;
+  expiresAt: Date;
+  hitCount: number;
+  createdAt: Date;
+  updatedAt: Date;
 }

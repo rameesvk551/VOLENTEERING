@@ -7,7 +7,7 @@ import { Kafka, logLevel, type Consumer, type Producer, type EachMessagePayload 
 import { randomUUID } from 'crypto';
 import { GooglePlacesService, PlaceResult } from '@/services/google-places.service';
 import { logger } from '@/utils/logger';
-import { getServiceUrls, isKafkaEnabled, getKafkaTopics, getKafkaTimeout } from '@/utils/env-config';
+import { getServiceUrls, isKafkaEnabled, getKafkaTopics, getKafkaTimeout, isAttractionsOnlyMode } from '@/utils/env-config';
 
 // Get service URLs from centralized configuration - Avoids magic strings
 const serviceUrls = getServiceUrls();
@@ -200,9 +200,15 @@ export class DiscoveryOrchestrator {
   private readonly replyTopic = DISCOVERY_REPLY_TOPIC;
   private readonly requestTimeoutMs = KAFKA_REQUEST_TIMEOUT_MS;
   private responseHandlers: Map<string, ResponseHandler> = new Map();
+  private readonly attractionsOnly: boolean;
 
   constructor() {
     this.googlePlaces = new GooglePlacesService();
+    this.attractionsOnly = isAttractionsOnlyMode();
+
+    if (this.attractionsOnly) {
+      logger.info('Discovery orchestrator running in attractions-only mode');
+    }
   }
 
   async initialize(): Promise<void> {
@@ -389,25 +395,38 @@ export class DiscoveryOrchestrator {
     });
 
     try {
-      // Fetch all data in parallel for better performance
-      const [attractions, weather, visa, hotels, articles, tips, experiences] = await Promise.all([
-        this.fetchAttractions(query),
-        this.fetchWeather(query),
-        this.fetchVisa(query),
-        this.fetchHotels(query),
-        this.fetchTravelArticles(query),
-        this.fetchTravelTips(query),
-        this.fetchLocalExperiences(query)
-      ]);
+      let attractions: PlaceResult[] = [];
+      let weather: WeatherData | null = null;
+      let visa: VisaInfo | null = null;
+      let hotels: Hotel[] = [];
+      let articles: TravelArticle[] = [];
+      let tips: TravelTip[] = [];
+      let experiences: LocalExperience[] = [];
+
+      if (this.attractionsOnly) {
+        attractions = await this.fetchAttractions(query);
+      } else {
+        [attractions, weather, visa, hotels, articles, tips, experiences] = await Promise.all([
+          this.fetchAttractions(query),
+          this.fetchWeather(query),
+          this.fetchVisa(query),
+          this.fetchHotels(query),
+          this.fetchTravelArticles(query),
+          this.fetchTravelTips(query),
+          this.fetchLocalExperiences(query)
+        ]);
+      }
 
       // Count active sources
       const sources: string[] = [];
       if (attractions.length > 0) sources.push('google-places');
-      if (weather) sources.push('weather-service');
-      if (visa) sources.push('visa-service');
-      if (hotels.length > 0) sources.push('hotel-service');
-      if (articles.length > 0 || tips.length > 0 || experiences.length > 0) {
-        sources.push('travel-data-service');
+      if (!this.attractionsOnly) {
+        if (weather) sources.push('weather-service');
+        if (visa) sources.push('visa-service');
+        if (hotels.length > 0) sources.push('hotel-service');
+        if (articles.length > 0 || tips.length > 0 || experiences.length > 0) {
+          sources.push('travel-data-service');
+        }
       }
 
       const result: DiscoveryResult = {

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Search, TrendingUp, Loader2 } from 'lucide-react';
 import { useDiscovery } from '../../hooks/useDiscovery';
-import { EntityChips } from './EntityChips';
+
 import { ResultsGrid } from './ResultsGrid';
 
 import { RecommendationCarousel } from './RecommendationCarousel';
@@ -106,8 +106,6 @@ export const DiscoverySearch: React.FC<DiscoverySearchProps> = ({ onResultSelect
         </div>
       </div>
 
-      {/* Entity Chips */}
-      {entities && <EntityChips entities={entities} />}
 
       {/* Results Grid */}
       {results && (

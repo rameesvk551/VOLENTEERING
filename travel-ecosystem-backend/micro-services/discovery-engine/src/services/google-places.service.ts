@@ -4,6 +4,11 @@
 import axios from 'axios';
 import { logger } from '@/utils/logger';
 import { getEnvVar, isGooglePlacesConfigured } from '@/utils/env-config';
+import { dbManager } from '@/database/connection';
+import { AttractionCache } from '@/database/models';
+import type { AttractionCacheDocument, PlaceResult } from '@/types';
+
+export type { PlaceResult } from '@/types';
 import {
   DEFAULT_SEARCH_RADIUS_METERS,
   DEFAULT_PLACE_LIMIT,
@@ -14,31 +19,11 @@ import {
   MAX_PHOTOS_PER_PLACE
 } from '@/constants';
 
-export interface PlaceResult {
-  name: string;
-  description: string;
-  placeId: string;
-  coordinates: {
-    lat: number;
-    lng: number;
-  };
-  address: string;
-  rating?: number;
-  userRatingsTotal?: number;
-  photos: string[];
-  types: string[];
-  url: string;
-  website?: string;
-  phoneNumber?: string;
-  openingHours?: {
-    open_now: boolean;
-    weekday_text?: string[];
-  };
-}
-
 export class GooglePlacesService {
   private apiKey: string;
   private readonly baseUrl = 'https://maps.googleapis.com/maps/api/place';
+  private readonly cacheTtlMs = 1000 * 60 * 60 * 24 * 7; // 7 days
+  private mongoReady = false;
 
   constructor() {
     // Use centralized environment configuration
@@ -315,26 +300,42 @@ export class GooglePlacesService {
       return { monuments: [], museums: [], parks: [], religious: [] };
     }
 
+  await this.ensureMongo();
+
     try {
       logger.info('🏛️ Fetching popular attractions by category', { city, country });
 
+      const locationKeys = this.getLocationKeys(city, country);
+
+  const cached = await this.getCachedAttractions(locationKeys);
+      if (cached) {
+        logger.info('♻️ Returning cached attractions', {
+          city,
+          country,
+          hitCount: cached.hitCount + 1,
+          fetchedAt: cached.fetchedAt
+        });
+        await this.incrementCacheHit(cached._id);
+        return cached.data;
+      }
+
       // Fetch attractions in parallel using defined search keywords
       const [monuments, museums, parks, religious] = await Promise.all([
-        this.searchAttractions(city, country, { 
+        this.searchAttractions(city, country, {
           type: 'tourist_attraction',
           keyword: SEARCH_KEYWORD_MONUMENTS,
           limit: 5
         }),
-        this.searchAttractions(city, country, { 
+        this.searchAttractions(city, country, {
           type: 'museum',
           limit: 5
         }),
-        this.searchAttractions(city, country, { 
+        this.searchAttractions(city, country, {
           type: 'park',
           keyword: SEARCH_KEYWORD_PARKS,
           limit: 5
         }),
-        this.searchAttractions(city, country, { 
+        this.searchAttractions(city, country, {
           type: 'place_of_worship',
           keyword: SEARCH_KEYWORD_RELIGIOUS,
           limit: 5
@@ -348,11 +349,118 @@ export class GooglePlacesService {
         religious: religious.length
       });
 
-      return { monuments, museums, parks, religious };
+      const result = { monuments, museums, parks, religious };
+      await this.cacheAttractions({
+        city,
+        country,
+        cityKey: locationKeys.cityKey,
+        countryKey: locationKeys.countryKey,
+        data: result
+      });
+
+      return result;
 
     } catch (error: any) {
       logger.error('Failed to fetch popular attractions', { error: error.message });
       return { monuments: [], museums: [], parks: [], religious: [] };
+    }
+  }
+
+  private async ensureMongo(): Promise<void> {
+    if (this.mongoReady) {
+      return;
+    }
+
+    try {
+      await dbManager.connectMongoDB();
+      this.mongoReady = true;
+    } catch (error) {
+      this.mongoReady = false;
+      logger.warn('MongoDB unavailable for attraction caching', { error });
+    }
+  }
+
+  private getLocationKeys(city: string, country: string): { cityKey: string; countryKey: string } {
+    const cityKey = city.trim().toLowerCase();
+    const countryKey = (country || '').trim().toLowerCase() || 'unknown';
+    return { cityKey, countryKey };
+  }
+
+  private async getCachedAttractions(keys: { cityKey: string; countryKey: string }): Promise<AttractionCacheDocument | null> {
+    if (!this.mongoReady) {
+      return null;
+    }
+
+    try {
+      const cacheDoc = await AttractionCache.findOne({
+        cityKey: keys.cityKey,
+        countryKey: keys.countryKey,
+        expiresAt: { $gt: new Date() }
+      });
+      return cacheDoc as AttractionCacheDocument | null;
+    } catch (error) {
+      logger.error('Failed to read attraction cache', { error });
+      return null;
+    }
+  }
+
+  private async incrementCacheHit(id: AttractionCacheDocument['_id']): Promise<void> {
+    if (!this.mongoReady) {
+      return;
+    }
+
+    try {
+      await AttractionCache.updateOne({ _id: id }, { $inc: { hitCount: 1 } });
+    } catch (error) {
+      logger.warn('Failed to increment attraction cache hit count', { id, error });
+    }
+  }
+
+  private async cacheAttractions(params: {
+    city: string;
+    country: string;
+    cityKey: string;
+    countryKey: string;
+    data: {
+      monuments: PlaceResult[];
+      museums: PlaceResult[];
+      parks: PlaceResult[];
+      religious: PlaceResult[];
+    };
+  }): Promise<void> {
+    if (!this.mongoReady) {
+      return;
+    }
+
+    const expiresAt = new Date(Date.now() + this.cacheTtlMs);
+
+    try {
+      await AttractionCache.findOneAndUpdate(
+        {
+          cityKey: params.cityKey,
+          countryKey: params.countryKey
+        },
+        {
+          city: params.city,
+          country: params.country,
+          data: params.data,
+          fetchedAt: new Date(),
+          expiresAt,
+          $setOnInsert: { hitCount: 0 }
+        },
+        {
+          upsert: true,
+          new: true
+        }
+      );
+
+      logger.info('🗃️ Stored attractions in Mongo cache', {
+        city: params.city,
+        country: params.country,
+        expiresAt
+      });
+    } catch (error) {
+      logger.error('Failed to write attraction cache', { error });
     }
   }
 }
