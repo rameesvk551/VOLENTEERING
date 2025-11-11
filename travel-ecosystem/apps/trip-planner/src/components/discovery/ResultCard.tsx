@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Calendar, Plus, Check } from 'lucide-react';
 import { useTripStore } from '../../store/tripStore';
 import type { DiscoveryEntity } from '../../hooks/useDiscovery';
 
@@ -13,7 +12,6 @@ interface ResultCardProps {
 export const ResultCard: React.FC<ResultCardProps> = ({ result, index, onSelect }) => {
   const addDestination = useTripStore((state) => state.addDestination);
   const destinations = useTripStore((state) => state.destinations);
-  const [isHovered, setIsHovered] = useState(false);
   const [isAdded, setIsAdded] = useState(false);
 
   const isAlreadyAdded = destinations.some(d => d.name === result.title);
@@ -38,36 +36,6 @@ export const ResultCard: React.FC<ResultCardProps> = ({ result, index, onSelect 
     setTimeout(() => setIsAdded(false), 2000);
   };
 
-  const typeConfig = {
-    festival: {
-      emoji: '🎉',
-      gradient: 'from-purple-500 to-pink-500',
-      bgColor: 'bg-purple-100 dark:bg-purple-900/30'
-    },
-    attraction: {
-      emoji: '🏛️',
-      gradient: 'from-cyan-500 to-blue-500',
-      bgColor: 'bg-cyan-100 dark:bg-cyan-900/30'
-    },
-    place: {
-      emoji: '📍',
-      gradient: 'from-green-500 to-emerald-500',
-      bgColor: 'bg-green-100 dark:bg-green-900/30'
-    },
-    event: {
-      emoji: '🎪',
-      gradient: 'from-amber-500 to-orange-500',
-      bgColor: 'bg-amber-100 dark:bg-amber-900/30'
-    },
-    experience: {
-      emoji: '✨',
-      gradient: 'from-pink-500 to-rose-500',
-      bgColor: 'bg-pink-100 dark:bg-pink-900/30'
-    }
-  };
-
-  const config = typeConfig[result.type];
-
   return (
     <motion.div
       layout
@@ -75,146 +43,115 @@ export const ResultCard: React.FC<ResultCardProps> = ({ result, index, onSelect 
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.9 }}
       transition={{ delay: index * 0.05 }}
-      whileHover={{ y: -8 }}
-      onHoverStart={() => setIsHovered(true)}
-      onHoverEnd={() => setIsHovered(false)}
+      whileHover={{ y: -4 }}
       onClick={onSelect}
       className="result-card group relative bg-white dark:bg-gray-800 
-        rounded-xl sm:rounded-2xl overflow-hidden cursor-pointer
-        shadow-lg hover:shadow-2xl transition-all duration-300"
+        rounded-2xl overflow-hidden cursor-pointer w-full
+        shadow-md hover:shadow-xl transition-all duration-300 border border-gray-100 dark:border-gray-700"
+      style={{ maxWidth: '260px', margin: '0 auto' }}
     >
-      {/* Image Container */}
-      <div className="relative h-56 sm:h-64 overflow-hidden">
+      {/* Image Container - Fixed Height */}
+      <div className="relative overflow-hidden" style={{ width: '100%', height: '140px' }}>
         <img
           src={result.media.images[0] || 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=800'}
           alt={result.title}
-          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+          className="object-cover transition-transform duration-500"
           loading="lazy"
+          style={{ width: '100%', height: '140px' }}
           onError={(e) => {
             (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=800';
           }}
         />
 
-        {/* Overlay Gradient */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
-
-        {/* Rating Badge */}
-        {result.metadata.popularity && (
-          <div className="absolute top-3 sm:top-4 right-3 sm:right-4 
-            bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-full 
-            px-2.5 py-1 sm:px-3 sm:py-1 flex items-center gap-1 shadow-lg">
-            <span className="text-yellow-500">⭐</span>
-            <span className="font-semibold text-gray-800 dark:text-white text-xs sm:text-sm">
-              {(result.metadata.popularity * 5).toFixed(1)}
-            </span>
-          </div>
-        )}
-
-        {/* Type Badge */}
-        <div className={`absolute top-3 sm:top-4 left-3 sm:left-4 
-          bg-gradient-to-r ${config.gradient} backdrop-blur-sm rounded-full 
-          px-2.5 py-1 sm:px-3 sm:py-1 text-white text-xs sm:text-sm font-semibold shadow-lg`}>
-          <span className="mr-1">{config.emoji}</span>
-          <span className="hidden sm:inline">{result.type}</span>
-        </div>
-
-        {/* Add to Trip Button - Shows on hover */}
+        {/* Favorite Button - Top Right */}
         <motion.button
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ 
-            opacity: isHovered ? 1 : 0, 
-            scale: isHovered ? 1 : 0.8 
-          }}
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.9 }}
           onClick={handleAddToTrip}
           disabled={isAlreadyAdded}
-          className={`absolute bottom-3 sm:bottom-4 right-3 sm:right-4 
-            p-2.5 sm:p-3 rounded-full shadow-xl transition-all duration-300 
+          className={`absolute top-3 right-3 p-2 rounded-full shadow-lg transition-all duration-300 
             ${isAlreadyAdded
-              ? 'bg-green-500 cursor-not-allowed'
-              : 'bg-white dark:bg-gray-800 hover:scale-110'
+              ? 'bg-red-500 cursor-default'
+              : 'bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm hover:bg-white dark:hover:bg-gray-800'
             }`}
-          aria-label={isAlreadyAdded ? 'Already added' : 'Add to trip'}
+          aria-label={isAlreadyAdded ? 'Added to favorites' : 'Add to favorites'}
         >
-          {isAlreadyAdded ? (
-            <Check className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
-          ) : (
-            <Plus className="w-4 h-4 sm:w-5 sm:h-5 text-cyan-600 dark:text-cyan-400" />
-          )}
+          <svg 
+            className={`w-5 h-5 transition-colors ${isAlreadyAdded ? 'text-white' : 'text-gray-600 dark:text-gray-300'}`}
+            fill={isAlreadyAdded ? 'currentColor' : 'none'}
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path 
+              strokeLinecap="round" 
+              strokeLinejoin="round" 
+              strokeWidth={2} 
+              d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" 
+            />
+          </svg>
         </motion.button>
       </div>
 
       {/* Content */}
-      <div className="p-5 sm:p-6">
-        <h3 className="text-xl sm:text-2xl font-bold text-gray-800 dark:text-white mb-1 
-          group-hover:text-cyan-600 dark:group-hover:text-cyan-400 transition-colors">
+      <div className="p-4">
+        {/* Title */}
+        <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-2 line-clamp-2 min-h-[3rem]">
           {result.title}
         </h3>
 
-        <p className="text-gray-500 dark:text-gray-400 mb-3 flex items-center gap-1 text-sm">
-          <span>📍</span> {result.location.city}
-          {result.location.country && `, ${result.location.country}`}
-        </p>
-
-        <p className="text-gray-600 dark:text-gray-300 leading-relaxed mb-4 
-          text-sm sm:text-base line-clamp-2 sm:line-clamp-3">
+        {/* Description */}
+        <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed mb-3 line-clamp-2 min-h-[2.5rem]">
           {result.description}
         </p>
 
-        {/* Date Information */}
-        {result.dates && (
-          <div className="flex items-center gap-1.5 mb-3 text-gray-600 dark:text-gray-400 text-sm">
-            <Calendar className="w-4 h-4 text-purple-500 flex-shrink-0" />
-            <span>
-              {new Date(result.dates.start).toLocaleDateString('en-US', {
-                month: 'short',
-                day: 'numeric'
-              })}
-              {' - '}
-              {new Date(result.dates.end).toLocaleDateString('en-US', {
-                month: 'short',
-                day: 'numeric',
-                year: 'numeric'
-              })}
-            </span>
-          </div>
+        {/* Location - if available */}
+        {result.location.city && (
+          <p className="text-xs text-gray-500 dark:text-gray-500 mb-3">
+            {result.location.city}
+            {result.location.country && `, ${result.location.country}`}
+          </p>
         )}
 
-        {/* Cost */}
-        {result.metadata.cost && (
-          <div className="mb-4">
-            <span className="font-semibold text-green-600 dark:text-green-400 text-sm">
-              {result.metadata.cost}
-            </span>
-          </div>
-        )}
+        {/* Divider */}
+        <div className="border-t border-gray-100 dark:border-gray-700 pt-3 mt-3">
+          {/* Bottom Row - Price and Rating */}
+          <div className="flex items-center justify-between">
+            {/* Price */}
+            <div className="flex flex-col">
+              <div className="flex items-baseline gap-1">
+                <span className="text-xs text-gray-500 dark:text-gray-400">From</span>
+                {result.metadata.cost ? (
+                  <span className="text-lg font-bold text-gray-900 dark:text-white">
+                    {result.metadata.cost}
+                  </span>
+                ) : (
+                  <span className="text-lg font-bold text-gray-900 dark:text-white">
+                    ₹6,149
+                  </span>
+                )}
+              </div>
+              <span className="text-xs text-gray-500 dark:text-gray-400">per person</span>
+            </div>
 
-        {/* Explore Button */}
-        <button 
-          className="w-full py-3 bg-gradient-to-r from-blue-500 to-purple-600 
-            text-white rounded-xl font-semibold hover:shadow-lg transition-all 
-            hover:scale-105 text-sm sm:text-base"
-          onClick={(e) => {
-            e.stopPropagation();
-            handleAddToTrip(e);
-          }}
-          disabled={isAlreadyAdded}
-        >
-          {isAlreadyAdded ? (
-            <span className="flex items-center justify-center gap-2">
-              <Check className="w-5 h-5" /> Added to Trip
-            </span>
-          ) : (
-            <span>Explore {result.title}</span>
-          )}
-        </button>
+            {/* Rating */}
+            {result.metadata.popularity && (
+              <div className="flex items-center gap-1 bg-gray-50 dark:bg-gray-700/50 px-2.5 py-1 rounded-lg">
+                <span className="text-yellow-500">★</span>
+                <span className="font-semibold text-gray-900 dark:text-white text-sm">
+                  {(result.metadata.popularity * 5).toFixed(1)}
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Added Toast */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: isAdded ? 1 : 0, y: isAdded ? 0 : 20 }}
-        className={`absolute inset-x-0 bottom-0 p-4 bg-green-500 text-white text-center
-          font-medium ${isAdded ? 'pointer-events-none' : ''}`}
+        className={`absolute inset-x-0 bottom-0 p-3 bg-green-500 text-white text-center
+          font-medium text-sm ${isAdded ? 'pointer-events-none' : ''}`}
       >
         ✓ Added to your trip!
       </motion.div>

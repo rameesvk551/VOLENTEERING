@@ -123,9 +123,10 @@ export const ResultsGrid: React.FC<ResultsGridProps> = ({ results, onResultSelec
       <motion.div
         layout
         className={viewMode === 'grid'
-          ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6'
+          ? 'grid grid-cols-4 gap-3'
           : 'flex flex-col gap-3 sm:gap-4'
         }
+        style={viewMode === 'grid' ? { maxWidth: '1056px', margin: '0 auto', gridTemplateColumns: 'repeat(4, 1fr)' } : {}}
       >
         {filteredResults.map((result, index) => (
           <ResultCard

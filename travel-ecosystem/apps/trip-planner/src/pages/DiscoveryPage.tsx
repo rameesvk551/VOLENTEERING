@@ -35,16 +35,7 @@ export const DiscoveryPage: React.FC = () => {
               >
                 <ArrowLeft className="w-5 h-5 sm:w-6 sm:h-6 text-gray-700 dark:text-gray-300" />
               </button>
-              <div className="min-w-0">
-                <h1 className="text-base sm:text-lg md:text-xl font-bold bg-gradient-to-r 
-                  from-cyan-600 to-purple-600 dark:from-cyan-400 dark:to-purple-400 
-                  bg-clip-text text-transparent truncate">
-                  AI Travel Discovery
-                </h1>
-                <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 truncate">
-                  Powered by LangChain & LangGraph
-                </p>
-              </div>
+         
             </div>
 
             <button
@@ -65,18 +56,6 @@ export const DiscoveryPage: React.FC = () => {
         <DiscoverySearch onResultSelect={handleResultSelect} />
       </main>
 
-      {/* Footer */}
-      <footer className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl 
-        border-t border-gray-200 dark:border-gray-700 py-6 mt-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
-            Powered by OpenAI, LangChain, LangGraph, and Weaviate
-          </p>
-          <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
-            Semantic search • Knowledge graphs • Real-time recommendations
-          </p>
-        </div>
-      </footer>
     </div>
   );
 };

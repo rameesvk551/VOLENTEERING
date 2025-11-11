@@ -98,8 +98,8 @@ const PlanYourTrip: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 via-white to-cyan-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
-      <div className="py-10 px-6 sm:px-10">
-        <div className="max-w-7xl mx-auto">
+      <div className="py-10 px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto" style={{ maxWidth: '1280px' }}>
           {/* Header */}
           <div className="text-center mb-12">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 mb-4">
@@ -198,7 +198,7 @@ const PlanYourTrip: React.FC = () => {
                   </p>
                 </div>
               ) : filteredDestinations.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div className="grid grid-cols-4 gap-3" style={{ maxWidth: '1056px', margin: '0 auto', gridTemplateColumns: 'repeat(4, 1fr)' }}>
                   {filteredDestinations.map((destination) => (
                     <DestinationCard
                       key={destination.id}
@@ -232,7 +232,7 @@ const PlanYourTrip: React.FC = () => {
               </div>
 
               {/* Trip Plans Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              <div className="grid grid-cols-4 gap-3" style={{ maxWidth: '1056px', margin: '0 auto', gridTemplateColumns: 'repeat(4, 1fr)' }}>
                 {sampleTripPlans.map((tripPlan) => (
                   <TripPlanCard
                     key={tripPlan.id}
