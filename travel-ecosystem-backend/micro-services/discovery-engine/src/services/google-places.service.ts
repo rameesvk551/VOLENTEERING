@@ -148,24 +148,41 @@ export class GooglePlacesService {
   ): Promise<{ lat: number; lng: number } | null> {
     try {
       const geocodeUrl = `https://maps.googleapis.com/maps/api/geocode/json`;
+      // Build address - handle empty country gracefully
+      const address = country ? `${city}, ${country}` : city;
       const params = {
-        address: `${city}, ${country}`,
+        address,
         key: this.apiKey
       };
+
+      logger.debug('Geocoding request', { address });
 
       const response = await axios.get(geocodeUrl, { params });
 
       if (response.data.status === 'OK' && response.data.results.length > 0) {
         const location = response.data.results[0].geometry.location;
+        logger.info('Geocoding successful', { 
+          address, 
+          coordinates: location 
+        });
         return {
           lat: location.lat,
           lng: location.lng
         };
       }
 
+      logger.warn('Geocoding returned no results', { 
+        address, 
+        status: response.data.status,
+        errorMessage: response.data.error_message 
+      });
       return null;
     } catch (error: any) {
-      logger.error('Geocoding failed', { error: error.message });
+      logger.error('Geocoding failed', { 
+        city, 
+        country, 
+        error: error.message 
+      });
       return null;
     }
   }

@@ -14,23 +14,30 @@ export interface DiscoveryRequest {
 }
 
 export interface Attraction {
-  id: string;
+  id?: string;
+  placeId?: string; // Backend uses placeId
   name: string;
   description: string;
   address: string;
-  category: string;
-  rating: number;
-  userRatingsTotal: number;
+  category?: string;
+  rating?: number;
+  userRatingsTotal?: number;
   photos: string[];
-  location: {
+  location?: { // Frontend format
+    lat: number;
+    lng: number;
+  };
+  coordinates?: { // Backend format
     lat: number;
     lng: number;
   };
   types: string[];
   priceLevel?: number;
   openingHours?: {
-    openNow: boolean;
+    openNow?: boolean;
+    open_now?: boolean; // Backend uses snake_case
     weekdayText?: string[];
+    weekday_text?: string[]; // Backend uses snake_case
   };
 }
 

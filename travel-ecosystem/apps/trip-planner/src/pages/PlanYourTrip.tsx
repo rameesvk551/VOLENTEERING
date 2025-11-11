@@ -13,16 +13,16 @@ const PlanYourTrip: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'destinations' | 'plans'>('destinations');
   const [destinations, setDestinations] = useState<Destination[]>(fallbackDestinations);
   const [isLoading, setIsLoading] = useState(false);
+  const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
   const { searchDestinations } = useDiscovery();
 
-  // Load dynamic destinations on mount
-  useEffect(() => {
-    loadDynamicDestinations();
-  }, []);
-
   const loadDynamicDestinations = async () => {
+    if (hasLoadedOnce) return; // Prevent multiple calls
+    
     try {
       setIsLoading(true);
+      setHasLoadedOnce(true);
+      
       const result = await searchDestinations('popular tourist destinations worldwide', {
         types: ['attraction', 'place'],
         limit: 20
@@ -40,11 +40,18 @@ const PlanYourTrip: React.FC = () => {
       }
     } catch (error) {
       console.error('Failed to load dynamic destinations:', error);
+      setHasLoadedOnce(false); // Allow retry on error
       // Keep using fallback data
     } finally {
       setIsLoading(false);
     }
   };
+
+  // Load dynamic destinations on mount - ONLY ONCE
+  useEffect(() => {
+    loadDynamicDestinations();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Empty deps intentional - only run once on mount
 
   // Convert DiscoveryEntity to Destination format
   const convertEntitiesToDestinations = (entities: DiscoveryEntity[]): Destination[] => {
