@@ -4,7 +4,7 @@ import { Search, Sparkles, TrendingUp, Loader2 } from 'lucide-react';
 import { useDiscovery } from '../../hooks/useDiscovery';
 import { EntityChips } from './EntityChips';
 import { ResultsGrid } from './ResultsGrid';
-import { SummarySection } from './SummarySection';
+
 import { RecommendationCarousel } from './RecommendationCarousel';
 import type { DiscoveryEntity } from '../../hooks/useDiscovery';
 
@@ -187,10 +187,6 @@ export const DiscoverySearch: React.FC<DiscoverySearchProps> = ({ onResultSelect
         {entities && <EntityChips entities={entities} />}
       </AnimatePresence>
 
-      {/* Summary Section */}
-      <AnimatePresence>
-        {summary && <SummarySection summary={summary} />}
-      </AnimatePresence>
 
       {/* Results Grid */}
       <AnimatePresence>

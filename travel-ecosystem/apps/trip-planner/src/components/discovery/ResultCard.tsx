@@ -43,12 +43,11 @@ export const ResultCard: React.FC<ResultCardProps> = ({ result, index, onSelect 
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.9 }}
       transition={{ delay: index * 0.05 }}
-      whileHover={{ y: -4 }}
       onClick={onSelect}
       className="result-card group relative bg-white dark:bg-gray-800 
         rounded-2xl overflow-hidden cursor-pointer w-full
-        shadow-md hover:shadow-xl transition-all duration-300 border border-gray-100 dark:border-gray-700"
-      style={{ maxWidth: '260px', margin: '0 auto' }}
+        shadow-md border border-gray-100 dark:border-gray-700"
+      style={{ maxWidth: '300px', margin: '0 auto' }}
     >
       {/* Image Container - Fixed Height */}
       <div className="relative overflow-hidden" style={{ width: '100%', height: '140px' }}>
@@ -65,14 +64,12 @@ export const ResultCard: React.FC<ResultCardProps> = ({ result, index, onSelect 
 
         {/* Favorite Button - Top Right */}
         <motion.button
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.9 }}
           onClick={handleAddToTrip}
           disabled={isAlreadyAdded}
-          className={`absolute top-3 right-3 p-2 rounded-full shadow-lg transition-all duration-300 
+          className={`absolute top-3 right-3 p-2 rounded-full shadow-lg 
             ${isAlreadyAdded
               ? 'bg-red-500 cursor-default'
-              : 'bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm hover:bg-white dark:hover:bg-gray-800'
+              : 'bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm'
             }`}
           aria-label={isAlreadyAdded ? 'Added to favorites' : 'Add to favorites'}
         >
