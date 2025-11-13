@@ -6,7 +6,6 @@ import { DiscoveryOrchestrator } from '@/orchestrator/discovery.orchestrator';
 import { Place } from '@/database/models';
 import { logger } from '@/utils/logger';
 import { z } from 'zod';
-import { Types } from 'mongoose';
 import {
   HTTP_STATUS_OK,
   HTTP_STATUS_BAD_REQUEST,
@@ -19,17 +18,11 @@ import {
   MAX_DESCRIPTION_LENGTH
 } from '@/constants';
 import { truncateDescription } from '@/utils/data-transformers';
-import type { BlogFeedItem, PaginatedDiscoveryResponse, RecommendationRequest } from '@/types';
 
 // Request validation schemas - Simplified for direct API calls
-const nonEmptyString = z.string().trim().min(1).max(100);
-
 const DiscoveryRequestSchema = z.object({
-  city: nonEmptyString,
-  country: z.preprocess(
-    (value) => (typeof value === 'string' ? value.trim() || undefined : value),
-    nonEmptyString.optional()
-  ),
+  city: z.string().min(1).max(100),
+  country: z.string().max(100).optional(),
   month: z.string().optional(),
   interests: z.array(z.string()).optional(),
   duration: z.number().optional(),
@@ -45,127 +38,6 @@ const RecommendationRequestSchema = z.object({
   }).optional(),
   limit: z.number().min(1).max(50).optional()
 });
-
-const FeedRequestSchema = z.object({
-  type: z.enum(['attractions', 'blogs']),
-  query: z.string().trim().min(1).max(200),
-  cursor: z.string().trim().min(1).optional(),
-  limit: z.coerce.number().int().min(1).max(60).optional()
-});
-
-const FEED_LIMIT_DEFAULT = 24;
-const FEED_LIMIT_MAX = 60;
-const FEED_PARAM_KEYS = new Set(['type', 'query', 'cursor', 'limit']);
-
-const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-
-const parseStringArray = (value: unknown): string[] => {
-  if (!value) return [];
-  if (Array.isArray(value)) {
-    return value
-      .flatMap((entry) => (typeof entry === 'string' ? entry.split(',') : []))
-      .map((entry) => entry.trim())
-      .filter(Boolean);
-  }
-  if (typeof value === 'string') {
-    return value
-      .split(',')
-      .map((entry) => entry.trim())
-      .filter(Boolean);
-  }
-  return [];
-};
-
-const mapPlaceToDiscoveryEntity = (place: any) => {
-  const coords = Array.isArray(place?.location?.coordinates)
-    ? place.location.coordinates
-    : [0, 0];
-  return {
-    id: place._id?.toString?.() ?? '',
-    type: place.type,
-    title: place.title,
-    description: place.description,
-    location: {
-      city: place.location?.city,
-      country: place.location?.country,
-      coordinates: {
-        lat: coords[1] ?? 0,
-        lng: coords[0] ?? 0
-      }
-    },
-    dates: place.dates
-      ? {
-          start:
-            place.dates.start instanceof Date
-              ? place.dates.start.toISOString()
-              : place.dates.start,
-          end:
-            place.dates.end instanceof Date ? place.dates.end.toISOString() : place.dates.end
-        }
-      : undefined,
-    metadata: {
-      category: place.metadata?.category ?? [],
-      tags: place.metadata?.tags ?? [],
-      popularity: place.metadata?.popularity ?? 0,
-      cost: place.metadata?.cost,
-      duration: place.metadata?.duration
-    },
-    media: {
-      images: place.media?.images ?? []
-    }
-  };
-};
-
-const FALLBACK_BLOG_IMAGE =
-  'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=80';
-
-const mapPlaceToBlogFeedItem = (place: any): BlogFeedItem => ({
-  id: place._id?.toString?.() ?? '',
-  title: place.title,
-  description: truncateDescription(place.description ?? '', MAX_DESCRIPTION_LENGTH),
-  imageUrl: place.media?.images?.[0] || FALLBACK_BLOG_IMAGE,
-  href: place.source?.url ?? '#',
-  source: place.source?.domain,
-  publishedAt:
-    place.source?.lastUpdated instanceof Date
-      ? place.source.lastUpdated.toISOString()
-      : place.updatedAt instanceof Date
-        ? place.updatedAt.toISOString()
-        : undefined
-});
-
-const fallbackBlogStories: BlogFeedItem[] = [
-  {
-    id: 'storybook-1',
-    title: 'How to spend 48 unforgettable hours in your dream city',
-    description:
-      'Curated itineraries, dining picks, and hidden shortcuts to help you make the most of a quick escape without feeling rushed.',
-    imageUrl: 'https://images.unsplash.com/photo-1526778548025-fa2f459cd5c1?auto=format&fit=crop&w=1200&q=80',
-    href: 'https://travel.example.com/guides/48-hours-city-break',
-    source: 'Travel Playbook',
-    publishedAt: new Date().toISOString()
-  },
-  {
-    id: 'storybook-2',
-    title: 'Seven slow travel experiences locals swear by',
-    description:
-      'Swap checklists for meaningful moments. From dawn markets to moonlit boat rides, these ideas stretch your stay and your imagination.',
-    imageUrl: 'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?auto=format&fit=crop&w=1200&q=80',
-    href: 'https://travel.example.com/stories/slow-travel-experiences',
-    source: 'Globe Journal',
-    publishedAt: new Date(Date.now() - 86400000).toISOString()
-  },
-  {
-    id: 'storybook-3',
-    title: 'Packing light for multi-climate adventures',
-    description:
-      'Use capsule wardrobes, smart fabrics, and modular tech to travel from tropical coastlines to alpine passes without excess luggage.',
-    imageUrl: 'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&w=1200&q=80',
-    href: 'https://travel.example.com/tips/packing-multi-climate',
-    source: 'Nomad Tips',
-    publishedAt: new Date(Date.now() - 172800000).toISOString()
-  }
-];
 
 export async function registerRoutes(fastify: FastifyInstance) {
   const orchestrator = new DiscoveryOrchestrator();
@@ -184,10 +56,10 @@ export async function registerRoutes(fastify: FastifyInstance) {
         tags: ['discovery'],
         body: {
           type: 'object',
-          required: ['city'],
+          required: ['city', 'country'],
           properties: {
             city: { type: 'string', description: 'City name (e.g., "Delhi", "Paris")' },
-            country: { type: 'string', description: 'Optional country name (e.g., "India", "France")' },
+            country: { type: 'string', description: 'Country name (e.g., "India", "France")' },
             month: { type: 'string', description: 'Optional month (e.g., "October")' },
             interests: { 
               type: 'array', 
@@ -217,7 +89,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
         }
       }
     },
-  async (request, reply: FastifyReply) => {
+    async (request, reply) => {
       try {
         // Validate request
         const validated = DiscoveryRequestSchema.parse(request.body);
@@ -268,162 +140,6 @@ export async function registerRoutes(fastify: FastifyInstance) {
     }
   );
 
-  fastify.get(
-    '/api/v1/discover/feed',
-    {
-      schema: {
-        description: 'Paginated discovery feed for attractions and travel stories',
-        tags: ['discovery'],
-        querystring: {
-          type: 'object',
-          required: ['type', 'query'],
-          properties: {
-            type: { type: 'string', enum: ['attractions', 'blogs'] },
-            query: { type: 'string', description: 'Search text (e.g., city, interest)' },
-            cursor: { type: 'string', description: 'Opaque pagination cursor' },
-            limit: { type: 'number', description: 'Items per page (max 60)' }
-          }
-        }
-      }
-    },
-  async (request, reply: FastifyReply) => {
-      try {
-        const rawQuery = request.query as Record<string, unknown>;
-        const parsed = FeedRequestSchema.parse(rawQuery);
-
-        const limit = Math.min(parsed.limit ?? FEED_LIMIT_DEFAULT, FEED_LIMIT_MAX);
-        const filterEntries = Object.entries(rawQuery).filter(([key]) => !FEED_PARAM_KEYS.has(key));
-        const filters = Object.fromEntries(filterEntries);
-
-        const baseFilter: Record<string, unknown> =
-          parsed.type === 'attractions'
-            ? { type: { $in: ['attraction', 'place', 'experience'] } }
-            : { type: { $in: ['place', 'experience', 'event', 'festival'] } };
-
-        const trimmedQuery = parsed.query.trim();
-        if (trimmedQuery) {
-          const queryRegex = new RegExp(escapeRegExp(trimmedQuery), 'i');
-          baseFilter['$or'] = [
-            { 'location.city': queryRegex },
-            { 'location.country': queryRegex },
-            { title: queryRegex },
-            { description: queryRegex },
-            { 'metadata.tags': queryRegex },
-            { 'metadata.category': queryRegex }
-          ];
-        }
-
-        const andConditions: Record<string, unknown>[] = [];
-
-        const interests = parseStringArray(filters.interests);
-        if (interests.length) {
-          andConditions.push({
-            'metadata.tags': {
-              $in: interests.map((interest) => new RegExp(escapeRegExp(interest), 'i'))
-            }
-          });
-        }
-
-        if (typeof filters.month === 'string' && filters.month) {
-          const monthRegex = new RegExp(escapeRegExp(filters.month), 'i');
-          andConditions.push({
-            $or: [
-              { 'metadata.bestTimeToVisit': monthRegex },
-              { description: monthRegex }
-            ]
-          });
-        }
-
-        if (andConditions.length) {
-          baseFilter['$and'] = [
-            ...((baseFilter['$and'] as Record<string, unknown>[] | undefined) ?? []),
-            ...andConditions
-          ];
-        }
-
-        const matchFilter: Record<string, unknown> = { ...baseFilter };
-        if (parsed.cursor) {
-          if (Types.ObjectId.isValid(parsed.cursor)) {
-            matchFilter['_id'] = { $lt: new Types.ObjectId(parsed.cursor) };
-          } else {
-            logger.warn('Invalid pagination cursor supplied', { cursor: parsed.cursor });
-          }
-        }
-
-        const sortOrder =
-          parsed.type === 'attractions'
-            ? ([
-                ['metadata.popularity', -1],
-                ['createdAt', -1],
-                ['_id', -1]
-              ] as [string, 1 | -1][])
-            : ([
-                ['updatedAt', -1],
-                ['createdAt', -1],
-                ['_id', -1]
-              ] as [string, 1 | -1][]);
-
-        const documents = await Place.find(matchFilter)
-          .sort(sortOrder)
-          .limit(limit + 1)
-          .select({
-            title: 1,
-            description: 1,
-            location: 1,
-            metadata: 1,
-            media: 1,
-            source: 1,
-            dates: 1,
-            type: 1,
-            createdAt: 1,
-            updatedAt: 1
-          })
-          .lean();
-
-        const hasMore = documents.length > limit;
-        const limitedDocs = hasMore ? documents.slice(0, limit) : documents;
-
-        let mappedItems =
-          parsed.type === 'attractions'
-            ? limitedDocs.map(mapPlaceToDiscoveryEntity)
-            : limitedDocs.map(mapPlaceToBlogFeedItem);
-
-        if (parsed.type === 'blogs' && mappedItems.length === 0) {
-          mappedItems = fallbackBlogStories;
-        }
-
-        const nextCursor = hasMore && limitedDocs.length > 0
-          ? limitedDocs[limitedDocs.length - 1]._id.toString()
-          : null;
-
-        const payload: PaginatedDiscoveryResponse<any> = {
-          items: mappedItems,
-          nextCursor,
-          hasMore
-        };
-
-        return reply.code(HTTP_STATUS_OK).send(payload);
-      } catch (error: any) {
-        logger.error('Discovery feed request failed', {
-          error: error.message,
-          stack: error.stack
-        });
-
-        if (error.name === 'ZodError') {
-          return reply.code(HTTP_STATUS_BAD_REQUEST).send({
-            error: 'Invalid request',
-            details: error.errors
-          });
-        }
-
-        return reply.code(HTTP_STATUS_SERVER_ERROR).send({
-          error: 'Failed to fetch discovery feed',
-          message: error.message
-        });
-      }
-    }
-  );
-
   /**
    * GET /api/v1/attractions
    * Get attractions for a city using Google Places API
@@ -445,7 +161,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
         }
       }
     },
-  async (request: any, reply: FastifyReply) => {
+    async (request: any, reply) => {
       try {
         const { city, country, interests } = request.query;
         logger.info('Attractions request', { city, country });
@@ -484,7 +200,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
         }
       }
     },
-  async (request: any, reply: FastifyReply) => {
+    async (request: any, reply) => {
       try {
         const { city, country } = request.query;
         logger.info('Weather request', { city, country });
@@ -526,7 +242,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
         }
       }
     },
-  async (request: any, reply: FastifyReply) => {
+    async (request: any, reply) => {
       try {
         const { from, to } = request.query;
         logger.info('Visa request', { from, to });
@@ -569,7 +285,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
         }
       }
     },
-  async (request: any, reply: FastifyReply) => {
+    async (request: any, reply) => {
       try {
         const { city, country, limit } = request.query;
         logger.info('Hotels request', { city, country });
@@ -608,7 +324,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
         }
       }
     },
-  async (request: any, reply: FastifyReply) => {
+    async (request: any, reply) => {
       try {
         const { city, country, limit } = request.query;
         logger.info('Travel articles request', { city, country });
@@ -646,7 +362,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
         }
       }
     },
-  async (request: any, reply: FastifyReply) => {
+    async (request: any, reply) => {
       try {
         const { city, country } = request.query;
         logger.info('Travel tips request', { city, country });
@@ -685,7 +401,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
         }
       }
     },
-  async (request: any, reply: FastifyReply) => {
+    async (request: any, reply) => {
       try {
         const { city, country, type } = request.query;
         logger.info('Local experiences request', { city, country, type });
@@ -721,7 +437,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
         }
       }
     },
-  async (request, reply: FastifyReply) => {
+    async (request, reply) => {
       try {
         const { id } = request.params;
         const includeRecommendations = request.query.includeRecommendations !== false;
@@ -840,7 +556,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
         }
       }
     },
-  async (request, reply: FastifyReply) => {
+    async (request, reply) => {
       try {
         const { city } = request.params;
         const limit = request.query.limit || 20;
@@ -902,7 +618,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
         }
       }
     },
-  async (request, reply: FastifyReply) => {
+    async (request, reply) => {
       try {
         const { q, limit = 20 } = request.query;
 
@@ -945,7 +661,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
    * GET /api/v1/health
    * Health check endpoint
    */
-  fastify.get('/api/v1/health', async (request, reply: FastifyReply) => {
+  fastify.get('/api/v1/health', async (request, reply) => {
     return reply.code(200).send({
       status: 'ok',
       timestamp: new Date().toISOString(),
@@ -957,7 +673,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
    * GET /api/v1/stats
    * System statistics
    */
-  fastify.get('/api/v1/stats', async (request, reply: FastifyReply) => {
+  fastify.get('/api/v1/stats', async (request, reply) => {
     try {
       const [totalPlaces, placesByType] = await Promise.all([
         Place.countDocuments(),
@@ -1014,7 +730,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
         }
       }
     },
-  async (request, reply: FastifyReply) => {
+    async (request, reply) => {
       try {
         const { city, country, types } = request.body;
 
@@ -1051,7 +767,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
    * GET /api/v1/admin/crawler-stats
    * Get crawler statistics
    */
-  fastify.get('/api/v1/admin/crawler-stats', async (request, reply: FastifyReply) => {
+  fastify.get('/api/v1/admin/crawler-stats', async (request, reply) => {
     try {
       const { crawlerManager } = await import('@/crawlers');
       const stats = await crawlerManager.getStatistics();

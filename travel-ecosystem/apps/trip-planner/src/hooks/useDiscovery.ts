@@ -3,13 +3,83 @@
 import { useState, useCallback, useRef } from 'react';
 import { discoveryService } from '../services/discovery.service';
 import type { DiscoveryResponse } from '../services/discovery.service';
-import type {
-  DiscoveryEntity,
-  DiscoveryResult,
-  QueryEntities,
-  Recommendation,
-  Summary
-} from '../types/discovery';
+
+export interface QueryEntities {
+  city: string;
+  country?: string;
+  month?: string;
+  year?: number;
+  interests: string[];
+  eventType: string[];
+  duration?: number;
+}
+
+export interface Summary {
+  headline: string;
+  overview: string;
+  highlights: string[];
+  bestTime?: string;
+  tips?: string[];
+}
+
+export interface Location {
+  city: string;
+  country?: string;
+  coordinates: { lat: number; lng: number };
+}
+
+export interface Metadata {
+  category: string[];
+  tags: string[];
+  popularity: number;
+  cost?: string;
+  duration?: string;
+}
+
+export interface Media {
+  images: string[];
+}
+
+export interface DiscoveryEntity {
+  id: string;
+  type: 'festival' | 'attraction' | 'event' | 'place' | 'experience';
+  title: string;
+  description: string;
+  location: Location;
+  dates?: {
+    start: string;
+    end: string;
+  };
+  metadata: Metadata;
+  media: Media;
+}
+
+export interface Recommendation {
+  entity: DiscoveryEntity;
+  reason: string;
+  score: number;
+  relationshipType: string;
+  distance?: string;
+}
+
+export interface DiscoveryResult {
+  query: string;
+  entities: QueryEntities;
+  summary: Summary;
+  results: {
+    festivals: DiscoveryEntity[];
+    attractions: DiscoveryEntity[];
+    places: DiscoveryEntity[];
+    events: DiscoveryEntity[];
+  };
+  recommendations: Recommendation[];
+  metadata: {
+    totalResults: number;
+    processingTime: number;
+    cached: boolean;
+    sources: string[];
+  };
+}
 
 // Dummy data for testing
 // 
@@ -21,7 +91,7 @@ const transformBackendResponse = (backendResponse: DiscoveryResponse, query: str
   // Extract entities from query
   const queryParts = query.split(',').map(part => part.trim());
   const city = queryParts[0] || query;
-  const country = queryParts[1] || backendResponse.query?.country || '';
+  const country = queryParts[1] || '';
 
   // Transform attractions to the frontend format
   console.log('🔍 Transforming attractions:', { 
@@ -141,18 +211,18 @@ export const useDiscovery = () => {
 
       // Parse the query to extract city and country
       // You can implement a more sophisticated parser
-  const queryParts = query.split(',').map(part => part.trim());
-  const city = queryParts[0] || query;
-  const country = queryParts[1]?.trim() ? queryParts[1]?.trim() : undefined;
+      const queryParts = query.split(',').map(part => part.trim());
+      const city = queryParts[0] || query;
+      const country = queryParts[1] || '';
 
-      // Build request payload while omitting empty inputs that break validation
+      // Call the discovery service
       const response = await discoveryService.discover({
         city,
-        ...(country ? { country } : {}),
-        ...(filters?.month ? { month: filters.month } : {}),
-        ...(filters?.interests?.length ? { interests: filters.interests } : {}),
-        ...(typeof filters?.duration === 'number' ? { duration: filters.duration } : {}),
-        ...(filters?.fromCountryCode ? { fromCountryCode: filters.fromCountryCode } : {}),
+        country,
+        month: filters?.month,
+        interests: filters?.interests || [],
+        duration: filters?.duration,
+        fromCountryCode: filters?.fromCountryCode,
       });
 
       console.log('📥 Discovery API Response:', {
@@ -271,11 +341,3 @@ export const useDiscovery = () => {
     clearResults
   };
 };
-
-export type {
-  DiscoveryEntity,
-  DiscoveryResult,
-  QueryEntities,
-  Recommendation,
-  Summary
-} from '../types/discovery';

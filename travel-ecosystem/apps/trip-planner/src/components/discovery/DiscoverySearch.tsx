@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { Search, TrendingUp, Loader2 } from 'lucide-react';
 import { useDiscovery } from '../../hooks/useDiscovery';
+
 import { ResultsGrid } from './ResultsGrid';
+
 import { RecommendationCarousel } from './RecommendationCarousel';
-import { ProgressBar } from './ProgressBar';
 import type { DiscoveryEntity } from '../../hooks/useDiscovery';
 
 interface DiscoverySearchProps {
@@ -12,9 +13,17 @@ interface DiscoverySearchProps {
 
 export const DiscoverySearch: React.FC<DiscoverySearchProps> = ({ onResultSelect }) => {
   const [query, setQuery] = useState('');
+  const [suggestions] = useState([
+    'Delhi in October',
+    'Paris food tours',
+    'Bali beaches',
+    'Tokyo cherry blossoms',
+    'New York museums'
+  ]);
+
   const {
     results,
-    summary,
+    entities,
     recommendations,
     isLoading,
     error,
@@ -27,6 +36,11 @@ export const DiscoverySearch: React.FC<DiscoverySearchProps> = ({ onResultSelect
     await search(query);
   };
 
+  const handleSuggestionClick = (suggestion: string) => {
+    setQuery(suggestion);
+    search(suggestion);
+  };
+
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       handleSearch();
@@ -35,8 +49,6 @@ export const DiscoverySearch: React.FC<DiscoverySearchProps> = ({ onResultSelect
 
   return (
     <div className="discovery-search-container max-w-7xl mx-auto">
-      <ProgressBar scope="discovery-feed" />
-
       {/* Hero Search Section */}
       <div
         className="hero-section bg-white dark:bg-gray-900 p-6 sm:p-8 rounded-2xl sm:rounded-3xl mb-6 sm:mb-8 border border-gray-200 dark:border-gray-700 shadow-sm"
@@ -98,8 +110,7 @@ export const DiscoverySearch: React.FC<DiscoverySearchProps> = ({ onResultSelect
       {/* Results Grid */}
       {results && (
         <ResultsGrid
-          query={results.query}
-          summary={summary}
+          results={results.results}
           onResultSelect={onResultSelect}
         />
       )}

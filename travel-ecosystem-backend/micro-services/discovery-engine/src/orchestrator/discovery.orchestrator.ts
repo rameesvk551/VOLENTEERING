@@ -149,7 +149,7 @@ export interface LocalExperience {
 
 export interface DiscoveryQuery {
   city: string;
-  country?: string;
+  country: string;
   month?: string;
   interests?: string[];
   duration?: number;
@@ -482,7 +482,7 @@ export class DiscoveryOrchestrator {
 
       const attractionData = await this.googlePlaces.getPopularAttractions(
         query.city,
-        query.country ?? ''
+        query.country
       );
 
       // Combine all attraction types
@@ -527,7 +527,7 @@ export class DiscoveryOrchestrator {
           WEATHER_REQUEST_TOPIC,
           {
             city: query.city,
-            ...(query.country ? { country: query.country } : {})
+            country: query.country
           },
           'weather'
         );
@@ -549,7 +549,7 @@ export class DiscoveryOrchestrator {
       const response = await this.http.get<WeatherData>(`${WEATHER_SERVICE_URL}/weather`, {
         params: {
           city: query.city,
-          ...(query.country ? { country: query.country } : {})
+          country: query.country
         }
       });
 
@@ -575,11 +575,6 @@ export class DiscoveryOrchestrator {
 
       if (!query.fromCountryCode) {
         logger.warn('No source country provided for visa check');
-        return null;
-      }
-
-      if (!query.country) {
-        logger.warn('No destination country provided for visa check');
         return null;
       }
 
@@ -636,11 +631,6 @@ export class DiscoveryOrchestrator {
   private async fetchHotels(query: DiscoveryQuery): Promise<Hotel[]> {
     try {
       logger.info('🏨 Step 4/7: Fetching hotel data...');
-
-      if (!query.country) {
-        logger.warn('No country provided for hotel lookup; returning empty list');
-        return [];
-      }
 
       if (this.kafkaEnabled) {
         const kafkaHotels = await this.sendKafkaRequest<Hotel[]>(
@@ -704,7 +694,7 @@ export class DiscoveryOrchestrator {
           TRAVEL_DATA_REQUEST_TOPIC,
           {
             city: query.city,
-            ...(query.country ? { country: query.country } : {}),
+            country: query.country,
             limit: 5,
             resource: 'articles'
           },
@@ -729,7 +719,7 @@ export class DiscoveryOrchestrator {
       const response = await this.http.get<{ articles: TravelArticle[] }>(`${TRAVEL_DATA_SERVICE_URL}/articles`, {
         params: {
           city: query.city,
-          ...(query.country ? { country: query.country } : {}),
+          country: query.country,
           limit: 5
         }
       });
@@ -762,7 +752,7 @@ export class DiscoveryOrchestrator {
           TRAVEL_DATA_REQUEST_TOPIC,
           {
             city: query.city,
-            ...(query.country ? { country: query.country } : {}),
+            country: query.country,
             resource: 'tips'
           },
           'tips'
@@ -786,7 +776,7 @@ export class DiscoveryOrchestrator {
       const response = await this.http.get<{ tips: TravelTip[] }>(`${TRAVEL_DATA_SERVICE_URL}/tips`, {
         params: {
           city: query.city,
-          ...(query.country ? { country: query.country } : {})
+          country: query.country
         }
       });
 
@@ -818,7 +808,7 @@ export class DiscoveryOrchestrator {
           TRAVEL_DATA_REQUEST_TOPIC,
           {
             city: query.city,
-            ...(query.country ? { country: query.country } : {}),
+            country: query.country,
             resource: 'experiences'
           },
           'experiences'
@@ -842,7 +832,7 @@ export class DiscoveryOrchestrator {
       const response = await this.http.get<{ experiences: LocalExperience[] }>(`${TRAVEL_DATA_SERVICE_URL}/experiences`, {
         params: {
           city: query.city,
-          ...(query.country ? { country: query.country } : {})
+          country: query.country
         }
       });
 

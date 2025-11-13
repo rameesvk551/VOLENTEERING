@@ -299,30 +299,3 @@ export interface AttractionCacheDocument {
   createdAt: Date;
   updatedAt: Date;
 }
-
-export type DiscoveryFeedType = 'attractions' | 'blogs';
-
-export interface PaginatedDiscoveryRequest {
-  type: DiscoveryFeedType;
-  query: string;
-  cursor?: string | null;
-  limit?: number;
-  filters?: Record<string, unknown>;
-}
-
-export interface PaginatedDiscoveryResponse<T> {
-  items: T[];
-  nextCursor: string | null;
-  totalCount?: number;
-  hasMore?: boolean;
-}
-
-export interface BlogFeedItem {
-  id: string;
-  title: string;
-  description: string;
-  imageUrl: string;
-  href: string;
-  source?: string;
-  publishedAt?: string;
-}

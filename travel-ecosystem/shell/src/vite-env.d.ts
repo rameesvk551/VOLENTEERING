@@ -26,7 +26,7 @@ declare module 'adminDashboard/App' {
 }
 
 declare module 'tripPlanner/App' {
-  const App: React.ComponentType<{ basename?: string }>;
+  const App: React.ComponentType;
   export default App;
 }
 

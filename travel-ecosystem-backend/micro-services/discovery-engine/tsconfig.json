@@ -32,7 +32,7 @@
       "@/chains/*": ["src/chains/*"],
       "@/graph/*": ["src/graph/*"],
       "@/database/*": ["src/database/*"],
-  "@/crawlers/*": ["src/crawlers/*"],
+      "@/crawlers/*": ["../travel-data-service/src/crawlers/*"],
       "@/utils/*": ["src/utils/*"]
     }
   },

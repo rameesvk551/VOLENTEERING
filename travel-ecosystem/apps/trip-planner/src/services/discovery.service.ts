@@ -1,57 +1,17 @@
 // Discovery Engine Service - Connects Trip Planner to Discovery Engine Backend
 
 import axios, { AxiosInstance } from 'axios';
-import type {
-  BlogFeedItem,
-  DiscoveryEntity,
-  PaginatedDiscoveryRequest,
-  PaginatedDiscoveryResponse,
-  PrefetchSuggestionPayload
-} from '../types/discovery';
 
 const API_BASE_URL = import.meta.env.VITE_DISCOVERY_API_URL || 'http://localhost:3000/api/v1';
 
 export interface DiscoveryRequest {
   city: string;
-  country?: string;
+  country: string;
   month?: string;
   interests?: string[];
   duration?: number;
   fromCountryCode?: string;
 }
-
-const sanitizeDiscoveryRequest = (request: Partial<DiscoveryRequest>): Partial<DiscoveryRequest> => {
-  const sanitized: Record<string, unknown> = {};
-
-  Object.entries(request).forEach(([key, value]) => {
-    if (value === undefined || value === null) {
-      return;
-    }
-
-    if (typeof value === 'string') {
-      const trimmed = value.trim();
-      if (!trimmed) {
-        return;
-      }
-
-  sanitized[key] = trimmed;
-      return;
-    }
-
-    if (Array.isArray(value)) {
-      if (!value.length) {
-        return;
-      }
-
-  sanitized[key] = value;
-      return;
-    }
-
-    sanitized[key] = value;
-  });
-
-  return sanitized as Partial<DiscoveryRequest>;
-};
 
 export interface Attraction {
   id?: string;
@@ -216,11 +176,9 @@ class DiscoveryService {
   /**
    * Main discovery endpoint - gets attractions, weather, hotels, visa info
    */
-  async discover(request: Partial<DiscoveryRequest>): Promise<DiscoveryResponse> {
+  async discover(request: DiscoveryRequest): Promise<DiscoveryResponse> {
     try {
-      const payload = sanitizeDiscoveryRequest(request);
-      console.log('📦 Discovery request payload', payload);
-      const response = await this.api.post<DiscoveryResponse>('/discover', payload);
+      const response = await this.api.post<DiscoveryResponse>('/discover', request);
       return response.data;
     } catch (error: any) {
       throw new Error(error.response?.data?.message || 'Discovery request failed');
@@ -318,40 +276,6 @@ class DiscoveryService {
       return response.data.recommendations || [];
     } catch (error: any) {
       throw new Error(error.response?.data?.message || 'Failed to fetch recommendations');
-    }
-  }
-
-  async fetchDiscoveryFeed<T extends DiscoveryEntity | BlogFeedItem>(
-    params: PaginatedDiscoveryRequest
-  ): Promise<PaginatedDiscoveryResponse<T>> {
-    try {
-      const response = await this.api.get<PaginatedDiscoveryResponse<T>>('/discover/feed', {
-        params: {
-          cursor: params.cursor ?? undefined,
-          limit: params.limit ?? 20,
-          type: params.type,
-          query: params.query,
-          ...(params.filters ?? {})
-        }
-      });
-
-      return response.data;
-    } catch (error: any) {
-      throw new Error(error.response?.data?.message || 'Failed to fetch discovery feed');
-    }
-  }
-
-  async prefetchDiscoveryFeed(params: PrefetchSuggestionPayload): Promise<void> {
-    try {
-      await this.api.get('/discover/prefetch', {
-        params: {
-          cursor: params.cursor ?? undefined,
-          query: params.query,
-          type: params.type
-        }
-      });
-    } catch (error) {
-      console.warn('Discovery feed prefetch failed', error);
     }
   }
 

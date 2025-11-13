@@ -9,7 +9,7 @@ interface ResultCardProps {
   onSelect?: () => void;
 }
 
-const ResultCardComponent: React.FC<ResultCardProps> = ({ result, index, onSelect }) => {
+export const ResultCard: React.FC<ResultCardProps> = ({ result, index, onSelect }) => {
   const addDestination = useTripStore((state) => state.addDestination);
   const destinations = useTripStore((state) => state.destinations);
   const [isAdded, setIsAdded] = useState(false);
@@ -38,10 +38,11 @@ const ResultCardComponent: React.FC<ResultCardProps> = ({ result, index, onSelec
 
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.97 }}
+      layout
+      initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0.6, scale: 0.95 }}
-      transition={{ duration: 0.25, delay: Math.min(index * 0.03, 0.3) }}
+      exit={{ opacity: 0, scale: 0.9 }}
+      transition={{ delay: index * 0.05 }}
       onClick={onSelect}
       className="result-card group relative bg-white dark:bg-gray-800 
         rounded-2xl overflow-hidden cursor-pointer w-full
@@ -154,6 +155,3 @@ const ResultCardComponent: React.FC<ResultCardProps> = ({ result, index, onSelec
     </motion.div>
   );
 };
-
-export const ResultCard = React.memo(ResultCardComponent);
-ResultCard.displayName = 'ResultCard';
