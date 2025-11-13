@@ -84,7 +84,7 @@ function App() {
               <Route path="/trip-planner/*" element={
                 <ProtectedRoute>
                   <MainLayout>
-                    <TripPlanner />
+                    <TripPlanner basename="/trip-planner" />
                   </MainLayout>
                 </ProtectedRoute>
               } />

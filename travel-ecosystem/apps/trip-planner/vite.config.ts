@@ -9,7 +9,7 @@ export default defineConfig({
       name: 'tripPlanner',
       filename: 'remoteEntry.js',
       exposes: {
-        './App': './src/App.tsx',
+        './App': './src/TripPlannerApp.tsx',
       },
       shared: {
         react: { singleton: true, requiredVersion: '^18.2.0' },
