@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { VirtuosoGrid, VirtuosoGridHandle } from 'react-virtuoso';
-import { motion } from 'framer-motion';
-import { Compass, Filter, MapPin, Mountain, Sparkles } from 'lucide-react';
+import { Compass, RefreshCcw } from 'lucide-react';
 import { useInfiniteDiscoveryFeed } from '../../hooks/useInfiniteDiscoveryFeed';
 import type { DiscoveryEntity, DiscoveryFilters } from '../../types/discovery';
 import { ResultCard } from './ResultCard';
@@ -12,24 +11,6 @@ interface VirtualizedAttractionFeedProps {
   onSelect?: (result: DiscoveryEntity) => void;
   filters?: DiscoveryFilters;
 }
-
-const filterTabs = [
-  { id: 'all', label: 'All experiences' },
-  { id: 'popular', label: 'Top rated' },
-  { id: 'outdoors', label: 'Outdoors' },
-  { id: 'culture', label: 'Culture & heritage' },
-  { id: 'family', label: 'Family friendly' }
-] as const;
-
-type FilterTab = (typeof filterTabs)[number]['id'];
-
-const filterPredicate: Record<FilterTab, (entity: DiscoveryEntity) => boolean> = {
-  all: () => true,
-  popular: (entity) => (entity.metadata.popularity ?? 0) >= 4,
-  outdoors: (entity) => entity.metadata.tags?.some((tag) => /park|nature|outdoor/i.test(tag)) ?? false,
-  culture: (entity) => entity.metadata.tags?.some((tag) => /museum|cultural|historic/i.test(tag)) ?? false,
-  family: (entity) => entity.metadata.tags?.some((tag) => /family|kids|zoo/i.test(tag)) ?? false
-};
 
 const MemoResultCard = React.memo(ResultCard);
 
@@ -58,8 +39,6 @@ export const VirtualizedAttractionFeed: React.FC<VirtualizedAttractionFeedProps>
   const virtuosoRef = useRef<VirtuosoGridHandle | null>(null);
   const scrollerRef = useRef<HTMLElement | Window | null>(null);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
-  const [activeFilter, setActiveFilter] = useState<FilterTab>('all');
-  const [showHeaderShadow, setShowHeaderShadow] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   useEffect(() => {
@@ -68,27 +47,11 @@ export const VirtualizedAttractionFeed: React.FC<VirtualizedAttractionFeedProps>
   }, [query]);
 
   useEffect(() => {
-    const scroller = scrollerRef.current;
-    if (!scroller) return;
+  const sentinel = sentinelRef.current;
+  const scroller = scrollerRef.current;
+  if (!sentinel) return;
 
-    const onScroll = () => {
-      if (scroller instanceof HTMLElement) {
-        setShowHeaderShadow(scroller.scrollTop > 12);
-      } else {
-        setShowHeaderShadow((window.scrollY || document.documentElement.scrollTop) > 12);
-      }
-    };
-
-  scroller.addEventListener('scroll', onScroll, { passive: true } as AddEventListenerOptions);
-    return () => scroller.removeEventListener('scroll', onScroll);
-  }, []);
-
-  useEffect(() => {
-    const sentinel = sentinelRef.current;
-    const scroller = scrollerRef.current;
-    if (!sentinel || !scroller) return;
-
-    const root = scroller instanceof HTMLElement ? scroller : null;
+  const root = scroller instanceof HTMLElement ? scroller : null;
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -121,55 +84,66 @@ export const VirtualizedAttractionFeed: React.FC<VirtualizedAttractionFeedProps>
     }
   }, [isRefreshing, refetch]);
 
-  const filteredItems = useMemo(() => {
-    const predicate = filterPredicate[activeFilter];
-    return items.filter(predicate);
-  }, [items, activeFilter]);
+  const filterChips = useMemo(() => {
+    if (!filters) {
+      return [] as string[];
+    }
+
+    const chips: string[] = [];
+
+    if (filters.month) {
+      chips.push(`Month: ${capitalize(filters.month)}`);
+    }
+
+    if (filters.duration) {
+      chips.push(`Duration: ${filters.duration} day${filters.duration > 1 ? 's' : ''}`);
+    }
+
+    const interests = filters.interests;
+    if (interests && interests.length) {
+      chips.push(...interests.map((interest) => `Interest: ${interest}`));
+    }
+
+    if (filters.fromCountryCode) {
+      chips.push(`From: ${filters.fromCountryCode.toUpperCase()}`);
+    }
+
+    return chips;
+  }, [filters]);
 
   const header = (
-    <motion.div
-      initial={false}
-      animate={{
-        boxShadow: showHeaderShadow ? '0 6px 16px rgba(15, 23, 42, 0.08)' : '0 0 0 rgba(0,0,0,0)'
-      }}
-      transition={{ duration: 0.2 }}
-      className={`sticky top-0 z-30 flex flex-col gap-4 border-b border-gray-100 bg-white/85 px-2 pb-4 pt-4 backdrop-blur-md dark:border-gray-800 dark:bg-gray-900/85 ${
-        isRefreshing || isRefetching ? 'animate-bounce-subtle' : ''
-      }`}
-    >
-      <div className="flex flex-wrap items-center justify-between gap-3 px-2">
-        <div className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-gray-500">
-          <Filter className="h-4 w-4" /> Filters
+    <div className="sticky top-0 z-30 border-b border-gray-100 bg-white px-3 py-3 dark:border-gray-800 dark:bg-gray-900">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <p className="text-sm font-semibold text-gray-700 dark:text-gray-200">
+            {items.length} attractions
+          </p>
+          {filterChips.length > 0 ? (
+            <div className="mt-2 flex flex-wrap gap-2">
+              {filterChips.map((chip) => (
+                <span
+                  key={chip}
+                  className="rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600 dark:bg-gray-800 dark:text-gray-300"
+                >
+                  {chip}
+                </span>
+              ))}
+            </div>
+          ) : (
+            <p className="text-xs text-gray-500 dark:text-gray-400">Showing the best matches for your search.</p>
+          )}
         </div>
-        <div className="flex items-center gap-2 text-xs text-gray-500">
-          <Compass className="h-4 w-4 text-indigo-500" aria-hidden="true" />
-          <span>{filteredItems.length} curated ideas</span>
-        </div>
+        <button
+          type="button"
+          onClick={handleRefresh}
+          disabled={isRefreshing || isRefetching}
+          className="inline-flex items-center gap-2 rounded-full border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-600 transition hover:border-gray-400 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-700 dark:text-gray-300"
+        >
+          <RefreshCcw className="h-3.5 w-3.5" aria-hidden="true" />
+          Refresh
+        </button>
       </div>
-      <div className="flex flex-wrap gap-2 px-2">
-        {filterTabs.map((tab) => {
-          const isActive = tab.id === activeFilter;
-          return (
-            <button
-              key={tab.id}
-              type="button"
-              onClick={() => setActiveFilter(tab.id)}
-              className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
-                isActive
-                  ? 'border-indigo-500/70 bg-indigo-500/10 text-indigo-600 dark:border-indigo-400/70 dark:text-indigo-300'
-                  : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300'
-              }`}
-              aria-pressed={isActive}
-            >
-              {tab.id === 'popular' && <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />}
-              {tab.id === 'outdoors' && <Mountain className="h-3.5 w-3.5" aria-hidden="true" />}
-              {tab.id === 'family' && <MapPin className="h-3.5 w-3.5" aria-hidden="true" />}
-              {tab.label}
-            </button>
-          );
-        })}
-      </div>
-    </motion.div>
+    </div>
   );
 
   if (status === 'pending') {
@@ -185,16 +159,9 @@ export const VirtualizedAttractionFeed: React.FC<VirtualizedAttractionFeedProps>
         <div className="space-y-2">
           <h3 className="text-2xl font-semibold text-gray-900 dark:text-white">No adventures yet</h3>
           <p className="text-sm text-gray-600 dark:text-gray-400">
-            Try adjusting your filters or explore nearby destinations to unlock more ideas.
+            Try adjusting your search filters to unlock more ideas.
           </p>
         </div>
-        <button
-          type="button"
-          onClick={() => setActiveFilter('all')}
-          className="rounded-full bg-indigo-600 px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500"
-        >
-          Reset filters
-        </button>
       </div>
     );
   }
@@ -203,13 +170,13 @@ export const VirtualizedAttractionFeed: React.FC<VirtualizedAttractionFeedProps>
     <div className="relative">
       <VirtuosoGrid
         ref={virtuosoRef}
-        style={{ height: '100%', minHeight: '70vh' }}
+        style={{ minHeight: '70vh' }}
         scrollerRef={(ref) => {
-          scrollerRef.current = ref ?? null;
+          scrollerRef.current = ref ?? (typeof window !== 'undefined' ? window : null);
         }}
-        data={filteredItems}
+        data={items}
         overscan={400}
-        useWindowScroll={false}
+        useWindowScroll
         components={{
           Header: () => header,
           Footer: () => (
@@ -218,10 +185,9 @@ export const VirtualizedAttractionFeed: React.FC<VirtualizedAttractionFeedProps>
               {isFetchingNextPage && (
                 <SkeletonList variant="grid" count={3} className="w-full" />
               )}
-              {!hasNextPage && filteredItems.length > 0 && (
-                <div className="flex items-center gap-3 rounded-full border border-gray-200 bg-gray-50 px-4 py-2 text-xs font-semibold text-gray-600 dark:border-gray-700 dark:bg-gray-800/70 dark:text-gray-300">
-                  <Sparkles className="h-4 w-4 text-amber-400" aria-hidden="true" />
-                  <span>End of list — more journeys coming soon</span>
+              {!hasNextPage && items.length > 0 && (
+                <div className="rounded-full border border-gray-200 bg-gray-50 px-4 py-2 text-xs font-semibold text-gray-600 dark:border-gray-700 dark:bg-gray-800/70 dark:text-gray-300">
+                  End of list — more journeys coming soon
                 </div>
               )}
             </div>
@@ -241,4 +207,11 @@ export const VirtualizedAttractionFeed: React.FC<VirtualizedAttractionFeedProps>
       />
     </div>
   );
+};
+
+const capitalize = (value: string) => {
+  if (!value) {
+    return value;
+  }
+  return value.charAt(0).toUpperCase() + value.slice(1);
 };
