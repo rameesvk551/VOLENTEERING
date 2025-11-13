@@ -44,8 +44,8 @@ export const VirtualizedBlogFeed: React.FC<VirtualizedBlogFeedProps> = ({ query,
   }, [query]);
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const scroller = scrollerRef.current instanceof HTMLElement ? scrollerRef.current : window;
+    const scroller = scrollerRef.current;
+    if (!scroller) return;
 
     const handleScroll = () => {
       if (scroller instanceof HTMLElement) {
@@ -55,14 +55,14 @@ export const VirtualizedBlogFeed: React.FC<VirtualizedBlogFeedProps> = ({ query,
       }
     };
 
-    scroller.addEventListener('scroll', handleScroll, { passive: true } as AddEventListenerOptions);
+  scroller.addEventListener('scroll', handleScroll, { passive: true } as AddEventListenerOptions);
     return () => scroller.removeEventListener('scroll', handleScroll);
   }, []);
 
   useEffect(() => {
     const sentinel = sentinelRef.current;
     const scroller = scrollerRef.current;
-    if (!sentinel) return;
+    if (!sentinel || !scroller) return;
 
     const root = scroller instanceof HTMLElement ? scroller : null;
 
@@ -138,12 +138,11 @@ export const VirtualizedBlogFeed: React.FC<VirtualizedBlogFeedProps> = ({ query,
     <div className="relative">
       <Virtuoso
         ref={virtuosoRef}
-        style={{ minHeight: '70vh' }}
+        style={{ height: '100%', maxHeight: '80vh' }}
         data={blogItems}
         scrollerRef={(ref) => {
-          scrollerRef.current = ref ?? (typeof window !== 'undefined' ? window : null);
+          scrollerRef.current = ref ?? null;
         }}
-        useWindowScroll
         components={{
           Header: () => header,
           Footer: () => (
