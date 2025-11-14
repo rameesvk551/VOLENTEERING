@@ -3,11 +3,12 @@
  * Allows users to select destinations and get optimized routes with AI travel guides
  */
 
-import { useState } from 'react';
-import { MapPin, Navigation, Clock, Zap, Loader2, TrendingUp, Info } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { MapPin, Navigation, Clock, Zap, Loader2, TrendingUp, Info, CheckCircle } from 'lucide-react';
 import { optimizeRoute } from '../services/routeOptimizer';
 import { generateBatchTravelGuides, TravelGuideData } from '../services/aiTravelGuide';
 import RouteMap from './RouteMap';
+import { useTripStore } from '../store/tripStore';
 
 interface Location {
   name: string;
@@ -28,6 +29,9 @@ interface OptimizedRoute {
 }
 
 export default function RouteOptimizer() {
+  // Get destinations from trip store (added from Discovery page)
+  const destinations = useTripStore((state) => state.destinations);
+  
   const [selectedPlaces, setSelectedPlaces] = useState<string[]>([]);
   const [inputPlace, setInputPlace] = useState('');
   const [isOptimizing, setIsOptimizing] = useState(false);
@@ -41,6 +45,15 @@ export default function RouteOptimizer() {
   const [routingProfile, setRoutingProfile] = useState<'fastest' | 'shortest' | 'scenic'>('fastest');
   const [returnToOrigin, setReturnToOrigin] = useState(false);
   const [showTrafficData, setShowTrafficData] = useState(false);
+
+  // Sync trip store destinations on mount and updates
+  useEffect(() => {
+    if (destinations.length > 0 && selectedPlaces.length === 0) {
+      // Auto-populate from trip store destinations
+      const destinationNames = destinations.map(d => d.name);
+      setSelectedPlaces(destinationNames.slice(0, 10)); // Max 10
+    }
+  }, [destinations]);
 
   const popularDestinations = [
     'Delhi',
@@ -174,9 +187,17 @@ export default function RouteOptimizer() {
             <Navigation className="w-8 h-8 text-indigo-600" />
             <h1 className="text-3xl font-bold text-gray-900">AI Route Optimizer</h1>
           </div>
-          <p className="text-gray-600">
+          <p className="text-gray-600 mb-3">
             Select up to 10 destinations and get the most optimized route with AI-powered travel guides for each stop.
           </p>
+          {destinations.length === 0 && (
+            <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-sm text-blue-800">
+                💡 <strong>Pro Tip:</strong> Use the <strong>AI Discovery</strong> page to find attractions first, 
+                then come back here to optimize your route!
+              </p>
+            </div>
+          )}
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -212,9 +233,39 @@ export default function RouteOptimizer() {
                 {selectedPlaces.length}/10 destinations selected
               </div>
 
+              {/* Destinations from Discovery (if any) */}
+              {destinations.length > 0 && (
+                <div className="mb-4">
+                  <h3 className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                    <CheckCircle className="w-4 h-4 text-green-600" />
+                    From Discovery ({destinations.length}):
+                  </h3>
+                  <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto">
+                    {destinations.map((dest) => (
+                      <button
+                        key={dest.id}
+                        onClick={() => handleQuickAdd(dest.name)}
+                        disabled={selectedPlaces.includes(dest.name) || selectedPlaces.length >= 10}
+                        className={`px-3 py-1 text-sm rounded-full transition-colors ${
+                          selectedPlaces.includes(dest.name)
+                            ? 'bg-green-100 text-green-700 cursor-default'
+                            : 'bg-purple-100 text-purple-700 hover:bg-purple-200 disabled:bg-gray-200 disabled:text-gray-500 disabled:cursor-not-allowed'
+                        }`}
+                      >
+                        {selectedPlaces.includes(dest.name) && '✓ '}
+                        {dest.name}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="text-xs text-gray-500 mt-2">
+                    💡 Click to add destinations you discovered to your route
+                  </p>
+                </div>
+              )}
+
               {/* Quick Add Popular Destinations */}
               <div className="mb-4">
-                <h3 className="text-sm font-medium text-gray-700 mb-2">Quick Add:</h3>
+                <h3 className="text-sm font-medium text-gray-700 mb-2">Quick Add Popular:</h3>
                 <div className="flex flex-wrap gap-2">
                   {popularDestinations.slice(0, 6).map((place) => (
                     <button

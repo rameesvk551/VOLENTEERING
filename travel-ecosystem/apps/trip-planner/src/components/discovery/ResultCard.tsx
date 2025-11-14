@@ -13,6 +13,7 @@ export const ResultCard: React.FC<ResultCardProps> = ({ result, index, onSelect 
   const addDestination = useTripStore((state) => state.addDestination);
   const destinations = useTripStore((state) => state.destinations);
   const [isAdded, setIsAdded] = useState(false);
+  const [isSelected, setIsSelected] = useState(false);
 
   const isAlreadyAdded = destinations.some(d => d.name === result.title);
 
@@ -36,6 +37,16 @@ export const ResultCard: React.FC<ResultCardProps> = ({ result, index, onSelect 
     setTimeout(() => setIsAdded(false), 2000);
   };
 
+  const handleCheckboxChange = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const newSelected = !isSelected;
+    setIsSelected(newSelected);
+    
+    if (newSelected && onSelect) {
+      onSelect();
+    }
+  };
+
   return (
     <motion.div
       layout
@@ -45,44 +56,86 @@ export const ResultCard: React.FC<ResultCardProps> = ({ result, index, onSelect 
       transition={{ delay: index * 0.05 }}
       onClick={onSelect}
       className="result-card group relative bg-white dark:bg-gray-800 
-        rounded-2xl overflow-hidden cursor-pointer w-full
+        rounded-2xl overflow-visible cursor-pointer w-full
         shadow-md border border-gray-100 dark:border-gray-700"
       style={{ maxWidth: '300px', margin: '0 auto' }}
     >
-      {/* Image Container - Fixed Height */}
-      <div className="relative overflow-hidden" style={{ width: '100%', height: '140px' }}>
-        <img
-          src={result.media.images[0] || 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=800'}
-          alt={result.title}
-          className="object-cover transition-transform duration-500"
-          loading="lazy"
-          style={{ width: '100%', height: '140px' }}
-          onError={(e) => {
-            (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=800';
+      {/* Image Container - Fixed Height with visible overflow for buttons */}
+      <div className="relative rounded-t-2xl" style={{ width: '100%', height: '140px' }}>
+        {/* Image wrapper with overflow hidden */}
+        <div className="absolute inset-0 overflow-hidden rounded-t-2xl">
+          <img
+            src={result.media.images[0] || 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=800'}
+            alt={result.title}
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+            loading="lazy"
+            onError={(e) => {
+              (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=800';
+            }}
+          />
+        </div>
+
+        {/* Selection Checkbox - Top Left */}
+        <motion.button
+          onClick={handleCheckboxChange}
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.9 }}
+          className={`absolute top-2 left-2 w-8 h-8 rounded-lg shadow-2xl z-50
+            transition-all duration-200 border-2 flex items-center justify-center
+            ${isSelected
+              ? 'bg-blue-500 border-blue-600'
+              : 'bg-white border-white hover:bg-blue-50 hover:border-blue-200'
+            }`}
+          style={{ 
+            backdropFilter: 'blur(10px)',
+            WebkitBackdropFilter: 'blur(10px)'
           }}
-        />
+          aria-label={isSelected ? 'Selected' : 'Select attraction'}
+        >
+          {isSelected ? (
+            <svg 
+              className="w-5 h-5 text-white" 
+              fill="none" 
+              stroke="currentColor" 
+              strokeWidth={3}
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+            </svg>
+          ) : (
+            <div className="w-5 h-5 rounded border-2 border-gray-400"></div>
+          )}
+        </motion.button>
 
         {/* Favorite Button - Top Right */}
         <motion.button
           onClick={handleAddToTrip}
           disabled={isAlreadyAdded}
-          className={`absolute top-3 right-3 p-2 rounded-full shadow-lg 
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.9 }}
+          className={`absolute top-2 right-2 p-2 rounded-full shadow-2xl z-50
+            transition-all duration-200 border-2
             ${isAlreadyAdded
-              ? 'bg-red-500 cursor-default'
-              : 'bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm'
+              ? 'bg-red-500 border-red-600 cursor-default'
+              : 'bg-white border-white hover:bg-red-50 hover:border-red-200'
             }`}
+          style={{ 
+            backdropFilter: 'blur(10px)',
+            WebkitBackdropFilter: 'blur(10px)'
+          }}
           aria-label={isAlreadyAdded ? 'Added to favorites' : 'Add to favorites'}
         >
           <svg 
-            className={`w-5 h-5 transition-colors ${isAlreadyAdded ? 'text-white' : 'text-gray-600 dark:text-gray-300'}`}
+            className={`w-6 h-6 transition-colors ${isAlreadyAdded ? 'text-white' : 'text-red-500'}`}
             fill={isAlreadyAdded ? 'currentColor' : 'none'}
             stroke="currentColor"
+            strokeWidth={2.5}
             viewBox="0 0 24 24"
+            xmlns="http://www.w3.org/2000/svg"
           >
             <path 
               strokeLinecap="round" 
               strokeLinejoin="round" 
-              strokeWidth={2} 
               d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" 
             />
           </svg>

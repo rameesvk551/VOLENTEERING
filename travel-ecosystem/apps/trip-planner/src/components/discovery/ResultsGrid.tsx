@@ -1,115 +1,121 @@
-import React, { useState } from 'react';
+import React, { Suspense, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Grid3x3, List } from 'lucide-react';
-import { ResultCard } from './ResultCard';
-import { BlogCard } from './BlogCard';
-import type { DiscoveryEntity } from '../../hooks/useDiscovery';
+import { useQueryClient } from '@tanstack/react-query';
+import { SkeletonList } from './SkeletonList';
+import { ErrorFallback } from './ErrorFallback';
+import { BackToTopButton } from './BackToTopButton';
+import { SummarySection } from './SummarySection';
+import { SimpleErrorBoundary } from './SimpleErrorBoundary.tsx';
+import type { DiscoveryEntity, DiscoveryFilters, Summary } from '../../types/discovery';
+
+const VirtualizedAttractionFeed = React.lazy(() =>
+  import('./VirtualizedAttractionFeed').then((mod) => ({ default: mod.VirtualizedAttractionFeed }))
+);
+
+const VirtualizedBlogFeed = React.lazy(() =>
+  import('./VirtualizedBlogFeed').then((mod) => ({ default: mod.VirtualizedBlogFeed }))
+);
 
 interface ResultsGridProps {
-  results: {
-    festivals: DiscoveryEntity[];
-    attractions: DiscoveryEntity[];
-    places: DiscoveryEntity[];
-    events: DiscoveryEntity[];
-  };
+  query: string;
+  summary?: Summary | null;
+  filters?: DiscoveryFilters;
   onResultSelect?: (result: DiscoveryEntity) => void;
 }
 
-export const ResultsGrid: React.FC<ResultsGridProps> = ({ results, onResultSelect }) => {
-  const [activeFilter, _setActiveFilter] = useState<string>('all');
-  const [viewMode, _setViewMode] = useState<'grid' | 'list'>('grid');
+export const ResultsGrid: React.FC<ResultsGridProps> = ({
+  query,
+  summary,
+  filters,
+  onResultSelect
+}) => {
+  const queryClient = useQueryClient();
 
-  const featuredBlogs = [
-    {
-      title: 'Fun facts about Paris: 10 things to know about the City of Lights',
-      description:
-        'Ever wonder why Paris is called the City of Light? We explore the myths, history, and the fascinating stories that make this iconic city shine.',
-      imageUrl: 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=800',
-      href: '#'
-    },
-    {
-      title: 'How to plan the perfect European summer getaway',
-      description:
-        'From picking the right cities to packing smart, here is a handy checklist to make your next Euro trip effortless and memorable.',
-      imageUrl: 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=800',
-      href: '#'
-    },
-    {
-      title: 'Top foodie experiences to book this season',
-      description:
-        'Savor the world through curated culinary adventures, chefs’ tables, and local market walks, perfect for gastronomes on the go.',
-      imageUrl: 'https://images.unsplash.com/photo-1470337458703-46ad1756a187?w=800',
-      href: '#'
-    }
-  ];
+  const stableFilters = useMemo(() => {
+    if (!filters) return undefined;
+    return JSON.parse(JSON.stringify(filters)) as DiscoveryFilters;
+  }, [filters]);
 
-  // Flatten and combine all results
-  const allResults = [
-    ...results.festivals,
-    ...results.attractions,
-    ...results.places,
-    ...results.events
-  ];
+  if (!query) {
+    return null;
+  }
 
-  // Filter results based on active filter
-  const filteredResults = activeFilter === 'all'
-    ? allResults
-    : results[activeFilter as keyof typeof results] || [];
-
- 
-
-  if (allResults.length === 0) return null;
+  const invalidateFeed = (type: 'attractions' | 'blogs') => {
+    queryClient.invalidateQueries({ queryKey: ['discovery-feed', type, query, stableFilters] });
+  };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
+    <motion.section
+      initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0 }}
-      className="results-grid-container mt-6 sm:mt-8"
+      transition={{ duration: 0.35, ease: 'easeOut' }}
+      className="results-grid-container relative mt-6 sm:mt-8"
     >
-      {/* two-column layout: left 75% (results), right 25% (sidebar) */}
-      <motion.div
-        layout
-        style={{
-          maxWidth: '1232px',
-          margin: '0 auto',
-          display: 'grid',
-          gridTemplateColumns: '75% 25%',
-          gap: '1rem'
-        }}
-      >
-        {/* Left: results area (uses an inner grid or list depending on viewMode) */}
-        <div>
-          <div
-            className={viewMode === 'grid' ? 'grid gap-4' : ''}
-            style={viewMode === 'grid' ? { gridTemplateColumns: 'repeat(3, 1fr)' } : {}}
-          >
-            {filteredResults.map((result, index) => (
-              <ResultCard
-                key={result.id}
-                result={result}
-                index={index}
-                onSelect={() => onResultSelect?.(result)}
+ 
+      <div className="flex flex-col gap-4 lg:flex-row lg:flex-nowrap lg:items-start lg:gap-6">
+        <div className="lg:basis-[75%] lg:max-w-[75%] lg:flex-none lg:min-w-0">
+          <SimpleErrorBoundary
+            onReset={() => invalidateFeed('attractions')}
+            fallback={(error: Error, reset: () => void) => (
+              <ErrorFallback
+                error={error}
+                title="We couldn't load new attractions"
+                onRetry={reset}
               />
-            ))}
-          </div>
+            )}
+          >
+            <Suspense
+              fallback={
+                <div className="rounded-3xl border border-gray-200 bg-white/80 p-6 dark:border-gray-800 dark:bg-gray-900/70">
+                  <SkeletonList variant="grid" count={9} />
+                </div>
+              }
+            >
+              <div className="rounded-3xl border border-gray-100 bg-white/70 shadow-sm dark:border-gray-800 dark:bg-gray-900/70">
+                <VirtualizedAttractionFeed
+                  query={query}
+                  filters={stableFilters}
+                  onSelect={onResultSelect}
+                />
+
+                     <VirtualizedBlogFeed query={query} filters={stableFilters} />
+              </div>
+
+                      <div className="rounded-3xl border border-gray-100 bg-white/70 p-2 shadow-sm dark:border-gray-800 dark:bg-gray-900/70">
+           
+              </div>
+            </Suspense>
+          </SimpleErrorBoundary>
+
+
+            <SimpleErrorBoundary
+            onReset={() => invalidateFeed('blogs')}
+            fallback={(error: Error, reset: () => void) => (
+              <ErrorFallback
+                error={error}
+                title="We couldn't load related stories"
+                onRetry={reset}
+              />
+            )}
+          >
+            <Suspense
+              fallback={
+                <div className="rounded-3xl border border-gray-200 bg-white/80 p-4 dark:border-gray-800 dark:bg-gray-900/70">
+                  <SkeletonList variant="list" count={4} />
+                </div>
+              }
+            >
+      
+            </Suspense>
+          </SimpleErrorBoundary>
         </div>
 
-        {/* Right: sidebar (25%) - place filters, info or anything you need here */}
-        <aside className="pl-4">
-          <div className="flex flex-col gap-4">
-            {featuredBlogs.map((blog) => (
-              <BlogCard
-                key={blog.title}
-                title={blog.title}
-                description={blog.description}
-                imageUrl={blog.imageUrl}
-                href={blog.href}
-              />
-            ))}
-          </div>
-        </aside>
-      </motion.div>
-    </motion.div>
+  <div className="space-y-4 lg:basis-[25%] lg:max-w-[25%] lg:flex-none lg:min-w-[260px]">
+        
+        </div>
+      </div>
+
+      <BackToTopButton />
+    </motion.section>
   );
 };

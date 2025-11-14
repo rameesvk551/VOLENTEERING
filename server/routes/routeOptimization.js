@@ -28,34 +28,6 @@ interface RouteOptimizationRequest {
 
 /**
  * 🔹 Geocoding Service - Convert place name to coordinates
- */
-async function geocodePlace(placeName: string): Promise<Coordinates> {
-  try {
-    // Using OpenStreetMap Nominatim as primary geocoding service
-    const response = await axios.get('https://nominatim.openstreetmap.org/search', {
-      params: {
-        format: 'json',
-        q: placeName,
-        limit: 1
-      },
-      headers: {
-        'User-Agent': 'TravelEcosystem/1.0'
-      }
-    });
-
-    if (response.data.length === 0) {
-      throw new Error(`Could not geocode: ${placeName}`);
-    }
-
-    return {
-      lat: parseFloat(response.data[0].lat),
-      lng: parseFloat(response.data[0].lon)
-    };
-  } catch (error) {
-    console.error(`Geocoding error for ${placeName}:`, error);
-    throw error;
-  }
-}
 
 /**
  * 🔹 Distance Matrix - Calculate distances between coordinates

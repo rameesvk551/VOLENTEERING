@@ -658,6 +658,122 @@ export async function registerRoutes(fastify: FastifyInstance) {
   );
 
   /**
+   * POST /api/v1/optimize-route
+   * Optimize travel route between attractions
+   * Calls the route-optimizer microservice
+   */
+  fastify.post<{
+    Body: {
+      attractions: Array<{
+        name: string;
+        latitude: number;
+        longitude: number;
+        image?: string;
+        priority?: number;
+        visitDuration?: number;
+      }>;
+      budget?: number;
+      travelType: 'budget' | 'comfort' | 'luxury' | 'speed';
+      travelMethod: 'walk' | 'bike' | 'ride' | 'drive' | 'public_transport';
+      algorithm?: string;
+    };
+  }>(
+    '/api/v1/optimize-route',
+    {
+      schema: {
+        description: 'Optimize route between attractions using advanced algorithms',
+        tags: ['route-optimization'],
+        body: {
+          type: 'object',
+          required: ['attractions', 'travelType', 'travelMethod'],
+          properties: {
+            attractions: {
+              type: 'array',
+              minItems: 2,
+              items: {
+                type: 'object',
+                required: ['name', 'latitude', 'longitude'],
+                properties: {
+                  name: { type: 'string' },
+                  latitude: { type: 'number', minimum: -90, maximum: 90 },
+                  longitude: { type: 'number', minimum: -180, maximum: 180 },
+                  image: { type: 'string' },
+                  priority: { type: 'number', minimum: 1, maximum: 10 },
+                  visitDuration: { type: 'number', minimum: 0 }
+                }
+              }
+            },
+            budget: { type: 'number', minimum: 0 },
+            travelType: { type: 'string', enum: ['budget', 'comfort', 'luxury', 'speed'] },
+            travelMethod: { type: 'string', enum: ['walk', 'bike', 'ride', 'drive', 'public_transport'] },
+            algorithm: { type: 'string', enum: ['nearest_neighbor', '2opt', 'christofides', 'genetic', 'priority', 'auto'] }
+          }
+        },
+        response: {
+          200: {
+            type: 'object',
+            properties: {
+              success: { type: 'boolean' },
+              data: { type: 'object' },
+              stats: { type: 'object' }
+            }
+          }
+        }
+      }
+    },
+    async (request, reply) => {
+      try {
+        logger.info('Route optimization request', {
+          attractions: request.body.attractions.length,
+          travelMethod: request.body.travelMethod,
+          travelType: request.body.travelType,
+          budget: request.body.budget
+        });
+
+        // Call route-optimizer microservice
+        const ROUTE_OPTIMIZER_URL = process.env.ROUTE_OPTIMIZER_URL || 'http://localhost:3007';
+        
+        const axios = (await import('axios')).default;
+        const response = await axios.post(
+          `${ROUTE_OPTIMIZER_URL}/api/optimize-route`,
+          request.body,
+          {
+            headers: { 'Content-Type': 'application/json' },
+            timeout: 30000 // 30 second timeout
+          }
+        );
+
+        logger.info('Route optimization completed', {
+          algorithm: response.data.data.algorithm,
+          totalDistance: response.data.data.totalDistance,
+          estimatedCost: response.data.data.estimatedCost
+        });
+
+        return reply.code(HTTP_STATUS_OK).send(response.data);
+      } catch (error: any) {
+        logger.error('Route optimization failed', {
+          error: error.message,
+          response: error.response?.data
+        });
+
+        if (error.response) {
+          return reply.code(error.response.status).send({
+            success: false,
+            error: 'Route optimizer service error',
+            message: error.response.data.message || error.message
+          });
+        }
+
+        return reply.code(HTTP_STATUS_SERVER_ERROR).send({
+          success: false,
+          error: 'Route optimization failed',
+          message: error.message
+        });
+      }
+    }
+  );
+
+  /**
    * GET /api/v1/health
    * Health check endpoint
    */
