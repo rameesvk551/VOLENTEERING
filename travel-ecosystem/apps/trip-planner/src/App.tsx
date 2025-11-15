@@ -3,6 +3,7 @@ import { useRoutes } from 'react-router-dom';
 import AdvancedTripPlanner from './pages/AdvancedTripPlanner';
 import { DiscoveryPage } from './pages/DiscoveryPage';
 import RouteOptimizationPage from './pages/RouteOptimizationPage';
+import './styles/index.css';
 
 const App: React.FC = () => {
   const element = useRoutes([

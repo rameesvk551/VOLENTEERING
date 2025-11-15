@@ -4,35 +4,75 @@
     import {loadShare} from "@module-federation/runtime";
     const importMap = {
       
+        "@reduxjs/toolkit": async () => {
+          let pkg = await import("__mf__virtual/volunteering__prebuild___mf_0_reduxjs_mf_1_toolkit__prebuild__.js");
+            return pkg;
+        }
+      ,
         "@tanstack/react-query": async () => {
-          let pkg = await import("__mf__virtual/shell__prebuild___mf_0_tanstack_mf_1_react_mf_2_query__prebuild__.js");
+          let pkg = await import("__mf__virtual/volunteering__prebuild___mf_0_tanstack_mf_1_react_mf_2_query__prebuild__.js");
             return pkg;
         }
       ,
         "react": async () => {
-          let pkg = await import("__mf__virtual/shell__prebuild__react__prebuild__.js");
+          let pkg = await import("__mf__virtual/volunteering__prebuild__react__prebuild__.js");
             return pkg;
         }
       ,
         "react-dom": async () => {
-          let pkg = await import("__mf__virtual/shell__prebuild__react_mf_2_dom__prebuild__.js");
+          let pkg = await import("__mf__virtual/volunteering__prebuild__react_mf_2_dom__prebuild__.js");
+            return pkg;
+        }
+      ,
+        "react-redux": async () => {
+          let pkg = await import("__mf__virtual/volunteering__prebuild__react_mf_2_redux__prebuild__.js");
             return pkg;
         }
       ,
         "react-router-dom": async () => {
-          let pkg = await import("__mf__virtual/shell__prebuild__react_mf_2_router_mf_2_dom__prebuild__.js");
+          let pkg = await import("__mf__virtual/volunteering__prebuild__react_mf_2_router_mf_2_dom__prebuild__.js");
             return pkg;
         }
       
     }
       const usedShared = {
       
+          "@reduxjs/toolkit": {
+            name: "@reduxjs/toolkit",
+            version: "2.9.2",
+            scope: ["default"],
+            loaded: false,
+            from: "volunteering",
+            async get () {
+              if (false) {
+                throw new Error(`Shared module '${"@reduxjs/toolkit"}' must be provided by host`);
+              }
+              usedShared["@reduxjs/toolkit"].loaded = true
+              const {"@reduxjs/toolkit": pkgDynamicImport} = importMap
+              const res = await pkgDynamicImport()
+              const exportModule = {...res}
+              // All npm packages pre-built by vite will be converted to esm
+              Object.defineProperty(exportModule, "__esModule", {
+                value: true,
+                enumerable: false
+              })
+              return function () {
+                return exportModule
+              }
+            },
+            shareConfig: {
+              singleton: true,
+              requiredVersion: "^1.9.7",
+              
+            }
+          }
+        ,
           "@tanstack/react-query": {
             name: "@tanstack/react-query",
             version: "5.90.9",
             scope: ["default"],
             loaded: false,
-            from: "shell",
+            from: "volunteering",
             async get () {
               if (false) {
                 throw new Error(`Shared module '${"@tanstack/react-query"}' must be provided by host`);
@@ -62,7 +102,7 @@
             version: "18.3.1",
             scope: ["default"],
             loaded: false,
-            from: "shell",
+            from: "volunteering",
             async get () {
               if (false) {
                 throw new Error(`Shared module '${"react"}' must be provided by host`);
@@ -92,7 +132,7 @@
             version: "18.3.1",
             scope: ["default"],
             loaded: false,
-            from: "shell",
+            from: "volunteering",
             async get () {
               if (false) {
                 throw new Error(`Shared module '${"react-dom"}' must be provided by host`);
@@ -117,12 +157,42 @@
             }
           }
         ,
+          "react-redux": {
+            name: "react-redux",
+            version: "9.2.0",
+            scope: ["default"],
+            loaded: false,
+            from: "volunteering",
+            async get () {
+              if (false) {
+                throw new Error(`Shared module '${"react-redux"}' must be provided by host`);
+              }
+              usedShared["react-redux"].loaded = true
+              const {"react-redux": pkgDynamicImport} = importMap
+              const res = await pkgDynamicImport()
+              const exportModule = {...res}
+              // All npm packages pre-built by vite will be converted to esm
+              Object.defineProperty(exportModule, "__esModule", {
+                value: true,
+                enumerable: false
+              })
+              return function () {
+                return exportModule
+              }
+            },
+            shareConfig: {
+              singleton: true,
+              requiredVersion: "^8.1.3",
+              
+            }
+          }
+        ,
           "react-router-dom": {
             name: "react-router-dom",
             version: "6.30.1",
             scope: ["default"],
             loaded: false,
-            from: "shell",
+            from: "volunteering",
             async get () {
               if (false) {
                 throw new Error(`Shared module '${"react-router-dom"}' must be provided by host`);
@@ -142,7 +212,7 @@
             },
             shareConfig: {
               singleton: true,
-              requiredVersion: "^6.20.0",
+              requiredVersion: "^6.22.0",
               
             }
           }

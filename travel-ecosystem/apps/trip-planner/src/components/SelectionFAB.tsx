@@ -4,8 +4,9 @@
  * 56px circular button with badge, smooth animations
  */
 
-import React from 'react';
-import { Map } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { Heart } from 'lucide-react';
 import type { SelectionFABProps } from '../types/trip-planner.types';
 
 export const SelectionFAB: React.FC<SelectionFABProps> = ({
@@ -13,50 +14,81 @@ export const SelectionFAB: React.FC<SelectionFABProps> = ({
   onClick,
   disabled = false
 }) => {
-  if (count === 0) return null;
+  const hasSelection = count > 0;
+  const isDisabled = disabled || !hasSelection;
+  const [isMounted, setIsMounted] = useState(false);
+  const portalRef = useRef<HTMLDivElement | null>(null);
 
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      className={`
-        fixed bottom-4 right-4 z-50
-        w-14 h-14 rounded-full
-        bg-blue-600 hover:bg-blue-700 active:bg-blue-800
-        text-white shadow-xl hover:shadow-2xl
-        flex items-center justify-center
-        transition-all duration-300 ease-out
-        transform hover:scale-110 active:scale-95
-        focus:outline-none focus-visible:ring-4 focus-visible:ring-blue-300
-        ${disabled ? 'opacity-50 cursor-not-allowed' : ''}
-        animate-[slideInUp_0.3s_ease-out]
-      `}
-      aria-label={`Plan trip for ${count} selected attraction${count > 1 ? 's' : ''}`}
-    >
-      {/* Icon */}
-      <Map className="w-6 h-6" strokeWidth={2.5} />
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
 
-      {/* Badge - count indicator */}
-      <span
+    const node = document.createElement('div');
+    portalRef.current = node;
+    document.body.appendChild(node);
+    setIsMounted(true);
+
+    return () => {
+      if (portalRef.current) {
+        document.body.removeChild(portalRef.current);
+        portalRef.current = null;
+      }
+      setIsMounted(false);
+    };
+  }, []);
+
+  const content = (
+    <div className="fixed bottom-6 right-6 z-[9999] flex flex-col items-end gap-2">
+      <button
+        type="button"
+        onClick={onClick}
+        disabled={isDisabled}
         className={`
-          absolute -top-1 -right-1
-          w-6 h-6 rounded-full
-          bg-red-500 text-white
-          text-xs font-bold
-          flex items-center justify-center
-          border-2 border-white
-          animate-[pulse_2s_ease-in-out_infinite]
+          group relative flex items-center gap-3 rounded-full
+          pl-5 pr-3 py-2 text-white shadow-2xl
+          bg-gradient-to-r from-rose-500 via-pink-500 to-orange-400
+          transition-all duration-300 ease-out
+          hover:translate-y-0.5 hover:shadow-[0px_12px_30px_rgba(244,63,94,0.45)]
+          focus:outline-none focus-visible:ring-4 focus-visible:ring-rose-200
+          ${isDisabled ? 'opacity-60 cursor-not-allowed translate-y-0 hover:translate-y-0' : ''}
         `}
-        aria-label={`${count} attractions`}
+        aria-label={`Plan trip for ${count} selected attraction${count === 1 ? '' : 's'}`}
+        title={isDisabled ? 'Select attractions to enable route planning' : 'Optimize route with selected attractions'}
       >
-        {count}
-      </span>
+        <span className="relative flex h-12 w-12 items-center justify-center rounded-full bg-white/20">
+          <Heart className="h-5 w-5" strokeWidth={2.5} />
+          {hasSelection && (
+            <span
+              className="
+                absolute -top-1 -right-1
+                flex h-5 w-5 items-center justify-center
+                rounded-full bg-white text-rose-600 text-xs font-bold
+                shadow-md border border-white/60
+              "
+              aria-label={`${count} attractions selected`}
+            >
+              {count}
+            </span>
+          )}
+        </span>
+        <span className="flex flex-col text-left">
+          <span className="text-[11px] uppercase tracking-wide opacity-80">Trip</span>
+          <span className="text-sm font-semibold leading-tight">Plan route</span>
+        </span>
+      </button>
 
-      {/* Ripple effect on click */}
-      <span className="absolute inset-0 rounded-full bg-white/20 scale-0 group-active:scale-100 transition-transform duration-300" />
-    </button>
+      {!hasSelection && (
+        <span className="rounded-full bg-white/90 px-4 py-1 text-xs font-medium text-slate-600 shadow-lg border border-slate-100 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700">
+          Select attractions to activate
+        </span>
+      )}
+    </div>
   );
+
+  if (!isMounted || !portalRef.current) {
+    return null;
+  }
+
+  return createPortal(content, portalRef.current);
 };
 
 // Custom keyframes for animations (add to Tailwind config)

@@ -14,7 +14,14 @@ export default defineConfig({
       exposes: {
         './Router': './src/bootstrap.tsx',
       },
-      shared: ['react', 'react-dom', 'react-router-dom', '@reduxjs/toolkit', 'react-redux']
+      shared: {
+        react: { singleton: true, requiredVersion: '^18.2.0' },
+        'react-dom': { singleton: true, requiredVersion: '^18.2.0' },
+        'react-router-dom': { singleton: true, requiredVersion: '^6.22.0' },
+        '@reduxjs/toolkit': { singleton: true, requiredVersion: '^1.9.7' },
+        'react-redux': { singleton: true, requiredVersion: '^8.1.3' },
+        '@tanstack/react-query': { singleton: true, requiredVersion: '^5.90.9' }
+      }
     }) as unknown as PluginOption[])
   ],
   server: {

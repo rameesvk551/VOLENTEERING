@@ -176,6 +176,15 @@ fastify.post<{
 });
 
 /**
+ * POST /api/optimize-route (V2 - NEW ARCHITECTURE)
+ * Frontend → Backend route optimization
+ * Returns ONLY optimized order, no transport details
+ */
+import { optimizeRouteHandler } from './handlers/optimize-route.handler.js';
+
+fastify.post('/api/optimize-route', optimizeRouteHandler);
+
+/**
  * GET /api/health
  * Health check
  */
@@ -183,7 +192,7 @@ fastify.get('/api/health', async (request, reply) => {
   return reply.code(200).send({
     status: 'healthy',
     service: 'route-optimizer',
-    version: '1.0.0',
+    version: '2.0.0',
     uptime: process.uptime(),
     timestamp: new Date().toISOString(),
   });

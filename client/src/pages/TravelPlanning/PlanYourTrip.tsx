@@ -1,11 +1,7 @@
 
-import React, { useState } from 'react'
-import PlaceToVisit from '../../components/travelPlanning/PlaceToVisitCard'
-import { MapPin } from 'lucide-react'
+import React from 'react'
 import SearchWithFilter from '../../components/travelPlanning/SearchWithFilter'
 import SuggestedPlace from '@/components/travelPlanning/SuggestedPlace';
-import 'leaflet/dist/leaflet.css';
-import TripMap from '@/components/travelPlanning/TripMap';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/redux/store';
 
@@ -13,7 +9,7 @@ import { RootState } from '@/redux/store';
 
 const PlanYourTrip = () => {
  
-  const { searchedPlace, selectedPlace } = useSelector((state: RootState) => state.attractions);
+  const { searchedPlace } = useSelector((state: RootState) => state.attractions);
  
   return (
     <div className="bg-gradient-to-b from-blue-50 to-white">
@@ -23,17 +19,12 @@ const PlanYourTrip = () => {
        
 
 
- {(!searchedPlace || searchedPlace.length === 0) &&
-         (!selectedPlace || selectedPlace.length === 0) && (
+ {(!searchedPlace || searchedPlace.length === 0) && (
           <SearchWithFilter />
         )}
 
         {searchedPlace && searchedPlace.length > 0 && (
           <SuggestedPlace />
-        )}
-
-        {selectedPlace && selectedPlace.length > 0 && (
-          <TripMap />
         )}
 
           

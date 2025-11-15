@@ -1,11 +1,8 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
 import { DiscoverySearch } from '../components/discovery/DiscoverySearch';
 import type { DiscoveryEntity } from '../hooks/useDiscovery';
 
 export const DiscoveryPage: React.FC = () => {
-  const navigate = useNavigate();
-
   const handleResultSelect = (result: DiscoveryEntity) => {
     // Result is already added to trip store by ResultCard
     // Optionally navigate to trip planner or show detail modal

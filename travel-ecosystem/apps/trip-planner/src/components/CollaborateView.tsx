@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { Share2, Link as LinkIcon, Copy, Check, Users, Crown, Edit, Eye } from 'lucide-react';
 import { useTripStore, Collaborator } from '../store/tripStore';
 
 const CollaborateView: React.FC = () => {
-  const { collaborators, tripName, addCollaborator } = useTripStore();
+  const { collaborators, tripName } = useTripStore();
   const [copied, setCopied] = useState(false);
-  const [showAddModal, setShowAddModal] = useState(false);
+  const [, setShowAddModal] = useState(false);
 
   // Generate shareable link
   const shareableLink = `https://nomadic-nook.com/trip/${crypto.randomUUID().slice(0, 8)}`;

@@ -7,13 +7,20 @@ interface ResultCardProps {
   result: DiscoveryEntity;
   index: number;
   onSelect?: () => void;
+  isSelected?: boolean;
+  onToggleSelect?: () => void;
 }
 
-export const ResultCard: React.FC<ResultCardProps> = ({ result, index, onSelect }) => {
+export const ResultCard: React.FC<ResultCardProps> = ({ 
+  result, 
+  index, 
+  onSelect, 
+  isSelected = false,
+  onToggleSelect 
+}) => {
   const addDestination = useTripStore((state) => state.addDestination);
   const destinations = useTripStore((state) => state.destinations);
   const [isAdded, setIsAdded] = useState(false);
-  const [isSelected, setIsSelected] = useState(false);
 
   const isAlreadyAdded = destinations.some(d => d.name === result.title);
 
@@ -30,7 +37,8 @@ export const ResultCard: React.FC<ResultCardProps> = ({ result, index, onSelect 
       endDate: result.dates?.end || new Date().toISOString(),
       activities: [],
       notes: result.description,
-      estimatedCost: 0
+      estimatedCost: 0,
+      sourceAttractionId: result.id
     });
 
     setIsAdded(true);
@@ -39,11 +47,9 @@ export const ResultCard: React.FC<ResultCardProps> = ({ result, index, onSelect 
 
   const handleCheckboxChange = (e: React.MouseEvent) => {
     e.stopPropagation();
-    const newSelected = !isSelected;
-    setIsSelected(newSelected);
-    
-    if (newSelected && onSelect) {
-      onSelect();
+    console.log('Checkbox clicked for:', result.title, 'Current state:', isSelected);
+    if (onToggleSelect) {
+      onToggleSelect();
     }
   };
 

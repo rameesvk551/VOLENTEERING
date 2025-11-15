@@ -13,17 +13,9 @@ interface DiscoverySearchProps {
 
 export const DiscoverySearch: React.FC<DiscoverySearchProps> = ({ onResultSelect }) => {
   const [query, setQuery] = useState('');
-  const [suggestions] = useState([
-    'Delhi in October',
-    'Paris food tours',
-    'Bali beaches',
-    'Tokyo cherry blossoms',
-    'New York museums'
-  ]);
 
   const {
     results,
-    entities,
     recommendations,
     isLoading,
     error,
@@ -34,11 +26,6 @@ export const DiscoverySearch: React.FC<DiscoverySearchProps> = ({ onResultSelect
   const handleSearch = async () => {
     if (!query.trim()) return;
     await search(query);
-  };
-
-  const handleSuggestionClick = (suggestion: string) => {
-    setQuery(suggestion);
-    search(suggestion);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {

@@ -15,7 +15,7 @@ const AdvancedTripPlanner: React.FC = () => {
   const { currentView, isOffline, setIsOffline } = useTripStore();
   const navigate = useNavigate();
   const [showAddDestinationModal, setShowAddDestinationModal] = useState(false);
-  const [showAddNoteModal, setShowAddNoteModal] = useState(false);
+  const [, setShowAddNoteModal] = useState(false);
 
   // Handle offline/online status
   useEffect(() => {
