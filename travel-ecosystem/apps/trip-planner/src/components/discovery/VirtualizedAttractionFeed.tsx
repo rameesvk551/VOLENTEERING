@@ -1,5 +1,6 @@
 ﻿import React, { useCallback, useEffect, useState } from 'react';
 import { Compass } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import type { DiscoveryEntity } from '../../hooks/useDiscovery';
 import { ResultCard } from './ResultCard';
 import { SelectionFAB } from '../SelectionFAB';
@@ -8,6 +9,9 @@ import { useOptimizeRouteMutation } from '../../hooks/useRouteOptimizer';
 import { useTripStore, getSelectionIdForDestination } from '../../store/tripStore';
 import type { TripDestination } from '../../store/tripStore';
 import type { TravelType, OptimizeRouteRequest } from '../../types/trip-planner.types';
+import { normalizePriority } from '../../utils/priority';
+import { useRouteOptimizationStore } from '../../store/routeOptimizationStore';
+import { buildTripPlannerPath } from '../../utils/navigation';
 
 interface VirtualizedAttractionFeedProps {
   items: DiscoveryEntity[];
@@ -73,6 +77,8 @@ export const VirtualizedAttractionFeed: React.FC<VirtualizedAttractionFeedProps>
   const [selectedDetails, setSelectedDetails] = useState<Record<string, DiscoveryEntity>>(() => getStoredDetails());
   const [isModalOpen, setIsModalOpen] = useState(false);
   const destinations = useTripStore((state) => state.destinations);
+  const navigate = useNavigate();
+  const setOptimizationSnapshot = useRouteOptimizationStore((state) => state.setSnapshot);
 
   const { mutate: optimizeRoute, isPending: isOptimizing } = useOptimizeRouteMutation();
   // Auto-sync selections with saved trip destinations (based on discovery source id)
@@ -196,16 +202,30 @@ export const VirtualizedAttractionFeed: React.FC<VirtualizedAttractionFeedProps>
       });
     }
 
+    const validItems = selectedItems.filter((item) =>
+      typeof item.location?.coordinates?.lat === 'number' &&
+      typeof item.location?.coordinates?.lng === 'number'
+    );
+
+    if (validItems.length < 2) {
+      alert('We need at least two attractions with valid coordinates to optimize a route.');
+      return;
+    }
+
     // Build optimization request payload
     const optimizeRequest: OptimizeRouteRequest = {
       userId: undefined, // Add user ID if authenticated
-      places: selectedItems.map(item => ({
+      places: validItems.map(item => ({
         id: item.id,
         name: item.title, // DiscoveryEntity uses 'title'
         lat: item.location.coordinates.lat,
         lng: item.location.coordinates.lng,
         imageUrl: item.media?.images?.[0],
-        priority: Math.round(item.metadata.popularity * 10) || 5, // Scale popularity to 1-10
+        priority: normalizePriority(
+          typeof item.metadata?.popularity === 'number'
+            ? item.metadata.popularity * 10
+            : undefined
+        ), // Scale popularity to 1-10
         visitDuration: 60 // Default 60 minutes
       })),
       constraints: {
@@ -224,19 +244,37 @@ export const VirtualizedAttractionFeed: React.FC<VirtualizedAttractionFeedProps>
     console.log('📤 Sending optimization request:', optimizeRequest);
 
     // Call API
+  const selectionSummaries = validItems.map((item) => ({
+      id: item.id,
+      name: item.title,
+      description: item.description,
+      city: item.location?.city,
+      country: item.location?.country,
+      coordinates: {
+        lat: item.location?.coordinates?.lat ?? 0,
+        lng: item.location?.coordinates?.lng ?? 0,
+      },
+      imageUrl: item.media?.images?.[0],
+    }));
+
     optimizeRoute(optimizeRequest, {
       onSuccess: (data) => {
         console.log('✅ Route optimized successfully:', data);
-        setIsModalOpen(false);
-        // TODO: Navigate to optimized route view
-        alert(`Route optimized! ${data.optimizedOrder.length} stops in optimal order.\n\nEstimated: ${data.estimatedDurationMinutes} minutes, ${(data.totalDistanceMeters / 1000).toFixed(1)} km`);
+        setOptimizationSnapshot({
+          request: optimizeRequest,
+          response: data,
+          selections: selectionSummaries,
+          createdAt: Date.now(),
+        });
+  setIsModalOpen(false);
+  navigate(buildTripPlannerPath('route-optimizer'));
       },
       onError: (error) => {
         console.error('❌ Optimization failed:', error);
         alert(`Optimization failed: ${error.message}`);
       }
     });
-  }, [selectedAttractions, items, optimizeRoute, selectedDetails]);
+  }, [selectedAttractions, items, optimizeRoute, selectedDetails, setOptimizationSnapshot, navigate]);
 
   if (!items || items.length === 0) {
     return (

@@ -4,6 +4,7 @@
  */
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { optimizeRoute as requestRouteOptimization } from '../api/routeOptimizer.api';
 import type {
   OptimizeRouteRequest,
   OptimizeRouteResponse,
@@ -49,12 +50,8 @@ export function useOptimizeRoute() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (request: OptimizeRouteRequest): Promise<OptimizeRouteResponse> => {
-      return fetchAPI('/optimize-route', {
-        method: 'POST',
-        body: JSON.stringify(request),
-      });
-    },
+    mutationFn: async (request: OptimizeRouteRequest): Promise<OptimizeRouteResponse> =>
+      requestRouteOptimization(request),
     onSuccess: (data) => {
       // Cache the optimized route
       queryClient.setQueryData(['optimized-route', data.jobId], data);

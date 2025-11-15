@@ -1,0 +1,17 @@
+import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faCartPlus, faHeart, faShareAlt } from "@fortawesome/free-solid-svg-icons";
+import { faFacebookF, faTwitter, faInstagram } from "@fortawesome/free-brands-svg-icons";
+import { useState } from "react";
+const ProductPage = () => {
+    return (_jsx("div", { className: "container mx-auto px-4 py-6", children: _jsxs("div", { className: "flex flex-col md:flex-row", children: [_jsx(ProductImageGallery, {}), _jsxs("div", { className: "md:w-1/2 mt-6 md:mt-0 md:pl-10", children: [_jsx("h2", { className: "text-3xl font-semibold text-gray-800", children: "Product Title" }), _jsx("p", { className: "text-xl text-gray-600 mt-2", children: "$199.99" }), _jsx("p", { className: "text-gray-500 mt-4", children: "This is a detailed description of the product. It highlights the key features, benefits, and any additional information that the user should know about the product. You can include bullet points here." }), _jsxs("div", { className: "mt-6", children: [_jsx("h3", { className: "text-2xl font-semibold text-gray-800", children: "Services and Features" }), _jsxs("ul", { className: "list-disc list-inside mt-2 text-gray-600", children: [_jsx("li", { children: "Fast and Free Shipping" }), _jsx("li", { children: "30-Day Money-Back Guarantee" }), _jsx("li", { children: "24/7 Customer Support" })] })] }), _jsxs("div", { className: "mt-6 flex gap-4", children: [_jsxs("button", { className: "bg-blue-600 text-white py-2 px-4 rounded-md flex items-center gap-2", children: [_jsx(FontAwesomeIcon, { icon: faCartPlus }), "Add to Cart"] }), _jsxs("button", { className: "bg-red-600 text-white py-2 px-4 rounded-md flex items-center gap-2", children: [_jsx(FontAwesomeIcon, { icon: faHeart }), "Favorite"] })] }), _jsxs("div", { className: "mt-4 flex gap-4 text-xl text-gray-700", children: [_jsx(FontAwesomeIcon, { icon: faFacebookF, className: "hover:text-blue-600 cursor-pointer" }), _jsx(FontAwesomeIcon, { icon: faTwitter, className: "hover:text-blue-400 cursor-pointer" }), _jsx(FontAwesomeIcon, { icon: faInstagram, className: "hover:text-pink-500 cursor-pointer" }), _jsx(FontAwesomeIcon, { icon: faShareAlt, className: "hover:text-gray-500 cursor-pointer" })] })] })] }) }));
+};
+export default ProductPage;
+const ProductImageGallery = () => {
+    const [mainImage, setMainImage] = useState("kasol.jpeg"); // Initial main image
+    // Function to update the main image
+    const handleThumbnailClick = (image) => {
+        setMainImage(image);
+    };
+    return (_jsxs("div", { className: "md:w-1/2", children: [_jsx("div", { className: "flex justify-center items-center", children: _jsx("img", { src: mainImage, alt: "Product", className: "rounded-lg shadow-lg w-full h-80 object-cover" }) }), _jsxs("div", { className: "flex justify-center mt-4 space-x-4", children: [_jsx("img", { src: "kasol.jpeg", alt: "Kasol", className: "w-20 h-20 object-cover cursor-pointer rounded-lg", onClick: () => handleThumbnailClick("kasol.jpeg") }), _jsx("img", { src: "manali.jpeg", alt: "Manali", className: "w-20 h-20 object-cover cursor-pointer rounded-lg", onClick: () => handleThumbnailClick("manali.jpeg") }), _jsx("img", { src: "delhi.jpeg", alt: "Delhi", className: "w-20 h-20 object-cover cursor-pointer rounded-lg", onClick: () => handleThumbnailClick("delhi.jpeg") })] })] }));
+};

@@ -23,7 +23,7 @@ export interface Location {
   address?: string;
 }
 
-export type TravelType = 'WALKING' | 'CYCLING' | 'PUBLIC_TRANSPORT' | 'DRIVE' | 'E_SCOOTER';
+export type TravelType = 'WALKING' | 'CYCLING' | 'PUBLIC_TRANSPORT' | 'DRIVING' | 'E_SCOOTER';
 export type TravelProfile = 'budget' | 'comfort' | 'luxury' | 'speed';
 
 export interface OptimizationConstraints {

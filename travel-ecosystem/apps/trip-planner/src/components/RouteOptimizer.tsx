@@ -3,12 +3,13 @@
  * Allows users to select destinations and get optimized routes with AI travel guides
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { MapPin, Navigation, Clock, Zap, Loader2, TrendingUp, Info, CheckCircle } from 'lucide-react';
 import { optimizeRoute } from '../services/routeOptimizer';
 import { generateBatchTravelGuides, TravelGuideData } from '../services/aiTravelGuide';
 import RouteMap from './RouteMap';
 import { useTripStore } from '../store/tripStore';
+import { useRouteOptimizationStore, RouteOptimizationSnapshot } from '../store/routeOptimizationStore';
 
 interface Location {
   name: string;
@@ -25,8 +26,92 @@ interface OptimizedRoute {
     to: string;
     distance: number;
     duration: number;
+    coordinates?: [number, number][];
   }>;
 }
+
+type CoordinateMap = Map<string, { lat: number; lng: number }>;
+
+const toRadians = (value: number) => (value * Math.PI) / 180;
+
+const calculateDistanceKm = (
+  a: { lat: number; lng: number },
+  b: { lat: number; lng: number }
+) => {
+  const R = 6371;
+  const dLat = toRadians(b.lat - a.lat);
+  const dLng = toRadians(b.lng - a.lng);
+  const lat1 = toRadians(a.lat);
+  const lat2 = toRadians(b.lat);
+
+  const h =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) * Math.sin(dLng / 2);
+  const c = 2 * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h));
+  return R * c;
+};
+
+const buildRouteFromSnapshot = (
+  snapshot: RouteOptimizationSnapshot
+): { route: OptimizedRoute | null; coordinates: CoordinateMap } => {
+  const placeById = new Map(snapshot.request.places.map((place) => [place.id, place]));
+  const coordinatesByName: CoordinateMap = new Map();
+  snapshot.request.places.forEach((place) => {
+    coordinatesByName.set(place.name, { lat: place.lat, lng: place.lng });
+  });
+
+  const ordered = [...snapshot.response.optimizedOrder].sort((a, b) => a.seq - b.seq);
+  if (ordered.length === 0) {
+    return { route: null, coordinates: coordinatesByName };
+  }
+
+  const orderedLocations = ordered.map((entry) => placeById.get(entry.placeId)?.name || entry.placeId);
+  const segments: OptimizedRoute['segments'] = [];
+
+  for (let i = 0; i < ordered.length - 1; i++) {
+    const fromEntry = ordered[i];
+    const toEntry = ordered[i + 1];
+    const fromPlace = placeById.get(fromEntry.placeId);
+    const toPlace = placeById.get(toEntry.placeId);
+
+    if (!fromPlace || !toPlace) {
+      segments.push({
+        from: fromPlace?.name || fromEntry.placeId,
+        to: toPlace?.name || toEntry.placeId,
+        distance: 0,
+        duration: 0,
+        coordinates: [],
+      });
+      continue;
+    }
+
+    const distance = calculateDistanceKm(
+      { lat: fromPlace.lat, lng: fromPlace.lng },
+      { lat: toPlace.lat, lng: toPlace.lng }
+    );
+    const duration = distance / 60; // hours at 60km/h average
+
+    segments.push({
+      from: fromPlace.name,
+      to: toPlace.name,
+      distance: Math.round(distance * 10) / 10,
+      duration: Math.round(duration * 10) / 10,
+      coordinates: [
+        [fromPlace.lng, fromPlace.lat],
+        [toPlace.lng, toPlace.lat],
+      ],
+    });
+  }
+
+  const route: OptimizedRoute = {
+    orderedLocations,
+    totalDistance: Math.round((snapshot.response.totalDistanceMeters / 1000) * 100) / 100,
+    totalDuration: Math.round((snapshot.response.estimatedDurationMinutes / 60) * 100) / 100,
+    segments,
+  };
+
+  return { route, coordinates: coordinatesByName };
+};
 
 export default function RouteOptimizer() {
   // Get destinations from trip store (added from Discovery page)
@@ -45,6 +130,35 @@ export default function RouteOptimizer() {
   const [routingProfile, setRoutingProfile] = useState<'fastest' | 'shortest' | 'scenic'>('fastest');
   const [returnToOrigin, setReturnToOrigin] = useState(false);
   const [showTrafficData, setShowTrafficData] = useState(false);
+  const optimizationSnapshot = useRouteOptimizationStore((state) => state.snapshot);
+  const lastHydratedSnapshotKey = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!optimizationSnapshot) {
+      return;
+    }
+
+    const snapshotKey = `${optimizationSnapshot.response.jobId}-${optimizationSnapshot.createdAt}`;
+    if (lastHydratedSnapshotKey.current === snapshotKey) {
+      return;
+    }
+    lastHydratedSnapshotKey.current = snapshotKey;
+
+    const { route, coordinates } = buildRouteFromSnapshot(optimizationSnapshot);
+    if (!route) {
+      return;
+    }
+
+    setSelectedPlaces(route.orderedLocations);
+    setOptimizedRoute(route);
+    setRouteCoordinates(coordinates);
+    setCurrentStopIndex(0);
+    setIsOptimizing(false);
+
+    generateBatchTravelGuides(route.orderedLocations)
+      .then((guides) => setTravelGuides(guides))
+      .catch((error) => console.error('Failed to generate travel guides for hydrated route:', error));
+  }, [optimizationSnapshot]);
 
   // Sync trip store destinations on mount and updates
   useEffect(() => {

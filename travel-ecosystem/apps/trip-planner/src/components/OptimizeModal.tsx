@@ -10,7 +10,7 @@ import type { OptimizeModalProps } from '../types/trip-planner.types';
 import type { TravelType } from '../types/trip-planner.types';
 
 const TRAVEL_TYPE_OPTIONS = [
-  { value: 'DRIVE' as TravelType, label: 'Drive', icon: Car, color: 'bg-blue-100 text-blue-700' },
+  { value: 'DRIVING' as TravelType, label: 'Drive', icon: Car, color: 'bg-blue-100 text-blue-700' },
   { value: 'PUBLIC_TRANSPORT' as TravelType, label: 'Public', icon: Bus, color: 'bg-green-100 text-green-700' },
   { value: 'CYCLING' as TravelType, label: 'Bike', icon: Bike, color: 'bg-yellow-100 text-yellow-700' },
   { value: 'WALKING' as TravelType, label: 'Walk', icon: Footprints, color: 'bg-purple-100 text-purple-700' },

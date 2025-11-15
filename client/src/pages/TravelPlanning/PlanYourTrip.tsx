@@ -2,6 +2,7 @@
 import React from 'react'
 import SearchWithFilter from '../../components/travelPlanning/SearchWithFilter'
 import SuggestedPlace from '@/components/travelPlanning/SuggestedPlace';
+import RouteOptimizerExperience from '@/components/travelPlanning/route-experience/RouteOptimizerExperience';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/redux/store';
 
@@ -31,6 +32,9 @@ const PlanYourTrip = () => {
           
         </div>
       </div>
+    </div>
+    <div className="pt-6 pb-12 px-0 sm:px-4">
+      <RouteOptimizerExperience />
     </div>
   </div>
   

@@ -18,7 +18,7 @@ const PORT = Number(process.env.PORT) || 4000;
 const AUTH_SERVICE_URL = process.env.AUTH_SERVICE_URL || 'http://localhost:4001';
 const BLOG_SERVICE_URL = process.env.BLOG_SERVICE_URL || 'http://localhost:4003';
 const ADMIN_SERVICE_URL = process.env.ADMIN_SERVICE_URL || 'http://localhost:4002';
-const ROUTE_OPTIMIZER_SERVICE_URL = process.env.ROUTE_OPTIMIZER_SERVICE_URL || 'http://localhost:4010';
+const ROUTE_OPTIMIZER_SERVICE_URL = process.env.ROUTE_OPTIMIZER_SERVICE_URL || 'http://localhost:3007';
 
 // Middleware
 app.use(helmet());

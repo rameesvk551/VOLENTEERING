@@ -40,11 +40,60 @@ interface OptimizationRequest {
   };
 }
 
-interface OptimizationResponse {
+export interface TransportLegStep {
+  mode: string;
+  from: string;
+  to: string;
+  distanceMeters: number;
+  durationSeconds: number;
+  route?: string;
+  routeColor?: string;
+  departureTime?: string;
+  arrivalTime?: string;
+  stops?: number;
+  delaySeconds?: number;
+}
+
+export interface TransportLegDetail {
+  from: { placeId: string; name: string; lat: number; lng: number; seq: number };
+  to: { placeId: string; name: string; lat: number; lng: number; seq: number };
+  travelType: string;
+  travelTimeSeconds: number;
+  distanceMeters: number;
+  cost: number;
+  steps: TransportLegStep[];
+  polyline?: string | null;
+  provider: 'transport-service' | 'osrm-fallback';
+}
+
+export interface TimelineEntry {
+  placeId: string;
+  seq: number;
+  arrivalTime: string;
+  departureTime: string;
+  visitDurationMinutes: number;
+}
+
+export interface RouteGeometry {
+  legs: Array<{ seq: number; travelType: string; polyline: string | null }>;
+}
+
+export interface RouteSummary {
+  startsAt: string;
+  endsAt: string;
+  totalVisitMinutes: number;
+  totalTravelMinutes: number;
+}
+
+export interface OptimizationResponse {
   jobId: string;
   optimizedOrder: Array<{ placeId: string; seq: number }>;
   estimatedDurationMinutes: number;
   totalDistanceMeters: number;
+  legs: TransportLegDetail[];
+  timeline: TimelineEntry[];
+  routeGeometry: RouteGeometry;
+  summary: RouteSummary;
   notes?: string;
 }
 
@@ -53,11 +102,21 @@ interface DistanceMatrix {
   durations: number[][]; // seconds
 }
 
+type LegTimelineBuildResult = {
+  legs: TransportLegDetail[];
+  timeline: TimelineEntry[];
+  routeGeometry: RouteGeometry;
+  summary: RouteSummary;
+  notes: string;
+};
+
 // ========== SERVICE ==========
 
 export class RouteOptimizerService {
   private readonly OSRM_URL = process.env.OSRM_URL || 'http://router.project-osrm.org';
   private readonly GOOGLE_API_KEY = process.env.GOOGLE_MAPS_API_KEY;
+  private readonly TRANSPORT_SERVICE_URL = process.env.TRANSPORT_SERVICE_URL || 'http://localhost:3008';
+  private readonly TRANSPORT_TIMEOUT_MS = Number(process.env.TRANSPORT_TIMEOUT_MS || 8000);
 
   /**
    * Main optimization function
@@ -83,9 +142,17 @@ export class RouteOptimizerService {
     );
 
     // Step 4: Calculate totals
+    const legEnhancements = await this.buildLegsAndTimeline(
+      constrainedOrder,
+      matrix,
+      request
+    );
+
     const { totalDistance, totalDuration } = this.calculateTotals(
       constrainedOrder,
-      matrix
+      matrix,
+      legEnhancements.legs,
+      legEnhancements.summary
     );
 
     // Step 5: Build response
@@ -99,7 +166,11 @@ export class RouteOptimizerService {
       optimizedOrder,
       estimatedDurationMinutes: Math.round(totalDuration / 60),
       totalDistanceMeters: totalDistance,
-      notes: 'Transport options needed for exact timings.',
+      legs: legEnhancements.legs,
+      timeline: legEnhancements.timeline,
+      routeGeometry: legEnhancements.routeGeometry,
+      summary: legEnhancements.summary,
+      notes: legEnhancements.notes,
     };
   }
 
@@ -111,58 +182,110 @@ export class RouteOptimizerService {
     places: Place[],
     travelTypes: string[]
   ): Promise<DistanceMatrix> {
-    const n = places.length;
-    const distances: number[][] = Array(n).fill(null).map(() => Array(n).fill(0));
-    const durations: number[][] = Array(n).fill(null).map(() => Array(n).fill(0));
+    if (places.length === 0) {
+      return { distances: [], durations: [] };
+    }
 
-    // Use OSRM if available, otherwise Haversine
-    const useOSRM = travelTypes.includes('DRIVING') || travelTypes.includes('WALKING');
+    if (this.shouldUseOsrm(travelTypes, places.length)) {
+      try {
+        return await this.fetchOsrmMatrix(places, travelTypes);
+      } catch (error: any) {
+        console.warn('OSRM matrix lookup failed. Falling back to Haversine matrix.', error?.message || error);
+      }
+    }
+
+    return this.buildHaversineMatrix(places);
+  }
+
+  private shouldUseOsrm(travelTypes: string[], placeCount: number): boolean {
+    if (placeCount <= 1) {
+      return false;
+    }
+
+    return travelTypes.some((type) =>
+      ['DRIVING', 'WALKING', 'CYCLING', 'E_SCOOTER'].includes(type)
+    );
+  }
+
+  private determineOsrmProfile(travelTypes: string[]): 'driving' | 'walking' | 'cycling' {
+    if (travelTypes.includes('DRIVING')) {
+      return 'driving';
+    }
+
+    if (travelTypes.some((type) => type === 'CYCLING' || type === 'E_SCOOTER')) {
+      return 'cycling';
+    }
+
+    return 'walking';
+  }
+
+  private async fetchOsrmMatrix(
+    places: Place[],
+    travelTypes: string[]
+  ): Promise<DistanceMatrix> {
+    const profile = this.determineOsrmProfile(travelTypes);
+    const coordinates = places.map((place) => `${place.lng},${place.lat}`).join(';');
+    const url = `${this.OSRM_URL}/table/v1/${profile}/${coordinates}?annotations=distance,duration`;
+
+    const timeout = Math.min(5000 + places.length * 500, 20000);
+    const response = await axios.get(url, { timeout });
+
+    const { distances, durations } = response.data || {};
+
+    if (!Array.isArray(distances) || !Array.isArray(durations)) {
+      throw new Error('OSRM table response missing distance/duration matrices');
+    }
+
+    const sanitizedDistances = this.sanitizeMatrix(distances, (i, j) =>
+      this.getHaversineDistance(places[i], places[j])
+    );
+    const sanitizedDurations = this.sanitizeMatrix(durations, (i, j) =>
+      sanitizedDistances[i][j] / 1.4
+    );
+
+    return {
+      distances: sanitizedDistances,
+      durations: sanitizedDurations,
+    };
+  }
+
+  private sanitizeMatrix(
+    rawMatrix: Array<Array<number | null | undefined>>,
+    fallback: (i: number, j: number) => number
+  ): number[][] {
+    return rawMatrix.map((row, i) =>
+      row.map((value, j) => {
+        if (i === j) {
+          return 0;
+        }
+
+        if (typeof value === 'number' && Number.isFinite(value)) {
+          return value;
+        }
+
+        return fallback(i, j);
+      })
+    );
+  }
+
+  private buildHaversineMatrix(places: Place[]): DistanceMatrix {
+    const n = places.length;
+    const distances: number[][] = Array.from({ length: n }, () => Array(n).fill(0));
+    const durations: number[][] = Array.from({ length: n }, () => Array(n).fill(0));
 
     for (let i = 0; i < n; i++) {
-      for (let j = 0; j < n; j++) {
-        if (i === j) {
-          distances[i][j] = 0;
-          durations[i][j] = 0;
-          continue;
-        }
+      for (let j = i + 1; j < n; j++) {
+        const distance = this.getHaversineDistance(places[i], places[j]);
+        const duration = distance / 1.4; // ~5 km/h walking speed
 
-        if (useOSRM) {
-          try {
-            const result = await this.getOSRMDistance(places[i], places[j]);
-            distances[i][j] = result.distance;
-            durations[i][j] = result.duration;
-          } catch (error) {
-            // Fallback to Haversine
-            distances[i][j] = this.getHaversineDistance(places[i], places[j]);
-            durations[i][j] = distances[i][j] / 1.4; // ~5 km/h walking speed
-          }
-        } else {
-          // Direct Haversine
-          distances[i][j] = this.getHaversineDistance(places[i], places[j]);
-          durations[i][j] = distances[i][j] / 1.4;
-        }
+        distances[i][j] = distance;
+        distances[j][i] = distance;
+        durations[i][j] = duration;
+        durations[j][i] = duration;
       }
     }
 
     return { distances, durations };
-  }
-
-  /**
-   * Get distance from OSRM
-   */
-  private async getOSRMDistance(
-    from: Place,
-    to: Place
-  ): Promise<{ distance: number; duration: number }> {
-    const url = `${this.OSRM_URL}/route/v1/driving/${from.lng},${from.lat};${to.lng},${to.lat}?overview=false`;
-
-    const response = await axios.get(url, { timeout: 5000 });
-    const route = response.data.routes[0];
-
-    return {
-      distance: route.distance, // meters
-      duration: route.duration, // seconds
-    };
   }
 
   /**
@@ -312,16 +435,408 @@ export class RouteOptimizerService {
    */
   private calculateTotals(
     route: number[],
-    matrix: DistanceMatrix
+    matrix: DistanceMatrix,
+    legs: TransportLegDetail[],
+    summary: RouteSummary
   ): { totalDistance: number; totalDuration: number } {
-    let totalDistance = 0;
-    let totalDuration = 0;
+    const distanceFromLegs = legs.reduce((sum, leg) => sum + (leg.distanceMeters || 0), 0);
+    const matrixDistance = this.calculateMatrixDistance(route, matrix);
+    const totalDistance = distanceFromLegs > 0 ? distanceFromLegs : matrixDistance;
 
-    for (let i = 0; i < route.length - 1; i++) {
-      totalDistance += matrix.distances[route[i]][route[i + 1]];
-      totalDuration += matrix.durations[route[i]][route[i + 1]];
-    }
+    const totalSummaryMinutes = summary.totalTravelMinutes + summary.totalVisitMinutes;
+    const matrixDuration = this.calculateMatrixDuration(route, matrix);
+    const totalDuration = totalSummaryMinutes > 0
+      ? totalSummaryMinutes * 60
+      : matrixDuration;
 
     return { totalDistance, totalDuration };
+  }
+
+  private calculateMatrixDistance(route: number[], matrix: DistanceMatrix): number {
+    let totalDistance = 0;
+    for (let i = 0; i < route.length - 1; i++) {
+      totalDistance += matrix.distances[route[i]][route[i + 1]] || 0;
+    }
+    return totalDistance;
+  }
+
+  private calculateMatrixDuration(route: number[], matrix: DistanceMatrix): number {
+    let totalDuration = 0;
+    for (let i = 0; i < route.length - 1; i++) {
+      totalDuration += matrix.durations[route[i]][route[i + 1]] || 0;
+    }
+    return totalDuration;
+  }
+
+  private async buildLegsAndTimeline(
+    route: number[],
+    matrix: DistanceMatrix,
+    request: OptimizationRequest
+  ): Promise<LegTimelineBuildResult> {
+    if (route.length === 0) {
+      const nowIso = new Date().toISOString();
+      return {
+        legs: [],
+        timeline: [],
+        routeGeometry: { legs: [] },
+        summary: {
+          startsAt: nowIso,
+          endsAt: nowIso,
+          totalVisitMinutes: 0,
+          totalTravelMinutes: 0,
+        },
+        notes: 'No places provided.',
+      };
+    }
+
+  const places = request.places;
+    const startTimestamp = this.resolveStartTimestamp(request.constraints.startTime);
+    let currentTimeMs = startTimestamp;
+    let totalVisitSeconds = 0;
+    let totalTravelSeconds = 0;
+    const timeline: TimelineEntry[] = [];
+    const legs: TransportLegDetail[] = [];
+    const legNotes: string[] = [];
+
+    // Seed timeline with first place
+    const firstIndex = route[0];
+    const firstVisitDurationSeconds = this.getVisitDurationSeconds(places[firstIndex]);
+    timeline.push({
+      placeId: places[firstIndex].id,
+      seq: 1,
+      arrivalTime: new Date(currentTimeMs).toISOString(),
+      departureTime: new Date(currentTimeMs + firstVisitDurationSeconds * 1000).toISOString(),
+      visitDurationMinutes: firstVisitDurationSeconds / 60,
+    });
+    totalVisitSeconds += firstVisitDurationSeconds;
+    currentTimeMs += firstVisitDurationSeconds * 1000;
+
+    for (let i = 1; i < route.length; i++) {
+      const originIndex = route[i - 1];
+      const destinationIndex = route[i];
+      const origin = places[originIndex];
+      const destination = places[destinationIndex];
+
+      const fallbackDistance = matrix.distances[originIndex]?.[destinationIndex] ?? this.getHaversineDistance(origin, destination);
+      const fallbackDuration = matrix.durations[originIndex]?.[destinationIndex] ?? fallbackDistance / 1.4;
+
+      const departureIso = new Date(currentTimeMs).toISOString();
+      const transportLeg = await this.fetchTransportLeg(
+        origin,
+        destination,
+        request.constraints,
+        request.options,
+        departureIso,
+        fallbackDistance,
+        fallbackDuration
+      );
+
+      const polyline = await this.fetchPolylineForLeg(origin, destination, transportLeg.travelType)
+        .catch(() => null);
+
+      const legDetail: TransportLegDetail = {
+        from: { placeId: origin.id, name: origin.name, lat: origin.lat, lng: origin.lng, seq: i },
+        to: { placeId: destination.id, name: destination.name, lat: destination.lat, lng: destination.lng, seq: i + 1 },
+        travelType: transportLeg.travelType,
+        travelTimeSeconds: transportLeg.travelTimeSeconds,
+        distanceMeters: transportLeg.distanceMeters,
+        cost: transportLeg.cost,
+        steps: transportLeg.steps,
+        polyline,
+        provider: transportLeg.provider,
+      };
+
+      legs.push(legDetail);
+      totalTravelSeconds += transportLeg.travelTimeSeconds;
+      currentTimeMs += transportLeg.travelTimeSeconds * 1000;
+
+      const arrivalIso = new Date(currentTimeMs).toISOString();
+      const visitDurationSeconds = this.getVisitDurationSeconds(destination);
+      const departureTimeIso = new Date(currentTimeMs + visitDurationSeconds * 1000).toISOString();
+
+      timeline.push({
+        placeId: destination.id,
+        seq: i + 1,
+        arrivalTime: arrivalIso,
+        departureTime: departureTimeIso,
+        visitDurationMinutes: visitDurationSeconds / 60,
+      });
+
+      totalVisitSeconds += visitDurationSeconds;
+      currentTimeMs += visitDurationSeconds * 1000;
+
+      if (transportLeg.provider === 'osrm-fallback') {
+        legNotes.push(`Leg ${i}: realtime transport unavailable, used fallback matrix estimates.`);
+      }
+    }
+
+    const summary: RouteSummary = {
+      startsAt: timeline[0]?.arrivalTime || new Date(startTimestamp).toISOString(),
+      endsAt: new Date(currentTimeMs).toISOString(),
+      totalVisitMinutes: Math.round(totalVisitSeconds / 60),
+      totalTravelMinutes: Math.round(totalTravelSeconds / 60),
+    };
+
+    const routeGeometry: RouteGeometry = {
+      legs: legs.map((leg, index) => ({
+        seq: index + 1,
+        travelType: leg.travelType,
+        polyline: leg.polyline ?? null,
+      })),
+    };
+
+    return {
+      legs,
+      timeline,
+      routeGeometry,
+      summary,
+      notes: legNotes.length > 0
+        ? legNotes.join(' ')
+        : 'Includes multimodal transport legs, timeline, and geometry.',
+    };
+  }
+
+  private resolveStartTimestamp(startTime?: string): number {
+    if (!startTime) {
+      return Date.now();
+    }
+
+    const parsed = Date.parse(startTime);
+    if (Number.isNaN(parsed)) {
+      return Date.now();
+    }
+    return parsed;
+  }
+
+  private getVisitDurationSeconds(place: Place): number {
+    return Math.max(5, place.visitDuration ?? 60) * 60;
+  }
+
+  private async fetchTransportLeg(
+    origin: Place,
+    destination: Place,
+    constraints: OptimizationRequest['constraints'],
+    options: OptimizationRequest['options'],
+    departureTime: string,
+    fallbackDistance: number,
+    fallbackDuration: number
+  ): Promise<Omit<TransportLegDetail, 'from' | 'to' | 'polyline'>> {
+    const payload = {
+      origin: {
+        name: origin.name,
+        lat: origin.lat,
+        lng: origin.lng,
+      },
+      destination: {
+        name: destination.name,
+        lat: destination.lat,
+        lng: destination.lng,
+      },
+      departureTime,
+      preferences: {
+        modes: this.mapTravelTypesToTransportModes(constraints.travelTypes),
+        budget: this.mapBudgetToPreference(constraints.budget),
+        maxWalkDistance: options.includeRealtimeTransit ? 1200 : undefined,
+      },
+    };
+
+    const url = `${this.TRANSPORT_SERVICE_URL.replace(/\/$/, '')}/api/v1/transport/multi-modal-route`;
+
+    try {
+      const response = await axios.post(url, payload, { timeout: this.TRANSPORT_TIMEOUT_MS });
+      const legs = response.data?.data;
+
+      if (Array.isArray(legs) && legs.length > 0) {
+        const selected = this.pickBestTransportLeg(legs, constraints.travelTypes);
+        if (selected) {
+          const travelTimeSeconds = Math.round(selected.totalDuration || fallbackDuration);
+          const distanceMeters = Math.round(selected.totalDistance || fallbackDistance);
+          const steps: TransportLegStep[] = (selected.steps || []).map((step: any) => ({
+            mode: step.mode || 'transit',
+            from: step.from,
+            to: step.to,
+            distanceMeters: Math.round(step.distance || 0),
+            durationSeconds: Math.round(step.duration || 0),
+            route: step.route,
+            routeColor: step.routeColor,
+            departureTime: step.departureTime,
+            arrivalTime: step.arrivalTime,
+            stops: step.stops,
+            delaySeconds: typeof step.delay === 'number' ? step.delay : undefined,
+          }));
+
+          return {
+            travelType: this.normalizeTransportMode(steps[0]?.mode) || this.determineFallbackTravelType(constraints.travelTypes),
+            travelTimeSeconds,
+            distanceMeters,
+            cost: Number(selected.estimatedCost ?? this.estimateFallbackCost(distanceMeters, constraints.travelTypes)),
+            steps,
+            provider: 'transport-service',
+          };
+        }
+      }
+    } catch (error) {
+      console.warn('Transport service lookup failed. Falling back to matrix data.', (error as Error)?.message);
+    }
+
+    return {
+      travelType: this.determineFallbackTravelType(constraints.travelTypes),
+      travelTimeSeconds: Math.round(fallbackDuration),
+      distanceMeters: Math.round(fallbackDistance),
+      cost: this.estimateFallbackCost(fallbackDistance, constraints.travelTypes),
+      steps: [
+        {
+          mode: 'fallback',
+          from: origin.name,
+          to: destination.name,
+          distanceMeters: Math.round(fallbackDistance),
+          durationSeconds: Math.round(fallbackDuration),
+        },
+      ],
+      provider: 'osrm-fallback',
+    };
+  }
+
+  private mapTravelTypesToTransportModes(travelTypes: string[]): Array<'transit' | 'walking' | 'cycling' | 'driving' | 'escooter'> {
+    const mapping: Record<string, 'transit' | 'walking' | 'cycling' | 'driving' | 'escooter'> = {
+      PUBLIC_TRANSPORT: 'transit',
+      WALKING: 'walking',
+      CYCLING: 'cycling',
+      DRIVING: 'driving',
+      E_SCOOTER: 'escooter',
+    };
+
+    const modes = (travelTypes || [])
+      .map((type) => mapping[type])
+      .filter((mode): mode is 'transit' | 'walking' | 'cycling' | 'driving' | 'escooter' => Boolean(mode));
+
+    return modes.length > 0 ? modes : ['transit'];
+  }
+
+  private mapBudgetToPreference(budget?: number): 'budget' | 'balanced' | 'premium' {
+    if (typeof budget !== 'number' || Number.isNaN(budget)) {
+      return 'balanced';
+    }
+
+    if (budget <= 50) {
+      return 'budget';
+    }
+
+    if (budget >= 200) {
+      return 'premium';
+    }
+
+    return 'balanced';
+  }
+
+  private pickBestTransportLeg(legs: any[], travelTypes: string[]) {
+    if (!Array.isArray(legs) || legs.length === 0) {
+      return null;
+    }
+
+    const preferredModes = this.mapTravelTypesToTransportModes(travelTypes);
+    const getModePriority = (mode: string) => {
+      const normalized = this.normalizeTransportMode(mode);
+      const index = preferredModes.indexOf(normalized as any);
+      return index >= 0 ? index : preferredModes.length;
+    };
+
+    return [...legs].sort((a, b) => {
+      const modeA = getModePriority(a.steps?.[0]?.mode);
+      const modeB = getModePriority(b.steps?.[0]?.mode);
+      if (modeA !== modeB) {
+        return modeA - modeB;
+      }
+      return (a.totalDuration || 0) - (b.totalDuration || 0);
+    })[0];
+  }
+
+  private normalizeTransportMode(mode?: string): 'transit' | 'walking' | 'cycling' | 'driving' | 'escooter' | undefined {
+    if (!mode) {
+      return undefined;
+    }
+
+    const normalized = mode.toLowerCase();
+    if (['transit', 'bus', 'metro', 'rail'].includes(normalized)) {
+      return 'transit';
+    }
+    if (['walk', 'walking'].includes(normalized)) {
+      return 'walking';
+    }
+    if (['bike', 'cycling'].includes(normalized)) {
+      return 'cycling';
+    }
+    if (['drive', 'driving', 'car', 'ride'].includes(normalized)) {
+      return 'driving';
+    }
+    if (['scooter', 'escooter'].includes(normalized)) {
+      return 'escooter';
+    }
+    return undefined;
+  }
+
+  private determineFallbackTravelType(travelTypes: string[]): string {
+    if (travelTypes.includes('WALKING')) {
+      return 'walking';
+    }
+    if (travelTypes.includes('CYCLING')) {
+      return 'cycling';
+    }
+    if (travelTypes.includes('PUBLIC_TRANSPORT')) {
+      return 'transit';
+    }
+    if (travelTypes.includes('E_SCOOTER')) {
+      return 'escooter';
+    }
+    return 'driving';
+  }
+
+  private estimateFallbackCost(distanceMeters: number, travelTypes: string[]): number {
+    const distanceKm = distanceMeters / 1000;
+    if (travelTypes.includes('PUBLIC_TRANSPORT')) {
+      return Number((distanceKm * 0.3).toFixed(2));
+    }
+    if (travelTypes.includes('WALKING') || travelTypes.includes('CYCLING')) {
+      return 0;
+    }
+    if (travelTypes.includes('E_SCOOTER')) {
+      return Number((distanceKm * 0.5).toFixed(2));
+    }
+    return Number((distanceKm * 0.8).toFixed(2));
+  }
+
+  private async fetchPolylineForLeg(
+    origin: Place,
+    destination: Place,
+    travelType: string
+  ): Promise<string | null> {
+    const profile = this.mapTransportModeToOsrmProfile(travelType);
+    if (!profile) {
+      return null;
+    }
+
+    const coordinates = `${origin.lng},${origin.lat};${destination.lng},${destination.lat}`;
+    const url = `${this.OSRM_URL}/route/v1/${profile}/${coordinates}?overview=full&geometries=polyline6`;
+
+    const response = await axios.get(url, { timeout: 8000 });
+    const routes = response.data?.routes;
+    if (Array.isArray(routes) && routes.length > 0) {
+      return routes[0]?.geometry || null;
+    }
+    return null;
+  }
+
+  private mapTransportModeToOsrmProfile(mode: string): 'walking' | 'cycling' | 'driving' | null {
+    const normalized = mode.toLowerCase();
+    if (normalized.includes('walk')) {
+      return 'walking';
+    }
+    if (normalized.includes('cycle') || normalized.includes('bike') || normalized.includes('scooter')) {
+      return 'cycling';
+    }
+    if (normalized.includes('drive') || normalized.includes('car') || normalized.includes('transit')) {
+      return 'driving';
+    }
+    return null;
   }
 }

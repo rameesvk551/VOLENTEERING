@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import PlaceToVisit from './PlaceToVisitCard';
 import { useSelector, useDispatch } from 'react-redux';
-import { RootState } from '@/redux/store';
+import { RootState, AppDispatch } from '@/redux/store';
 import { Search } from 'lucide-react';
 import {
   removeSelectedPlace,
@@ -11,6 +11,7 @@ import {
 } from '@/redux/Slices/attraction';
 import server from '@/server/app';
 import axios from 'axios';
+import { optimizeRoute } from '@/redux/thunks/routeOptimizerThunk';
 
 type AddressValues = {
   place_id: number;
@@ -33,14 +34,16 @@ const SuggestedPlace = () => {
   const [currentPage, setCurrentPage] = useState(1);
 const itemsPerPage = 6;
 
-  const [suggestions, setSuggestions] = useState<AddressValues[]>();
+  const [suggestions, setSuggestions] = useState<AddressValues[]>([]);
   const [loading, setLoading] = useState(false);
   const [input, setInput] = useState('');
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
   const [notFound,setNotFound]=useState(false)
   const { selectedPlace, attractions, searchedPlace } = useSelector(
     (state: RootState) => state.attractions
   );
+  const routeStatus = useSelector((state: RootState) => state.routeOptimizer.status);
+  const travelMode = useSelector((state: RootState) => state.routeOptimizer.travelMode);
 
   const totalPages = Math.ceil((attractions?.length || 0) / itemsPerPage);
 
@@ -54,6 +57,11 @@ const handleRemovePlace = (place: string, latitude: number, longitude: number) =
 
 const handleSelectPlace = (place: string, latitude: number, longitude: number) => {
   dispatch(setSelectedPlace({ place, latitude, longitude }));
+};
+
+const handleOptimizeRoute = () => {
+  if (selectedPlace.length < 2 || routeStatus === 'loading') return;
+  dispatch(optimizeRoute({ travelMode, places: selectedPlace }));
 };
 
 useEffect(() => {
@@ -168,7 +176,7 @@ useEffect(() => {
       </div>
 
       {/* Suggestions */}
-      {suggestions?.length > 0 && (
+      {suggestions.length > 0 && (
         <ul className="absolute z-10 mt-2 w-full bg-white border rounded-xl shadow-lg max-h-60 overflow-y-auto">
           {suggestions.map((place) => (
             <li
@@ -293,6 +301,25 @@ useEffect(() => {
    ) : (
      <div className="text-gray-500 italic">No place selected yet.</div>
    )}
+
+    <div className="mt-6 space-y-2">
+      <button
+        disabled={selectedPlace.length < 2 || routeStatus === 'loading'}
+        onClick={handleOptimizeRoute}
+        className={`w-full h-12 rounded-xl text-white font-semibold flex items-center justify-center gap-2 transition ${
+          selectedPlace.length < 2
+            ? 'bg-gray-300 cursor-not-allowed'
+            : routeStatus === 'loading'
+              ? 'bg-blue-400 animate-pulse'
+              : 'bg-blue-600 hover:bg-blue-700'
+        }`}
+      >
+        {routeStatus === 'loading' ? 'Optimizing…' : 'Optimize Route'}
+      </button>
+      {selectedPlace.length < 2 && (
+        <p className="text-xs text-gray-500 text-center">Select at least two places to generate a route.</p>
+      )}
+    </div>
  </div>
  )}
 </div>

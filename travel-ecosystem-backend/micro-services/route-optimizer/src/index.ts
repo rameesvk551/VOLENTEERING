@@ -10,6 +10,7 @@ import { RouteOptimizerService, TravelMethod, TravelType } from './services/rout
 import { Attraction } from './algorithms/tsp-solver';
 import { z } from 'zod';
 import dotenv from 'dotenv';
+import { getOptimizeRouteJobHandler, optimizeRouteHandler } from './handlers/optimize-route.handler.js';
 
 dotenv.config();
 
@@ -29,6 +30,8 @@ const fastify = Fastify({
 fastify.register(cors, {
   origin: true,
 });
+
+const enableLegacyOptimizeRoute = process.env.ENABLE_LEGACY_OPTIMIZE_ROUTE === 'true';
 
 // Initialize service
 const routeOptimizer = new RouteOptimizerService();
@@ -54,76 +57,82 @@ const OptimizeRouteSchema = z.object({
   considerTimeWindows: z.boolean().optional(),
 });
 
-/**
- * POST /api/optimize-route
- * Main route optimization endpoint
- */
-fastify.post<{
-  Body: {
-    attractions: Attraction[];
-    budget?: number;
-    travelType: TravelType;
-    travelMethod: TravelMethod;
-    startTime?: string;
-    algorithm?: string;
-  };
-}>('/api/optimize-route', async (request, reply) => {
-  try {
-    const validated = OptimizeRouteSchema.parse(request.body);
+if (enableLegacyOptimizeRoute) {
+  fastify.log.warn('ENABLE_LEGACY_OPTIMIZE_ROUTE=true → registering legacy /api/optimize-route handler');
 
-    fastify.log.info({
-      msg: 'Route optimization request',
-      attractions: validated.attractions.length,
-      travelMethod: validated.travelMethod,
-      travelType: validated.travelType,
-      budget: validated.budget,
-    });
+  /**
+   * POST /api/optimize-route (LEGACY)
+   * Main route optimization endpoint used by legacy clients
+   */
+  fastify.post<{
+    Body: {
+      attractions: Attraction[];
+      budget?: number;
+      travelType: TravelType;
+      travelMethod: TravelMethod;
+      startTime?: string;
+      algorithm?: string;
+    };
+  }>('/api/optimize-route', async (request, reply) => {
+    try {
+      const validated = OptimizeRouteSchema.parse(request.body);
 
-    const startTime = Date.now();
+      fastify.log.info({
+        msg: 'Route optimization request (legacy)',
+        attractions: validated.attractions.length,
+        travelMethod: validated.travelMethod,
+        travelType: validated.travelType,
+        budget: validated.budget,
+      });
 
-    const result = await routeOptimizer.optimizeRoute(validated.attractions, {
-      budget: validated.budget,
-      travelType: validated.travelType,
-      travelMethod: validated.travelMethod,
-      startTime: validated.startTime,
-      algorithm: validated.algorithm === 'auto' ? undefined : validated.algorithm as any,
-      multiModal: validated.multiModal,
-      considerTimeWindows: validated.considerTimeWindows,
-    });
+      const startTime = Date.now();
 
-    const processingTime = Date.now() - startTime;
+      const result = await routeOptimizer.optimizeRoute(validated.attractions, {
+        budget: validated.budget,
+        travelType: validated.travelType,
+        travelMethod: validated.travelMethod,
+        startTime: validated.startTime,
+        algorithm: validated.algorithm === 'auto' ? undefined : (validated.algorithm as any),
+        multiModal: validated.multiModal,
+        considerTimeWindows: validated.considerTimeWindows,
+      });
 
-    fastify.log.info({
-      msg: 'Route optimization completed',
-      algorithm: result.algorithm,
-      totalDistance: result.totalDistance,
-      processingTime: `${processingTime}ms`,
-    });
+      const processingTime = Date.now() - startTime;
 
-    return reply.code(200).send({
-      success: true,
-      data: result,
-      stats: routeOptimizer.getRouteStats(result),
-      processingTime: `${processingTime}ms`,
-    });
-  } catch (error: any) {
-    fastify.log.error({ msg: 'Route optimization failed', error: error.message });
+      fastify.log.info({
+        msg: 'Route optimization completed (legacy)',
+        algorithm: result.algorithm,
+        totalDistance: result.totalDistance,
+        processingTime: `${processingTime}ms`,
+      });
 
-    if (error.name === 'ZodError') {
-      return reply.code(400).send({
+      return reply.code(200).send({
+        success: true,
+        data: result,
+        stats: routeOptimizer.getRouteStats(result),
+        processingTime: `${processingTime}ms`,
+      });
+    } catch (error: any) {
+      fastify.log.error({ msg: 'Route optimization failed (legacy)', error: error.message });
+
+      if (error.name === 'ZodError') {
+        return reply.code(400).send({
+          success: false,
+          error: 'Invalid request data',
+          details: error.errors,
+        });
+      }
+
+      return reply.code(500).send({
         success: false,
-        error: 'Invalid request data',
-        details: error.errors,
+        error: 'Route optimization failed',
+        message: error.message,
       });
     }
-
-    return reply.code(500).send({
-      success: false,
-      error: 'Route optimization failed',
-      message: error.message,
-    });
-  }
-});
+  });
+} else {
+  fastify.log.info('Legacy /api/optimize-route handler disabled (set ENABLE_LEGACY_OPTIMIZE_ROUTE=true to re-enable)');
+}
 
 /**
  * POST /api/compare-algorithms
@@ -176,13 +185,20 @@ fastify.post<{
 });
 
 /**
- * POST /api/optimize-route (V2 - NEW ARCHITECTURE)
+ * POST /api/v1/optimize-route (V2 - NEW ARCHITECTURE)
  * Frontend → Backend route optimization
  * Returns ONLY optimized order, no transport details
  */
-import { optimizeRouteHandler } from './handlers/optimize-route.handler.js';
+fastify.post('/api/v1/optimize-route', optimizeRouteHandler);
+fastify.get('/api/v1/optimize-route/:jobId', getOptimizeRouteJobHandler);
 
-fastify.post('/api/optimize-route', optimizeRouteHandler);
+if (!enableLegacyOptimizeRoute) {
+  fastify.post('/api/optimize-route', optimizeRouteHandler);
+  fastify.get('/api/optimize-route/:jobId', getOptimizeRouteJobHandler);
+  fastify.log.info('Registered new optimize route handler on /api/optimize-route (alias for /api/v1/optimize-route)');
+} else {
+  fastify.log.warn('Legacy handler active. New clients must call /api/v1/optimize-route to use the V2 schema.');
+}
 
 /**
  * GET /api/health

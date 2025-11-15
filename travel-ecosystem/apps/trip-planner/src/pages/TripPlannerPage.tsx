@@ -10,6 +10,7 @@ import { OptimizeModal } from '../components/OptimizeModal';
 import { LegOptionsList } from '../components/LegOptionsList';
 import { SelectedPlanSummary } from '../components/SelectedPlanSummary';
 import { useAttractions, useOptimizeRoute, useBatchMultiModalRoutes, useGeneratePDF } from '../hooks/useTripPlannerAPI';
+import { normalizePriority } from '../utils/priority';
 import type { Attraction, Leg, TravelType } from '../types/trip-planner.types';
 import { AlertCircle, CheckCircle, Loader } from 'lucide-react';
 
@@ -65,7 +66,7 @@ export const TripPlannerPage: React.FC<TripPlannerPageProps> = ({ city, country 
           lat: a.latitude,
           lng: a.longitude,
           imageUrl: a.imageUrl,
-          priority: a.priority,
+          priority: normalizePriority(a.priority),
           visitDuration: a.visitDurationMinutes
         })),
         constraints: {

@@ -7,6 +7,7 @@ import messageReducer from "./Slices/messageSlice";
 import attractionsReducer from "./Slices/attraction";
 import hotelBookingReducer from './Slices/hotelBookingSlice'
 import  socketReducer from './Slices/socketlice'
+import routeOptimizerReducer from './Slices/routeOptimizerSlice';
 export const store = configureStore({
     reducer: {
         admin: adminReducer,
@@ -16,7 +17,8 @@ export const store = configureStore({
         volenteer:volenteerReducer,
         message: messageReducer,
     attractions:attractionsReducer,
-    hotelBooking:hotelBookingReducer
+    hotelBooking:hotelBookingReducer,
+    routeOptimizer: routeOptimizerReducer
 
     },
 });

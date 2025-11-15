@@ -272,9 +272,9 @@ node ..\test-route-optimization.js
 | Distance matrix | < 500ms | ✅ ~300ms |
 | TSP optimization | < 200ms | ✅ ~150ms |
 | Error rate | < 1% | ✅ 0% |
-| Code coverage | > 80% | ✅ Ready for tests |
+| Code coverage | > 80% | ✅ Ready for tests | 
 
----
+--- 
 
 ## 📚 Documentation Files
 

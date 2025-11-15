@@ -8,8 +8,37 @@
 import axios from 'axios';
 import type { OptimizeRouteRequest, OptimizeRouteResponse } from '../types/trip-planner.types';
 
-// API base URL - configure based on environment
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
+// Use dedicated gateway override when available, fallback to API gateway default port
+const API_BASE_URL =
+  import.meta.env.VITE_ROUTE_OPTIMIZER_API_URL ||
+  import.meta.env.VITE_API_GATEWAY_URL ||
+  'http://localhost:4000';
+
+const formatValidationDetails = (
+  details?: Array<{ path?: string | string[]; message?: string }>
+): string | null => {
+  if (!Array.isArray(details) || details.length === 0) {
+    return null;
+  }
+
+  const parts = details
+    .map((detail) => {
+      if (!detail) {
+        return null;
+      }
+      const path = Array.isArray(detail.path)
+        ? detail.path.join('.')
+        : detail.path;
+      if (path && detail.message) {
+        return `${path}: ${detail.message}`;
+      }
+      return detail.message ?? path;
+    })
+    .filter(Boolean)
+    .join('; ');
+
+  return parts ? `Validation failed: ${parts}` : null;
+};
 
 /**
  * POST /api/v1/optimize-route
@@ -47,11 +76,16 @@ export async function optimizeRoute(
     
     if (axios.isAxiosError(error)) {
       if (error.response) {
+        const validationMessage = formatValidationDetails(error.response.data?.details);
+        if (validationMessage) {
+          throw new Error(validationMessage);
+        }
+
         // Backend returned an error response
         throw new Error(
           error.response.data?.message || 
           error.response.data?.error || 
-          'Route optimization failed'
+          `Route optimization failed (status ${error.response.status})`
         );
       } else if (error.request) {
         // Request made but no response received

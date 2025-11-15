@@ -15,13 +15,12 @@ User selects attractions → Frontend sends to backend → Backend optimizes rou
 ✅ User selects travel types, budget, options  
 ✅ Frontend sends request to backend  
 ✅ Backend runs TSP/2-opt + distance matrix + constraints  
-✅ Backend returns optimized order ONLY  
+✅ Backend returns optimized order **plus** transport legs, polyline geometry, and timeline  
 ✅ Frontend displays result  
 
 **What this does NOT do (comes later):**
-❌ Fetch transport options per leg  
-❌ Generate polylines  
-❌ Generate PDF  
+❌ PDF generation  
+❌ Detailed cost breakdown per traveler  
 
 ---
 
@@ -52,7 +51,12 @@ RouteOptimizerService
   ├─ Build Distance Matrix (OSRM/Haversine)
   ├─ Run TSP (Nearest Neighbor + 2-opt)
   ├─ Apply Constraints (time/budget/priority)
-  └─ Return optimized order
+  ├─ Fetch Transport Legs + Polylines
+  ├─ Build Timeline + Summary
+  └─ Persist enriched itinerary
+
+RouteJobStore (in-memory TTL)
+  └─ Serves GET /api/v1/optimize-route/:jobId
 ```
 
 ---
@@ -83,20 +87,28 @@ RouteOptimizerService
    - 60 second timeout for complex optimizations
    - Optional auth support
 
-5. **`route-optimizer/src/handlers/optimize-route.handler.ts`** ✅ NEW
-   - Request validation (Zod schemas)
-   - Calls `RouteOptimizerService`
-   - Returns JSON response
+4. **`route-optimizer/src/handlers/optimize-route.handler.ts`** ✅ MODIFIED
+  - Request validation (Zod schemas)
+  - Calls `RouteOptimizerService`
+  - Persists enriched itinerary into in-memory job store
+  - Returns JSON response with legs + timeline + geometry
 
-6. **`route-optimizer/src/services/route-optimizer-v2.service.ts`** ✅ NEW
-   - **Distance Matrix**: OSRM (with Haversine fallback)
-   - **TSP Optimization**: Nearest Neighbor + 2-opt
-   - **Constraints**: Time budget, priority filtering
-   - Returns optimized order only
+5. **`route-optimizer/src/lib/route-job-store.ts`** ✅ NEW
+  - Simple TTL-based in-memory persistence for optimized itineraries
+  - Enables polling via `GET /api/v1/optimize-route/:jobId`
+
+6. **`route-optimizer/src/services/route-optimizer-v2.service.ts`** ✅ MODIFIED
+  - **Distance Matrix**: OSRM (with Haversine fallback)
+  - **TSP Optimization**: Nearest Neighbor + 2-opt
+  - **Constraints**: Time budget, priority filtering
+  - **Transport Legs**: Calls Transportation Service per leg with fallbacks
+  - **Timeline Builder**: Computes arrival/departure stamps using visit durations
+  - **Polyline Generation**: Fetches OSRM polylines per leg
+  - Returns optimized order + legs + timeline + geometry summary
 
 7. **`route-optimizer/src/index.ts`** ✅ MODIFIED
-   - Registered `/api/optimize-route-v2` endpoint
-   - Imported handler
+  - Registered `/api/optimize-route-v2` endpoint
+  - Added `GET /api/v1/optimize-route/:jobId` for polling persisted itineraries
 
 ---
 
@@ -157,8 +169,82 @@ Authorization: Bearer <token> (optional)
   ],
   "estimatedDurationMinutes": 320,
   "totalDistanceMeters": 12000,
-  "notes": "Transport options needed for exact timings.",
+  "legs": [
+    {
+      "from": { "placeId": "p2", "seq": 1 },
+      "to": { "placeId": "p1", "seq": 2 },
+      "travelType": "transit",
+      "travelTimeSeconds": 900,
+      "distanceMeters": 5400,
+      "cost": 3.2,
+      "steps": [
+        {
+          "mode": "transit",
+          "from": "Marina Bay Sands",
+          "to": "Gardens by the Bay",
+          "distanceMeters": 5400,
+          "durationSeconds": 900,
+          "route": "Bus 42",
+          "departureTime": "2025-11-15T09:30:00+08:00",
+          "arrivalTime": "2025-11-15T09:45:00+08:00"
+        }
+      ],
+      "polyline": "y|qeAujyv...",
+      "provider": "transport-service"
+    }
+  ],
+  "timeline": [
+    {
+      "placeId": "p2",
+      "seq": 1,
+      "arrivalTime": "2025-11-15T09:00:00+08:00",
+      "departureTime": "2025-11-15T10:30:00+08:00",
+      "visitDurationMinutes": 90
+    },
+    {
+      "placeId": "p1",
+      "seq": 2,
+      "arrivalTime": "2025-11-15T10:45:00+08:00",
+      "departureTime": "2025-11-15T12:15:00+08:00",
+      "visitDurationMinutes": 90
+    }
+  ],
+  "routeGeometry": {
+    "legs": [
+      { "seq": 1, "travelType": "transit", "polyline": "y|qeAujyv..." }
+    ]
+  },
+  "summary": {
+    "startsAt": "2025-11-15T09:00:00+08:00",
+    "endsAt": "2025-11-15T18:20:00+08:00",
+    "totalVisitMinutes": 270,
+    "totalTravelMinutes": 150
+  },
+  "notes": "Includes multimodal transport legs, timeline, and geometry.",
   "processingTime": "845ms"
+}
+```
+
+### Poll optimized itinerary by jobId
+
+```
+GET /api/v1/optimize-route/{jobId}
+```
+
+```json
+{
+  "success": true,
+  "job": {
+    "jobId": "job-abc123",
+    "optimizedOrder": [...],
+    "legs": [...],
+    "timeline": [...],
+    "summary": {...},
+    "routeGeometry": {...},
+    "storedAt": 1731650400000,
+    "processingTimeMs": 845
+  },
+  "cached": true
 }
 ```
 
@@ -364,20 +450,14 @@ This implementation handles **Step 1** of the trip planner flow.
 
 **Next Steps** (not in this section):
 
-1. **Fetch transport options per leg** (Step 2)
-   - Call Transportation Service for each leg
-   - Return multiple options (drive/PT/walk)
-   - User selects preferred option per leg
+1. **User-adjustable leg selection**
+  - Surface multiple transport options per leg and let users lock a preference.
 
-2. **Generate optimized itinerary** (Step 3)
-   - Build final timeline with ETAs
-   - Include polylines for map display
-   - Show total cost/duration
+2. **Cost + carbon analytics**
+  - Aggregate per-leg cost and emissions into richer trip insights.
 
-3. **Generate PDF** (Step 4)
-   - Call PDF Service
-   - Include map, timeline, attractions
-   - Download/share
+3. **PDF / shareable itinerary**
+  - Call PDF Service, embed polylines and timeline, expose download link.
 
 ---
 
