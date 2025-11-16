@@ -45,14 +45,23 @@ app.use(morgan('dev'));
 // app.use(express.urlencoded({ extended: true }));
 app.use(loggerMiddleware);
 
-// Rate limiting
+// Rate limiting - More permissive in development
 const limiter = rateLimit({
-  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000'),
-  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '100'),
-  message: 'Too many requests from this IP, please try again later.'
+  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000'), // 15 minutes
+  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '1000'), // Increased from 100 to 1000
+  message: 'Too many requests from this IP, please try again later.',
+  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+  skip: (req) => {
+    // Skip rate limiting for health checks and in development if needed
+    return req.path === '/health' || process.env.NODE_ENV === 'development';
+  }
 });
 
-app.use('/api/', limiter);
+// Apply rate limiter only in production or when explicitly enabled
+if (process.env.ENABLE_RATE_LIMIT !== 'false') {
+  app.use('/api/', limiter);
+}
 
 // Health check
 app.get('/health', (req: Request, res: Response) => {
@@ -197,6 +206,61 @@ app.use('/api/v1/optimize-route', optionalAuthMiddleware, createProxyMiddleware(
   },
   onError: (err, req, res) => {
     console.error('Route Optimizer Proxy Error:', err);
+    res.status(503).json({ 
+      success: false, 
+      message: 'Route optimizer service unavailable',
+      error: err.message 
+    });
+  }
+}));
+
+// Route Optimizer Service V2 - Enhanced with persistence & transport
+app.use('/api/v2/optimize-route', optionalAuthMiddleware, createProxyMiddleware({
+  target: ROUTE_OPTIMIZER_SERVICE_URL,
+  changeOrigin: true,
+  pathRewrite: {
+    '^/api/v2/optimize-route': '/api/v2/optimize-route'
+  },
+  timeout: 60000, // 60 seconds for complex optimizations
+  proxyTimeout: 60000,
+  onProxyReq: (proxyReq, req: any) => {
+    console.log('Proxying to Route Optimizer V2:', req.method, req.url);
+    // Forward user info if authenticated
+    if (req.user) {
+      proxyReq.setHeader('X-User-Id', req.user.id);
+      proxyReq.setHeader('X-User-Email', req.user.email);
+    }
+  },
+  onProxyRes: (proxyRes, req, res) => {
+    console.log('Route Optimizer V2 Response:', proxyRes.statusCode);
+  },
+  onError: (err, req, res) => {
+    console.error('Route Optimizer V2 Proxy Error:', err);
+    res.status(503).json({ 
+      success: false, 
+      message: 'Route optimizer service unavailable',
+      error: err.message 
+    });
+  }
+}));
+
+// Route Optimizer Service V2 - Additional endpoints
+app.use('/api/v2/optimizations', optionalAuthMiddleware, createProxyMiddleware({
+  target: ROUTE_OPTIMIZER_SERVICE_URL,
+  changeOrigin: true,
+  pathRewrite: {
+    '^/api/v2/optimizations': '/api/v2/optimizations'
+  },
+  timeout: 30000,
+  proxyTimeout: 30000,
+  onProxyReq: (proxyReq, req: any) => {
+    if (req.user) {
+      proxyReq.setHeader('X-User-Id', req.user.id);
+      proxyReq.setHeader('X-User-Email', req.user.email);
+    }
+  },
+  onError: (err, req, res) => {
+    console.error('Route Optimizer V2 Optimizations Proxy Error:', err);
     res.status(503).json({ 
       success: false, 
       message: 'Route optimizer service unavailable',

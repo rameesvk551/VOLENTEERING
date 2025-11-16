@@ -125,10 +125,23 @@ export interface StopTimeUpdate {
 }
 
 // Multimodal routing types
-export interface TransportMode {
-  mode: 'transit' | 'walking' | 'cycling' | 'driving' | 'escooter';
-  badgeText?: string;
-  isRecommended?: boolean;
+export type TransportMode = 'transit' | 'walking' | 'cycling' | 'driving' | 'escooter';
+
+export interface RouteStep {
+  mode: string;
+  from: string;
+  to: string;
+  distance: number;
+  duration: number;
+  route?: string;
+  routeColor?: string;
+  departureTime?: string;
+  arrivalTime?: string;
+  stops?: number;
+  delay?: number;
+  tripId?: string;
+  instructions?: string;
+  polyline?: string;
 }
 
 export interface TransportStep {

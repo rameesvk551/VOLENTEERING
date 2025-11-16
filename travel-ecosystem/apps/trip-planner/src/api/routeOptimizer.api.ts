@@ -14,6 +14,27 @@ const API_BASE_URL =
   import.meta.env.VITE_API_GATEWAY_URL ||
   'http://localhost:4000';
 
+interface OptimizeRouteApiEnvelope {
+  success: boolean;
+  data: OptimizeRouteResponse;
+  message?: string;
+  error?: string;
+  processingTime?: string;
+}
+
+const isOptimizeRouteEnvelope = (
+  payload: any
+): payload is OptimizeRouteApiEnvelope => {
+  return (
+    payload &&
+    typeof payload === 'object' &&
+    'data' in payload &&
+    payload.data &&
+    typeof payload.data === 'object' &&
+    'optimizedOrder' in payload.data
+  );
+};
+
 const formatValidationDetails = (
   details?: Array<{ path?: string | string[]; message?: string }>
 ): string | null => {
@@ -41,22 +62,24 @@ const formatValidationDetails = (
 };
 
 /**
- * POST /api/v1/optimize-route
+ * POST /api/v2/optimize-route
  * 
- * Sends selected attractions to backend for route optimization
+ * Sends selected attractions to backend for route optimization with MULTIMODAL TRANSPORT
  * Backend will:
- * 1. Build distance matrix (OSRM/Google/Haversine)
+ * 1. Build distance matrix using Transportation Service (OSRM/RAPTOR/Google)
  * 2. Run TSP optimization (2-opt, simulated annealing, etc.)
- * 3. Apply RAPTOR algorithm if public transport involved
- * 4. Apply constraints (budget, time, opening hours)
- * 5. Return optimized order ONLY (no transport options yet)
+ * 3. Apply RAPTOR algorithm for real-time public transport
+ * 4. Call Transportation Service for each leg (walking/cycling/driving/transit/e-scooter)
+ * 5. Apply constraints (budget, time, opening hours)
+ * 6. Return optimized order WITH REAL TRANSPORT DETAILS (polylines, steps, delays)
+ * 7. Persist to MongoDB for history/analytics
  */
 export async function optimizeRoute(
   request: OptimizeRouteRequest
 ): Promise<OptimizeRouteResponse> {
   try {
-    const response = await axios.post<OptimizeRouteResponse>(
-      `${API_BASE_URL}/api/v1/optimize-route`,
+    const response = await axios.post<OptimizeRouteResponse | OptimizeRouteApiEnvelope>(
+      `${API_BASE_URL}/api/v2/optimize-route`,
       request,
       {
         headers: {
@@ -66,11 +89,23 @@ export async function optimizeRoute(
             Authorization: `Bearer ${localStorage.getItem('token')}`
           })
         },
-        timeout: 30000 // 30 second timeout for optimization
+        // Match API Gateway/proxy timeout (60s) to avoid client cancelling
+        // long-running optimization requests; microservice may take longer
+        // for complex routes - adjust if needed.
+        timeout: 60000 // 60 second timeout for optimization
       }
     );
 
-    return response.data;
+    const payload = response.data;
+
+    if (isOptimizeRouteEnvelope(payload)) {
+      if (payload.success === false) {
+        throw new Error(payload.message || payload.error || 'Route optimization failed');
+      }
+      return payload.data;
+    }
+
+    return payload;
   } catch (error: any) {
     console.error('Route optimization API error:', error);
     
@@ -98,16 +133,16 @@ export async function optimizeRoute(
 }
 
 /**
- * GET /api/v1/optimize-route/:jobId
+ * GET /api/v2/optimize-route/:jobId
  * 
- * Poll for optimization job status (if using async processing)
+ * Get optimization job by ID from MongoDB persistence layer
  */
 export async function getOptimizationJobStatus(
   jobId: string
 ): Promise<OptimizeRouteResponse> {
   try {
-    const response = await axios.get<OptimizeRouteResponse>(
-      `${API_BASE_URL}/api/v1/optimize-route/${jobId}`,
+    const response = await axios.get<OptimizeRouteResponse | OptimizeRouteApiEnvelope>(
+      `${API_BASE_URL}/api/v2/optimize-route/${jobId}`,
       {
         headers: {
           ...(localStorage.getItem('token') && {
@@ -117,7 +152,16 @@ export async function getOptimizationJobStatus(
       }
     );
 
-    return response.data;
+    const payload = response.data;
+
+    if (isOptimizeRouteEnvelope(payload)) {
+      if (payload.success === false) {
+        throw new Error(payload.message || payload.error || 'Failed to get optimization status');
+      }
+      return payload.data;
+    }
+
+    return payload;
   } catch (error: any) {
     console.error('Job status API error:', error);
     throw new Error('Failed to get optimization status');

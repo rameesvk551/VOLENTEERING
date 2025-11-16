@@ -7,7 +7,8 @@ import { z } from 'zod';
 import { logger } from '@/utils/logger';
 import { getCache, setCache } from '@/cache/redis';
 import { config } from '@/config';
-import type { Leg } from '@/types/gtfs.types';
+import type { Leg, TransportMode } from '@/types/gtfs.types';
+import { multiModalRouter } from '@/services/multi-modal-router.service';
 
 // Request schema
 const multiModalRouteSchema = z.object({
@@ -54,35 +55,41 @@ export async function transportRoutes(app: FastifyInstance): Promise<void> {
         });
       }
 
-      // TODO: Implement actual routing logic
-      // For now, return mock data structure
-      const legs: Leg[] = [
-        {
-          origin,
-          destination,
-          steps: [
-            {
-              mode: 'transit',
-              from: origin.name,
-              to: destination.name,
-              distance: 5000,
-              duration: 900,
-              route: 'Bus 42',
-              routeColor: '#FF5733',
-              departureTime: departureTime || new Date().toISOString(),
-              arrivalTime: new Date(Date.now() + 900000).toISOString(),
-              stops: 8,
-              delay: 0
-            }
-          ],
-          totalDistance: 5000,
-          totalDuration: 900,
-          estimatedCost: 2.50
-        }
-      ];
+      // Use real multimodal routing
+      const routeOptions = await multiModalRouter.route({
+        origin,
+        destination,
+        departureTime,
+        preferences
+      });
 
-      // Cache the result
-      await setCache(cacheKey, legs, config.redisCacheTtlStatic);
+      // Convert RouteOptions to Leg format
+      const legs: Leg[] = routeOptions.map(option => ({
+        origin,
+        destination,
+        steps: option.steps.map(step => ({
+          mode: step.mode,
+          from: step.from,
+          to: step.to,
+          distance: step.distance,
+          duration: step.duration,
+          route: step.route,
+          routeColor: step.routeColor,
+          departureTime: step.departureTime,
+          arrivalTime: step.arrivalTime,
+          stops: step.stops,
+          delay: step.delay
+        })),
+        totalDistance: option.totalDistance,
+        totalDuration: option.totalDuration,
+        estimatedCost: option.estimatedCost
+      }));
+
+      // Cache the result (shorter TTL for realtime data)
+      const cacheTtl = preferences?.modes?.includes('transit') 
+        ? config.redisCacheTtlRealtime 
+        : config.redisCacheTtlStatic;
+      await setCache(cacheKey, legs, cacheTtl);
 
       return reply.send({
         success: true,

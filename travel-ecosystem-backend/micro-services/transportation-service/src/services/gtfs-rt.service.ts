@@ -257,6 +257,32 @@ export class GTFSRTService {
 
     return delays;
   }
+
+  /**
+   * Get trip update with delay information
+   */
+  async getTripUpdate(tripId: string): Promise<{ delay: number } | null> {
+    try {
+      const result = await pool.query(`
+        SELECT AVG(stu.arrival_delay) as avg_delay
+        FROM trip_updates tu
+        JOIN stop_time_updates stu ON tu.id = stu.trip_update_id
+        WHERE tu.trip_id = $1
+        AND tu.updated_at > NOW() - INTERVAL '10 minutes'
+      `, [tripId]);
+
+      if (result.rows.length === 0 || !result.rows[0].avg_delay) {
+        return null;
+      }
+
+      return {
+        delay: Math.round(result.rows[0].avg_delay)
+      };
+    } catch (error) {
+      logger.error({ error, tripId }, 'Failed to get trip update');
+      return null;
+    }
+  }
 }
 
 export const gtfsRtService = new GTFSRTService();

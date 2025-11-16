@@ -11,6 +11,14 @@ import { Attraction } from './algorithms/tsp-solver';
 import { z } from 'zod';
 import dotenv from 'dotenv';
 import { getOptimizeRouteJobHandler, optimizeRouteHandler } from './handlers/optimize-route.handler.js';
+import {
+  optimizeRouteHandler as optimizeRouteEnhancedHandler,
+  getOptimizationJobHandler,
+  getUserOptimizationsHandler,
+  getUserStatsHandler,
+  deleteOptimizationJobHandler,
+} from './handlers/optimize-route-enhanced.handler.js';
+import { connectDB, closeDB } from './database/connection.js';
 
 dotenv.config();
 
@@ -192,6 +200,17 @@ fastify.post<{
 fastify.post('/api/v1/optimize-route', optimizeRouteHandler);
 fastify.get('/api/v1/optimize-route/:jobId', getOptimizeRouteJobHandler);
 
+/**
+ * POST /api/v2/optimize-route (V3 - ENHANCED WITH PERSISTENCE & TRANSPORT)
+ * Enhanced route optimization with MongoDB persistence and real transport details
+ */
+fastify.post('/api/v2/optimize-route', optimizeRouteEnhancedHandler);
+fastify.get('/api/v2/optimize-route/:jobId', getOptimizationJobHandler);
+fastify.get('/api/v2/optimizations', getUserOptimizationsHandler);
+fastify.get('/api/v2/optimizations/stats/:userId', getUserStatsHandler);
+fastify.delete('/api/v2/optimize-route/:jobId', deleteOptimizationJobHandler);
+fastify.log.info('Registered enhanced optimize route handler on /api/v2/optimize-route (with transport & persistence)');
+
 if (!enableLegacyOptimizeRoute) {
   fastify.post('/api/optimize-route', optimizeRouteHandler);
   fastify.get('/api/optimize-route/:jobId', getOptimizeRouteJobHandler);
@@ -346,6 +365,14 @@ const start = async () => {
     const PORT = parseInt(process.env.PORT || '3007', 10);
     const HOST = process.env.HOST || '0.0.0.0';
 
+    // Connect to MongoDB
+    try {
+      await connectDB();
+      fastify.log.info('✅ MongoDB persistence layer ready');
+    } catch (dbError: any) {
+      fastify.log.warn({ error: dbError?.message }, '⚠️  MongoDB connection failed - persistence disabled');
+    }
+
     await fastify.listen({ port: PORT, host: HOST });
 
     fastify.log.info(`🚀 Route Optimizer Service running on port ${PORT}`);
@@ -358,3 +385,18 @@ const start = async () => {
 };
 
 start();
+
+// Graceful shutdown
+process.on('SIGINT', async () => {
+  fastify.log.info('Received SIGINT, shutting down gracefully...');
+  await fastify.close();
+  await closeDB();
+  process.exit(0);
+});
+
+process.on('SIGTERM', async () => {
+  fastify.log.info('Received SIGTERM, shutting down gracefully...');
+  await fastify.close();
+  await closeDB();
+  process.exit(0);
+});

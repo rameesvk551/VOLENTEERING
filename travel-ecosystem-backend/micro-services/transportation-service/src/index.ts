@@ -75,7 +75,8 @@ async function start() {
 
     logger.info(`Transportation Service running on port ${config.port}`);
   } catch (error) {
-    logger.error('Failed to start server:', error);
+    logger.error({ error, message: error instanceof Error ? error.message : 'Unknown error', stack: error instanceof Error ? error.stack : undefined }, 'Failed to start server');
+    console.error('Full error:', error);
     process.exit(1);
   }
 }

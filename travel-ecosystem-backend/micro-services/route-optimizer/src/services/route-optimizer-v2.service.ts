@@ -392,7 +392,7 @@ export class RouteOptimizerService {
   }
 
   /**
-   * Apply constraints (budget, time window, priority)
+   * Apply constraints (budget, time window, priority) - ENHANCED
    */
   private applyConstraints(
     route: number[],
@@ -400,18 +400,58 @@ export class RouteOptimizerService {
     places: Place[],
     constraints: any
   ): number[] {
-    // For now, just filter based on time budget
-    if (!constraints.timeBudgetMinutes) {
-      return route;
+    let constrainedRoute = [...route];
+
+    // 1. Apply time budget constraint
+    if (constraints.timeBudgetMinutes) {
+      constrainedRoute = this.applyTimeBudgetConstraint(
+        constrainedRoute,
+        matrix,
+        places,
+        constraints.timeBudgetMinutes
+      );
     }
 
-    const timeBudgetSeconds = constraints.timeBudgetMinutes * 60;
+    // 2. Apply budget constraint (filter expensive segments)
+    if (typeof constraints.budget === 'number' && constraints.budget > 0) {
+      constrainedRoute = this.applyBudgetConstraint(
+        constrainedRoute,
+        matrix,
+        places,
+        constraints.budget,
+        constraints.travelTypes || []
+      );
+    }
+
+    // 3. Apply priority-based re-ordering (keep high-priority places)
+    if (constraints.priorityWeighting && constraints.priorityWeighting > 0) {
+      constrainedRoute = this.applyPriorityOptimization(
+        constrainedRoute,
+        matrix,
+        places,
+        constraints.priorityWeighting
+      );
+    }
+
+    return constrainedRoute.length > 0 ? constrainedRoute : [route[0]]; // At least include first place
+  }
+
+  /**
+   * Apply time budget constraint
+   */
+  private applyTimeBudgetConstraint(
+    route: number[],
+    matrix: DistanceMatrix,
+    places: Place[],
+    timeBudgetMinutes: number
+  ): number[] {
+    const timeBudgetSeconds = timeBudgetMinutes * 60;
     let totalTime = 0;
     const constrainedRoute: number[] = [];
 
     for (let i = 0; i < route.length; i++) {
       const placeIndex = route[i];
-      const visitDuration = (places[placeIndex].visitDuration || 60) * 60; // Convert to seconds
+      const visitDuration = (places[placeIndex].visitDuration || 60) * 60;
 
       if (i > 0) {
         const travelTime = matrix.durations[route[i - 1]][placeIndex];
@@ -423,11 +463,105 @@ export class RouteOptimizerService {
       if (totalTime <= timeBudgetSeconds) {
         constrainedRoute.push(placeIndex);
       } else {
-        break; // Exceeded time budget
+        break;
       }
     }
 
-    return constrainedRoute.length > 0 ? constrainedRoute : [route[0]]; // At least include first place
+    return constrainedRoute;
+  }
+
+  /**
+   * Apply budget constraint - NEW
+   * Remove places that would exceed travel budget
+   */
+  private applyBudgetConstraint(
+    route: number[],
+    matrix: DistanceMatrix,
+    places: Place[],
+    budget: number,
+    travelTypes: string[]
+  ): number[] {
+    let totalCost = 0;
+    const constrainedRoute: number[] = [route[0]]; // Always include starting point
+
+    for (let i = 1; i < route.length; i++) {
+      const prevIndex = route[i - 1];
+      const currentIndex = route[i];
+      const distance = matrix.distances[prevIndex][currentIndex];
+      
+      // Estimate cost for this leg
+      const legCost = this.estimateFallbackCost(distance, travelTypes);
+      
+      if (totalCost + legCost <= budget) {
+        constrainedRoute.push(currentIndex);
+        totalCost += legCost;
+      } else {
+        console.log(`⚠️  Budget constraint: Excluding place ${places[currentIndex].name} (would exceed budget)`);
+        break; // Stop adding more places
+      }
+    }
+
+    return constrainedRoute;
+  }
+
+  /**
+   * Apply priority-based optimization - NEW
+   * Re-order route to favor high-priority places early
+   */
+  private applyPriorityOptimization(
+    route: number[],
+    matrix: DistanceMatrix,
+    places: Place[],
+    priorityWeighting: number // 0-1, how much to weight priority vs distance
+  ): number[] {
+    if (route.length <= 2 || priorityWeighting === 0) {
+      return route;
+    }
+
+    // Calculate combined score: (1-w)*distance + w*priority_penalty
+    const scoreRoute = (r: number[]): number => {
+      let distanceScore = 0;
+      let priorityPenalty = 0;
+
+      for (let i = 0; i < r.length - 1; i++) {
+        distanceScore += matrix.distances[r[i]][r[i + 1]];
+        
+        // Penalize visiting low-priority places early
+        const priority = places[r[i]].priority || 5;
+        const positionPenalty = (1 - priority / 10) * (r.length - i); // Higher penalty for low-priority early visits
+        priorityPenalty += positionPenalty * 1000; // Scale to be comparable to distance
+      }
+
+      return (1 - priorityWeighting) * distanceScore + priorityWeighting * priorityPenalty;
+    };
+
+    // Try swapping adjacent places to improve score
+    let improved = true;
+    let bestRoute = [...route];
+
+    while (improved) {
+      improved = false;
+      const currentScore = scoreRoute(bestRoute);
+
+      for (let i = 1; i < bestRoute.length - 1; i++) {
+        for (let j = i + 1; j < bestRoute.length; j++) {
+          // Try swapping
+          const newRoute = [...bestRoute];
+          [newRoute[i], newRoute[j]] = [newRoute[j], newRoute[i]];
+          
+          const newScore = scoreRoute(newRoute);
+          if (newScore < currentScore) {
+            bestRoute = newRoute;
+            improved = true;
+            break;
+          }
+        }
+        if (improved) break;
+      }
+    }
+
+    console.log(`✨ Priority optimization: Adjusted route to favor high-priority attractions`);
+    return bestRoute;
   }
 
   /**
@@ -676,7 +810,16 @@ export class RouteOptimizerService {
         }
       }
     } catch (error) {
-      console.warn('Transport service lookup failed. Falling back to matrix data.', (error as Error)?.message);
+      console.warn('❌ Transport service lookup failed. Falling back to matrix data.');
+      console.warn('  URL:', url);
+      console.warn('  Error:', error instanceof Error ? error.message : String(error));
+      if (axios.isAxiosError(error)) {
+        console.warn('  Axios Error Code:', error.code);
+        console.warn('  Response Status:', error.response?.status);
+        if (error.response?.data) {
+          console.warn('  Response Data:', JSON.stringify(error.response.data).substring(0, 200));
+        }
+      }
     }
 
     return {

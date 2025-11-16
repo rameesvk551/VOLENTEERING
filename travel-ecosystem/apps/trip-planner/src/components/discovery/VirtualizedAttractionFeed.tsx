@@ -212,6 +212,18 @@ export const VirtualizedAttractionFeed: React.FC<VirtualizedAttractionFeedProps>
       return;
     }
 
+    const travelTypeMap: Record<TravelType, string> = {
+      WALKING: 'walking',
+      CYCLING: 'cycling',
+      DRIVING: 'driving',
+      PUBLIC_TRANSPORT: 'transit',
+      E_SCOOTER: 'e_scooter'
+    };
+
+    const mappedTravelTypes = payload.travelTypes.map(
+      (type) => travelTypeMap[type] || type.toLowerCase()
+    );
+
     // Build optimization request payload
     const optimizeRequest: OptimizeRouteRequest = {
       userId: undefined, // Add user ID if authenticated
@@ -232,7 +244,7 @@ export const VirtualizedAttractionFeed: React.FC<VirtualizedAttractionFeedProps>
         startLocation: undefined, // Will use user's current location if available
         startTime: new Date().toISOString(),
         timeBudgetMinutes: 480, // 8 hours default
-        travelTypes: payload.travelTypes,
+        travelTypes: mappedTravelTypes,
         budget: payload.budget
       },
       options: {
