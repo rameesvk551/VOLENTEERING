@@ -269,7 +269,8 @@ export interface OptimizeModalProps {
   selectedCount: number;
   onSubmit: (payload: {
     travelTypes: TravelType[];
-    budget?: number;
+    startLocation?: { lat: number; lng: number; address: string };
+    tripDurationHours?: number;
     includeRealtimeTransit: boolean;
     startTime?: string;
   }) => void;

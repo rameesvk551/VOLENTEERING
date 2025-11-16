@@ -5,16 +5,17 @@
  */
 
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Car, Bus, Bike, Footprints, Zap } from 'lucide-react';
+import { X, Car, Bus, Bike, Footprints, Zap, Calendar } from 'lucide-react';
+import { PlaceAutocomplete } from '../../../../shared/ui';
 import type { OptimizeModalProps } from '../types/trip-planner.types';
 import type { TravelType } from '../types/trip-planner.types';
 
 const TRAVEL_TYPE_OPTIONS = [
-  { value: 'DRIVING' as TravelType, label: 'Drive', icon: Car, color: 'bg-blue-100 text-blue-700' },
-  { value: 'PUBLIC_TRANSPORT' as TravelType, label: 'Public', icon: Bus, color: 'bg-green-100 text-green-700' },
-  { value: 'CYCLING' as TravelType, label: 'Bike', icon: Bike, color: 'bg-yellow-100 text-yellow-700' },
-  { value: 'WALKING' as TravelType, label: 'Walk', icon: Footprints, color: 'bg-purple-100 text-purple-700' },
-  { value: 'E_SCOOTER' as TravelType, label: 'Scooter', icon: Zap, color: 'bg-orange-100 text-orange-700' }
+  { value: 'DRIVING' as TravelType, label: 'Drive', icon: Car, color: 'bg-blue-600 text-white' },
+  { value: 'PUBLIC_TRANSPORT' as TravelType, label: 'Public', icon: Bus, color: 'bg-green-600 text-white' },
+  { value: 'CYCLING' as TravelType, label: 'Bike', icon: Bike, color: 'bg-yellow-600 text-white' },
+  { value: 'WALKING' as TravelType, label: 'Walk', icon: Footprints, color: 'bg-purple-600 text-white' },
+  { value: 'E_SCOOTER' as TravelType, label: 'Scooter', icon: Zap, color: 'bg-orange-600 text-white' }
 ];
 
 export const OptimizeModal: React.FC<OptimizeModalProps> = ({
@@ -25,11 +26,15 @@ export const OptimizeModal: React.FC<OptimizeModalProps> = ({
   isLoading = false
 }) => {
   const [selectedTypes, setSelectedTypes] = useState<TravelType[]>(['PUBLIC_TRANSPORT', 'WALKING']);
-  const [budget, setBudget] = useState<number>(50);
+  const [startLocation, setStartLocation] = useState<{ lat: number; lng: number; address: string } | null>(null);
+  const [startDate, setStartDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [endDate, setEndDate] = useState<string>(new Date(Date.now() + 86400000).toISOString().split('T')[0]);
   const [includeRealtime, setIncludeRealtime] = useState(true);
   const [startY, setStartY] = useState(0);
   const [currentY, setCurrentY] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
+  const [locationError, setLocationError] = useState('');
+  const [dateError, setDateError] = useState('');
   
   const modalRef = useRef<HTMLDivElement>(null);
 
@@ -67,11 +72,29 @@ export const OptimizeModal: React.FC<OptimizeModalProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (selectedTypes.length === 0) return;
+    
+    // Validate start location
+    if (!startLocation) {
+      setLocationError('Please select a starting location');
+      return;
+    }
+
+    // Validate dates
+    if (new Date(endDate) < new Date(startDate)) {
+      setDateError('End date must be after start date');
+      return;
+    }
+
+    // Calculate trip duration in hours
+    const durationMs = new Date(endDate).getTime() - new Date(startDate).getTime();
+    const durationHours = Math.round(durationMs / (1000 * 60 * 60));
 
     onSubmit({
       travelTypes: selectedTypes,
-      budget,
-      includeRealtimeTransit: includeRealtime
+      startLocation: startLocation,
+      tripDurationHours: durationHours,
+      includeRealtimeTransit: includeRealtime,
+      startTime: startDate
     });
   };
 
@@ -111,7 +134,7 @@ export const OptimizeModal: React.FC<OptimizeModalProps> = ({
       {/* Modal */}
       <div
         ref={modalRef}
-        className="fixed inset-x-0 bottom-0 z-50 transition-transform duration-300 ease-out"
+        className="fixed inset-x-0 bottom-0 md:inset-0 md:flex md:items-center md:justify-center z-50 transition-transform duration-300 ease-out"
         style={{
           transform: isDragging ? `translateY(${currentY}px)` : 'translateY(0)'
         }}
@@ -122,14 +145,14 @@ export const OptimizeModal: React.FC<OptimizeModalProps> = ({
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
       >
-        <div className="bg-white rounded-t-3xl shadow-2xl max-h-[85vh] overflow-y-auto">
-          {/* Swipe handle */}
-          <div className="sticky top-0 bg-white pt-2 pb-1 flex justify-center">
+        <div className="bg-white rounded-t-3xl md:rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto md:w-full md:max-w-lg md:mx-4">
+          {/* Swipe handle - only visible on mobile */}
+          <div className="sticky top-0 bg-white pt-2 pb-1 flex justify-center md:hidden">
             <div className="w-12 h-1 bg-slate-300 rounded-full" aria-hidden="true" />
           </div>
 
           {/* Header */}
-          <div className="sticky top-8 bg-white px-4 pb-3 flex items-center justify-between border-b border-slate-200">
+          <div className="sticky top-8 md:top-0 bg-white px-4 md:px-6 pb-2 md:pb-3 md:pt-4 flex items-center justify-between border-b border-slate-200">
             <h2 id="modal-title" className="text-xl font-bold text-slate-900">
               Plan trip for {selectedCount} stop{selectedCount > 1 ? 's' : ''}
             </h2>
@@ -144,32 +167,32 @@ export const OptimizeModal: React.FC<OptimizeModalProps> = ({
           </div>
 
           {/* Form content */}
-          <form onSubmit={handleSubmit} className="p-4 space-y-6">
+          <form onSubmit={handleSubmit} className="p-3 md:p-6 space-y-3 sm:space-y-5">
             {/* Travel type selection */}
             <fieldset>
-              <legend className="text-base font-semibold text-slate-900 mb-3">
+              <legend className="text-sm sm:text-base font-semibold text-slate-900 mb-1.5 sm:mb-2">
                 Travel preferences
               </legend>
-              <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
+              <div className="grid grid-cols-3 sm:grid-cols-5 gap-1.5 sm:gap-3">
                 {TRAVEL_TYPE_OPTIONS.map(({ value, label, icon: Icon, color }) => (
                   <button
                     key={value}
                     type="button"
                     onClick={() => toggleTravelType(value)}
                     className={`
-                      flex flex-col items-center justify-center gap-2 p-3 rounded-lg
-                      min-h-[48px] transition-all duration-200
-                      focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600
+                      flex flex-col items-center justify-center gap-1 sm:gap-1.5 p-2 sm:p-4 rounded-lg sm:rounded-xl
+                      border-2 transition-all duration-200
+                      focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2
                       ${selectedTypes.includes(value)
-                        ? `${color} ring-2 ring-offset-1 ring-current font-semibold scale-105`
-                        : 'bg-slate-50 text-slate-600 hover:bg-slate-100'
+                        ? `${color} border-transparent shadow-md`
+                        : 'bg-white text-slate-700 border-slate-200 hover:border-slate-300 hover:shadow-sm'
                       }
                     `}
                     aria-pressed={selectedTypes.includes(value)}
                     aria-label={`${label} travel mode`}
                   >
-                    <Icon className="w-5 h-5" strokeWidth={2} />
-                    <span className="text-xs">{label}</span>
+                    <Icon className="w-5 h-5 sm:w-6 sm:h-6" strokeWidth={2} />
+                    <span className="text-xs sm:text-sm font-medium">{label}</span>
                   </button>
                 ))}
               </div>
@@ -180,42 +203,82 @@ export const OptimizeModal: React.FC<OptimizeModalProps> = ({
               )}
             </fieldset>
 
-            {/* Budget slider */}
+            {/* Starting Location */}
             <div>
-              <label htmlFor="budget-slider" className="block text-base font-semibold text-slate-900 mb-3">
-                Budget
+              <label className="block text-sm sm:text-base font-semibold text-slate-900 mb-1.5 sm:mb-2">
+                Starting location
               </label>
-              <div className="space-y-2">
-                <input
-                  id="budget-slider"
-                  type="range"
-                  min="0"
-                  max="200"
-                  step="10"
-                  value={budget}
-                  onChange={(e) => setBudget(Number(e.target.value))}
-                  className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
-                  aria-valuemin={0}
-                  aria-valuemax={200}
-                  aria-valuenow={budget}
-                  aria-label="Budget slider"
-                />
-                <div className="flex justify-between text-sm text-slate-600">
-                  <span>$0</span>
-                  <span className="font-semibold text-blue-600">${budget}</span>
-                  <span>$200+</span>
+              <PlaceAutocomplete
+                placeholder="Where will you start?"
+                onSelect={(place) => {
+                  setStartLocation({
+                    lat: parseFloat(place.lat),
+                    lng: parseFloat(place.lon),
+                    address: place.display_name
+                  });
+                  setLocationError('');
+                }}
+                error={locationError}
+              />
+            </div>
+
+            {/* Trip Duration - Date Range */}
+            <div>
+              <label className="block text-sm sm:text-base font-semibold text-slate-900 mb-1.5 sm:mb-2">
+                Trip dates
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label htmlFor="start-date" className="block text-xs text-slate-600 mb-1">
+                    Start date
+                  </label>
+                  <div className="relative">
+                    <Calendar className="absolute left-2.5 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                    <input
+                      id="start-date"
+                      type="date"
+                      value={startDate}
+                      onChange={(e) => {
+                        setStartDate(e.target.value);
+                        setDateError('');
+                      }}
+                      min={new Date().toISOString().split('T')[0]}
+                      className="w-full pl-8 pr-2 py-2 text-sm border-2 border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label htmlFor="end-date" className="block text-xs text-slate-600 mb-1">
+                    End date
+                  </label>
+                  <div className="relative">
+                    <Calendar className="absolute left-2.5 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                    <input
+                      id="end-date"
+                      type="date"
+                      value={endDate}
+                      onChange={(e) => {
+                        setEndDate(e.target.value);
+                        setDateError('');
+                      }}
+                      min={startDate}
+                      className="w-full pl-8 pr-2 py-2 text-sm border-2 border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent"
+                    />
+                  </div>
                 </div>
               </div>
+              {dateError && (
+                <p className="mt-1 text-xs text-red-600" role="alert">
+                  {dateError}
+                </p>
+              )}
             </div>
 
             {/* Live transit toggle */}
-            <div className="flex items-start justify-between gap-3">
+            <div className="flex items-center justify-between gap-3">
               <label htmlFor="realtime-toggle" className="flex-1 cursor-pointer">
-                <span className="block text-base font-semibold text-slate-900 mb-1">
+                <span className="block text-sm sm:text-base font-semibold text-slate-900">
                   Include live transit
-                </span>
-                <span className="text-sm text-slate-600">
-                  Get real-time arrival info and delays
                 </span>
               </label>
               <button
@@ -242,15 +305,15 @@ export const OptimizeModal: React.FC<OptimizeModalProps> = ({
             </div>
 
             {/* Submit button */}
-            <div className="pt-2 space-y-2">
+            <div className="space-y-1.5">
               <button
                 type="submit"
-                disabled={isLoading || selectedTypes.length === 0}
+                disabled={isLoading || selectedTypes.length === 0 || !startLocation}
                 className={`
-                  w-full py-4 rounded-xl font-semibold text-base
+                  w-full py-2.5 sm:py-3 rounded-xl font-semibold text-sm sm:text-base
                   transition-all duration-200
                   focus:outline-none focus-visible:ring-4 focus-visible:ring-blue-300
-                  ${isLoading || selectedTypes.length === 0
+                  ${isLoading || selectedTypes.length === 0 || !startLocation
                     ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
                     : 'bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800 shadow-lg hover:shadow-xl'
                   }
@@ -272,7 +335,7 @@ export const OptimizeModal: React.FC<OptimizeModalProps> = ({
               <button
                 type="button"
                 onClick={onClose}
-                className="w-full py-3 text-slate-600 hover:text-slate-900 font-medium transition-colors"
+                className="w-full py-2 sm:py-2.5 text-slate-600 hover:text-slate-900 font-medium transition-colors text-sm sm:text-base"
               >
                 Cancel
               </button>
