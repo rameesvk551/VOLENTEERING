@@ -5,6 +5,7 @@ import type { DiscoveryEntity } from '../../hooks/useDiscovery';
 import { ResultCard } from './ResultCard';
 import { SelectionFAB } from '../SelectionFAB';
 import { OptimizeModal } from '../OptimizeModal';
+import { TransportDrawer } from '../TransportDrawer';
 import { useOptimizeRouteMutation } from '../../hooks/useRouteOptimizer';
 import { useTripStore, getSelectionIdForDestination } from '../../store/tripStore';
 import type { TripDestination } from '../../store/tripStore';
@@ -76,6 +77,12 @@ export const VirtualizedAttractionFeed: React.FC<VirtualizedAttractionFeedProps>
   const [selectedAttractions, setSelectedAttractions] = useState<Set<string>>(() => getStoredIds());
   const [selectedDetails, setSelectedDetails] = useState<Record<string, DiscoveryEntity>>(() => getStoredDetails());
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isTransportDrawerOpen, setIsTransportDrawerOpen] = useState(false);
+  const [transportDrawerData, setTransportDrawerData] = useState<{
+    startLocation: { lat: number; lng: number; address: string };
+    selectedDate: string;
+    selectedTypes: TravelType[];
+  } | null>(null);
   const destinations = useTripStore((state) => state.destinations);
   const navigate = useNavigate();
   const setOptimizationSnapshot = useRouteOptimizationStore((state) => state.setSnapshot);
@@ -180,6 +187,38 @@ export const VirtualizedAttractionFeed: React.FC<VirtualizedAttractionFeedProps>
     console.log('Planning trip with selected attractions:', Array.from(selectedAttractions));
     setIsModalOpen(true);
   }, [selectedAttractions]);
+
+  // Handle opening transport drawer when public transport is selected
+  const handleOpenTransportDrawer = useCallback((data: {
+    startLocation: { lat: number; lng: number; address: string };
+    selectedDate: string;
+    selectedTypes: TravelType[];
+  }) => {
+    console.log('VirtualizedAttractionFeed: handleOpenTransportDrawer called with:', data);
+    setTransportDrawerData(data);
+    setIsModalOpen(false);
+    setIsTransportDrawerOpen(true);
+    console.log('Transport drawer should now be open');
+  }, []);
+
+  // Handle transport drawer submission
+  const handleTransportSubmit = useCallback(async (data: {
+    startLocation: { lat: number; lng: number; address: string };
+    destination: { lat: number; lng: number; address: string };
+    date: string;
+    transportMode: 'bus' | 'train' | 'flight';
+    useDummyData: boolean;
+  }) => {
+    console.log('Transport search:', data);
+    
+    if (data.useDummyData) {
+      alert(`Searching for ${data.transportMode} from ${data.startLocation.address} to ${data.destination.address} on ${data.date} (Using dummy data)`);
+    } else {
+      alert(`Searching for ${data.transportMode} routes...`);
+    }
+    
+    setIsTransportDrawerOpen(false);
+  }, []);
 
   const handleOptimizeSubmit = useCallback((payload: {
     travelTypes: TravelType[];
@@ -345,6 +384,17 @@ export const VirtualizedAttractionFeed: React.FC<VirtualizedAttractionFeedProps>
         selectedCount={selectedAttractions.size}
         onSubmit={handleOptimizeSubmit}
         isLoading={isOptimizing}
+        onOpenTransportDrawer={handleOpenTransportDrawer}
+      />
+
+      {/* Transport drawer (opens from top when public transport is selected) */}
+      <TransportDrawer
+        isOpen={isTransportDrawerOpen}
+        onClose={() => setIsTransportDrawerOpen(false)}
+        startingLocation={transportDrawerData?.startLocation || null}
+        selectedDate={transportDrawerData?.selectedDate || new Date().toISOString().split('T')[0]}
+        searchedPlace={''}
+        onSubmit={handleTransportSubmit}
       />
     </div>
   );

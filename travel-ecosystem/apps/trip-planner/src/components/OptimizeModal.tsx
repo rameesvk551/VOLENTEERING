@@ -5,7 +5,7 @@
  */
 
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Car, Bus, Bike, Footprints, Zap, Calendar } from 'lucide-react';
+import { X, Car, Bus, Bike, Footprints, Calendar } from 'lucide-react';
 import { PlaceAutocomplete } from '../../../../shared/ui';
 import type { OptimizeModalProps } from '../types/trip-planner.types';
 import type { TravelType } from '../types/trip-planner.types';
@@ -23,7 +23,8 @@ export const OptimizeModal: React.FC<OptimizeModalProps> = ({
   onClose,
   selectedCount,
   onSubmit,
-  isLoading = false
+  isLoading = false,
+  onOpenTransportDrawer
 }) => {
   const [selectedTypes, setSelectedTypes] = useState<TravelType[]>(['PUBLIC_TRANSPORT', 'WALKING']);
   const [startLocation, setStartLocation] = useState<{ lat: number; lng: number; address: string } | null>(null);
@@ -74,6 +75,26 @@ export const OptimizeModal: React.FC<OptimizeModalProps> = ({
     // Validate start location
     if (!startLocation) {
       setLocationError('Please select a starting location');
+      return;
+    }
+
+    // Check if PUBLIC_TRANSPORT is selected - open TransportDrawer
+    if (selectedTypes.includes('PUBLIC_TRANSPORT')) {
+      console.log('Opening transport drawer with data:', {
+        startLocation,
+        selectedDate: startDate,
+        selectedTypes
+      });
+      // Pass data to parent to open transport drawer
+      if (onOpenTransportDrawer) {
+        onOpenTransportDrawer({
+          startLocation,
+          selectedDate: startDate,
+          selectedTypes
+        });
+      } else {
+        console.error('onOpenTransportDrawer callback not provided!');
+      }
       return;
     }
 
@@ -286,6 +307,8 @@ export const OptimizeModal: React.FC<OptimizeModalProps> = ({
                     </svg>
                     Optimizing route...
                   </span>
+                ) : selectedTypes.includes('PUBLIC_TRANSPORT') ? (
+                  'Select Transportation'
                 ) : (
                   'Optimize Route'
                 )}

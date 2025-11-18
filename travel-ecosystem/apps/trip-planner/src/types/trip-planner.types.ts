@@ -275,6 +275,11 @@ export interface OptimizeModalProps {
     startTime?: string;
   }) => void;
   isLoading?: boolean;
+  onOpenTransportDrawer?: (data: {
+    startLocation: { lat: number; lng: number; address: string };
+    selectedDate: string;
+    selectedTypes: TravelType[];
+  }) => void;
 }
 
 export interface OptimizedRouteMapProps {

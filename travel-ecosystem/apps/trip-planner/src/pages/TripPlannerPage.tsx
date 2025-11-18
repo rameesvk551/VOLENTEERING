@@ -7,6 +7,7 @@ import React, { useState } from 'react';
 import { AttractionCard, AttractionCardSkeleton } from '../components/AttractionCard';
 import { SelectionFAB } from '../components/SelectionFAB';
 import { OptimizeModal } from '../components/OptimizeModal';
+import { TransportDrawer } from '../components/TransportDrawer';
 import { LegOptionsList } from '../components/LegOptionsList';
 import { SelectedPlanSummary } from '../components/SelectedPlanSummary';
 import { useAttractions, useOptimizeRoute, useBatchMultiModalRoutes, useGeneratePDF } from '../hooks/useTripPlannerAPI';
@@ -23,6 +24,12 @@ export const TripPlannerPage: React.FC<TripPlannerPageProps> = ({ city, country 
   // State
   const [selectedPlaceIds, setSelectedPlaceIds] = useState<Set<string>>(new Set());
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isTransportDrawerOpen, setIsTransportDrawerOpen] = useState(false);
+  const [transportDrawerData, setTransportDrawerData] = useState<{
+    startLocation: { lat: number; lng: number; address: string };
+    selectedDate: string;
+    selectedTypes: TravelType[];
+  } | null>(null);
   const [optimizedOrder, setOptimizedOrder] = useState<Array<{ placeId: string; seq: number }>>([]);
   const [legs, setLegs] = useState<Leg[]>([]);
   const [showOptimizedView, setShowOptimizedView] = useState(false);
@@ -93,6 +100,40 @@ export const TripPlannerPage: React.FC<TripPlannerPageProps> = ({ city, country 
       console.error('Optimization failed:', error);
       alert('Failed to optimize route. Please try again.');
     }
+  };
+
+  // Handle opening transport drawer when public transport not selected
+  const handleOpenTransportDrawer = (data: {
+    startLocation: { lat: number; lng: number; address: string };
+    selectedDate: string;
+    selectedTypes: TravelType[];
+  }) => {
+    console.log('handleOpenTransportDrawer called with:', data);
+    setTransportDrawerData(data);
+    setIsModalOpen(false);
+    setIsTransportDrawerOpen(true);
+    console.log('Transport drawer should now be open');
+  };
+
+  // Handle transport drawer submission
+  const handleTransportSubmit = async (data: {
+    startLocation: { lat: number; lng: number; address: string };
+    destination: { lat: number; lng: number; address: string };
+    date: string;
+    transportMode: 'bus' | 'train' | 'flight';
+    useDummyData: boolean;
+  }) => {
+    console.log('Transport search:', data);
+    
+    if (data.useDummyData) {
+      // Use dummy data for testing
+      alert(`Searching for ${data.transportMode} from ${data.startLocation.address} to ${data.destination.address} on ${data.date} (Using dummy data)`);
+    } else {
+      // Make actual API call here
+      alert(`Searching for ${data.transportMode} routes...`);
+    }
+    
+    setIsTransportDrawerOpen(false);
   };
 
   // Fetch transport options for all legs
@@ -251,11 +292,13 @@ export const TripPlannerPage: React.FC<TripPlannerPageProps> = ({ city, country 
           )}
         </main>
 
-        {/* FAB */}
-        <SelectionFAB
-          count={selectedPlaceIds.size}
-          onClick={() => setIsModalOpen(true)}
-        />
+        {/* FAB - Hide when TransportDrawer is open */}
+        {!isTransportDrawerOpen && (
+          <SelectionFAB
+            count={selectedPlaceIds.size}
+            onClick={() => setIsModalOpen(true)}
+          />
+        )}
 
         {/* Optimize modal */}
         <OptimizeModal
@@ -264,6 +307,17 @@ export const TripPlannerPage: React.FC<TripPlannerPageProps> = ({ city, country 
           selectedCount={selectedPlaceIds.size}
           onSubmit={handleOptimize}
           isLoading={isOptimizing}
+          onOpenTransportDrawer={handleOpenTransportDrawer}
+        />
+
+        {/* Transport drawer (opens from top when public transport not selected) */}
+        <TransportDrawer
+          isOpen={isTransportDrawerOpen}
+          onClose={() => setIsTransportDrawerOpen(false)}
+          startingLocation={transportDrawerData?.startLocation || null}
+          selectedDate={transportDrawerData?.selectedDate || new Date().toISOString().split('T')[0]}
+          searchedPlace={city}
+          onSubmit={handleTransportSubmit}
         />
       </div>
     );
