@@ -41,6 +41,7 @@
 - ✅ `LegOptionsList.tsx` - Horizontal scroll list
 - ✅ `SelectedPlanSummary.tsx` - Sticky toolbar with CTA
 - ✅ `TripPlannerPage.tsx` - Main orchestration page
+- ✅ `RouteOptimizationInteractiveGuide.tsx` - Interactive storytelling view of the full Delhi optimization flow
 
 #### Type Definitions
 - ✅ `types/trip-planner.types.ts` - Complete TypeScript interfaces

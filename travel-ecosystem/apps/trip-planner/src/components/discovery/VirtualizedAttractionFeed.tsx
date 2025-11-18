@@ -304,20 +304,19 @@ export const VirtualizedAttractionFeed: React.FC<VirtualizedAttractionFeedProps>
 
   return (
     <div className="relative">
-      <div className="sticky top-0 z-30 border-b border-gray-100 bg-white px-3 py-3 dark:border-gray-800 dark:bg-gray-900">
+      <div className="sticky top-0 z-30 border-b border-gray-100 bg-white px-3 py-2 dark:border-gray-800 dark:bg-gray-900">
         <div className="flex items-center justify-between">
           <div>
             <p className="text-sm font-semibold text-gray-700 dark:text-gray-200">{items.length} attraction{items.length !== 1 ? 's' : ''}</p>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Showing the best matches for your search.</p>
           </div>
           {selectedAttractions.size > 0 && (
-            <div className="bg-blue-500 text-white px-3 py-1 rounded-full text-sm font-semibold">
+            <div className="bg-blue-500 text-white px-2.5 py-0.5 rounded-full text-xs font-semibold">
               {selectedAttractions.size} selected
             </div>
           )}
         </div>
       </div>
-      <div className="grid grid-cols-1 gap-2 p-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-3 p-3 sm:grid-cols-2 sm:gap-4 sm:p-4 lg:grid-cols-3">
         {items.map((entity, index) => (
           <ResultCard
             key={entity.id}
@@ -330,12 +329,14 @@ export const VirtualizedAttractionFeed: React.FC<VirtualizedAttractionFeedProps>
         ))}
       </div>
 
-      {/* Floating Action Button - triggers modal */}
-      <SelectionFAB
-        count={selectedAttractions.size}
-        onClick={handlePlanTrip}
-        disabled={isOptimizing}
-      />
+      {/* Floating Action Button - triggers modal (hidden when modal is open) */}
+      {!isModalOpen && (
+        <SelectionFAB
+          count={selectedAttractions.size}
+          onClick={handlePlanTrip}
+          disabled={isOptimizing}
+        />
+      )}
 
       {/* Optimization Modal - collects travel preferences */}
       <OptimizeModal

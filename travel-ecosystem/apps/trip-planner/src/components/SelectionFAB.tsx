@@ -1,6 +1,6 @@
 /**
  * SelectionFAB - Floating Action Button
- * Appears when 1+ attractions selected, triggers optimization modal
+ * Appears when 2+ attractions selected, triggers optimization modal
  * 56px circular button with badge, smooth animations
  */
 
@@ -14,8 +14,8 @@ export const SelectionFAB: React.FC<SelectionFABProps> = ({
   onClick,
   disabled = false
 }) => {
-  const hasSelection = count > 0;
-  const isDisabled = disabled || !hasSelection;
+  const hasMinimumSelection = count >= 2;
+  const isDisabled = disabled || !hasMinimumSelection;
   const [isMounted, setIsMounted] = useState(false);
   const portalRef = useRef<HTMLDivElement | null>(null);
 
@@ -36,6 +36,11 @@ export const SelectionFAB: React.FC<SelectionFABProps> = ({
     };
   }, []);
 
+  // Don't render FAB if less than 2 attractions selected
+  if (count < 2) {
+    return null;
+  }
+
   const content = (
     <div className="fixed bottom-6 right-6 z-[9999] flex flex-col items-end gap-2">
       <button
@@ -52,11 +57,11 @@ export const SelectionFAB: React.FC<SelectionFABProps> = ({
           ${isDisabled ? 'opacity-60 cursor-not-allowed translate-y-0 hover:translate-y-0' : ''}
         `}
         aria-label={`Plan trip for ${count} selected attraction${count === 1 ? '' : 's'}`}
-        title={isDisabled ? 'Select attractions to enable route planning' : 'Optimize route with selected attractions'}
+        title={isDisabled ? 'Select at least 2 attractions to enable route planning' : 'Optimize route with selected attractions'}
       >
         <span className="relative flex h-12 w-12 items-center justify-center rounded-full bg-white/20">
           <Heart className="h-5 w-5" strokeWidth={2.5} />
-          {hasSelection && (
+          {count >= 2 && (
             <span
               className="
                 absolute -top-1 -right-1
@@ -75,12 +80,6 @@ export const SelectionFAB: React.FC<SelectionFABProps> = ({
           <span className="text-sm font-semibold leading-tight">Plan route</span>
         </span>
       </button>
-
-      {!hasSelection && (
-        <span className="rounded-full bg-white/90 px-4 py-1 text-xs font-medium text-slate-600 shadow-lg border border-slate-100 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700">
-          Select attractions to activate
-        </span>
-      )}
     </div>
   );
 
