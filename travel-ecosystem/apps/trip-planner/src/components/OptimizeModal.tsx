@@ -15,7 +15,7 @@ const TRAVEL_TYPE_OPTIONS = [
   { value: 'PUBLIC_TRANSPORT' as TravelType, label: 'Public', icon: Bus, color: 'bg-green-600 text-white' },
   { value: 'CYCLING' as TravelType, label: 'Bike', icon: Bike, color: 'bg-yellow-600 text-white' },
   { value: 'WALKING' as TravelType, label: 'Walk', icon: Footprints, color: 'bg-purple-600 text-white' },
-  { value: 'E_SCOOTER' as TravelType, label: 'Scooter', icon: Zap, color: 'bg-orange-600 text-white' }
+
 ];
 
 export const OptimizeModal: React.FC<OptimizeModalProps> = ({
@@ -28,13 +28,11 @@ export const OptimizeModal: React.FC<OptimizeModalProps> = ({
   const [selectedTypes, setSelectedTypes] = useState<TravelType[]>(['PUBLIC_TRANSPORT', 'WALKING']);
   const [startLocation, setStartLocation] = useState<{ lat: number; lng: number; address: string } | null>(null);
   const [startDate, setStartDate] = useState<string>(new Date().toISOString().split('T')[0]);
-  const [endDate, setEndDate] = useState<string>(new Date(Date.now() + 86400000).toISOString().split('T')[0]);
   const [includeRealtime, setIncludeRealtime] = useState(true);
   const [startY, setStartY] = useState(0);
   const [currentY, setCurrentY] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [locationError, setLocationError] = useState('');
-  const [dateError, setDateError] = useState('');
   
   const modalRef = useRef<HTMLDivElement>(null);
 
@@ -79,15 +77,8 @@ export const OptimizeModal: React.FC<OptimizeModalProps> = ({
       return;
     }
 
-    // Validate dates
-    if (new Date(endDate) < new Date(startDate)) {
-      setDateError('End date must be after start date');
-      return;
-    }
-
-    // Calculate trip duration in hours
-    const durationMs = new Date(endDate).getTime() - new Date(startDate).getTime();
-    const durationHours = Math.round(durationMs / (1000 * 60 * 60));
+    // Default trip duration: 24 hours (1 day)
+    const durationHours = 24;
 
     onSubmit({
       travelTypes: selectedTypes,
@@ -173,20 +164,22 @@ export const OptimizeModal: React.FC<OptimizeModalProps> = ({
               <legend className="text-sm sm:text-base font-semibold text-slate-900 mb-1.5 sm:mb-2">
                 Travel preferences
               </legend>
-              <div className="grid grid-cols-3 sm:grid-cols-5 gap-1.5 sm:gap-3">
-                {TRAVEL_TYPE_OPTIONS.map(({ value, label, icon: Icon, color }) => (
+              <div className="flex flex-row sm:grid sm:grid-cols-4 gap-0 sm:gap-3 w-full rounded-xl bg-slate-100">
+                {TRAVEL_TYPE_OPTIONS.map(({ value, label, icon: Icon, color }, idx) => (
                   <button
                     key={value}
                     type="button"
                     onClick={() => toggleTravelType(value)}
                     className={`
-                      flex flex-col items-center justify-center gap-1 sm:gap-1.5 p-2 sm:p-4 rounded-lg sm:rounded-xl
-                      border-2 transition-all duration-200
+                      flex flex-col items-center justify-center gap-0 sm:gap-1.5 p-0 sm:p-4 border-2 transition-all duration-200
                       focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2
                       ${selectedTypes.includes(value)
                         ? `${color} border-transparent shadow-md`
                         : 'bg-white text-slate-700 border-slate-200 hover:border-slate-300 hover:shadow-sm'
                       }
+                      flex-1 min-w-0
+                      ${idx === 0 ? 'rounded-l-xl sm:rounded-l-xl' : ''}
+                      ${idx === TRAVEL_TYPE_OPTIONS.length - 1 ? 'rounded-r-xl sm:rounded-r-xl' : ''}
                     `}
                     aria-pressed={selectedTypes.includes(value)}
                     aria-label={`${label} travel mode`}
@@ -222,56 +215,22 @@ export const OptimizeModal: React.FC<OptimizeModalProps> = ({
               />
             </div>
 
-            {/* Trip Duration - Date Range */}
+            {/* Start Date */}
             <div>
-              <label className="block text-sm sm:text-base font-semibold text-slate-900 mb-1.5 sm:mb-2">
-                Trip dates
+              <label htmlFor="start-date" className="block text-sm sm:text-base font-semibold text-slate-900 mb-1.5 sm:mb-2">
+                Start date
               </label>
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label htmlFor="start-date" className="block text-xs text-slate-600 mb-1">
-                    Start date
-                  </label>
-                  <div className="relative">
-                    <Calendar className="absolute left-2.5 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-                    <input
-                      id="start-date"
-                      type="date"
-                      value={startDate}
-                      onChange={(e) => {
-                        setStartDate(e.target.value);
-                        setDateError('');
-                      }}
-                      min={new Date().toISOString().split('T')[0]}
-                      className="w-full pl-8 pr-2 py-2 text-sm border-2 border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label htmlFor="end-date" className="block text-xs text-slate-600 mb-1">
-                    End date
-                  </label>
-                  <div className="relative">
-                    <Calendar className="absolute left-2.5 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-                    <input
-                      id="end-date"
-                      type="date"
-                      value={endDate}
-                      onChange={(e) => {
-                        setEndDate(e.target.value);
-                        setDateError('');
-                      }}
-                      min={startDate}
-                      className="w-full pl-8 pr-2 py-2 text-sm border-2 border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent"
-                    />
-                  </div>
-                </div>
+              <div className="relative">
+                <Calendar className="absolute left-2.5 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                <input
+                  id="start-date"
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  min={new Date().toISOString().split('T')[0]}
+                  className="w-full pl-8 pr-2 py-2 text-sm border-2 border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent"
+                />
               </div>
-              {dateError && (
-                <p className="mt-1 text-xs text-red-600" role="alert">
-                  {dateError}
-                </p>
-              )}
             </div>
 
             {/* Live transit toggle */}
