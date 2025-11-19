@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-  "dev": "vite --port 1004",
+    "dev": "vite --port 1004",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
@@ -30,7 +30,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.36.0",
-  "@module-federation/vite": "^1.9.0",
+    "@module-federation/vite": "^1.9.0",
     "@tailwindcss/forms": "^0.5.0",
     "@tailwindcss/postcss": "^4.1.14",
     "@tailwindcss/typography": "^0.5.0",
