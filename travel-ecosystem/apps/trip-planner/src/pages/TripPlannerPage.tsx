@@ -8,6 +8,7 @@ import { AttractionCard, AttractionCardSkeleton } from '../components/Attraction
 import { SelectionFAB } from '../components/SelectionFAB';
 import { OptimizeModal } from '../components/OptimizeModal';
 import { TransportDrawer } from '../components/TransportDrawer';
+import { HotelDrawer } from '../components/HotelDrawer';
 import { LegOptionsList } from '../components/LegOptionsList';
 import { SelectedPlanSummary } from '../components/SelectedPlanSummary';
 import { useAttractions, useOptimizeRoute, useBatchMultiModalRoutes, useGeneratePDF } from '../hooks/useTripPlannerAPI';
@@ -25,10 +26,17 @@ export const TripPlannerPage: React.FC<TripPlannerPageProps> = ({ city, country 
   const [selectedPlaceIds, setSelectedPlaceIds] = useState<Set<string>>(new Set());
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isTransportDrawerOpen, setIsTransportDrawerOpen] = useState(false);
+  const [isHotelDrawerOpen, setIsHotelDrawerOpen] = useState(false);
   const [transportDrawerData, setTransportDrawerData] = useState<{
     startLocation: { lat: number; lng: number; address: string };
     selectedDate: string;
     selectedTypes: TravelType[];
+  } | null>(null);
+  const [hotelDrawerData, setHotelDrawerData] = useState<{
+    destination: string;
+    checkInDate: string;
+    transportMode: 'bus' | 'train' | 'flight';
+    transportName: string;
   } | null>(null);
   const [optimizedOrder, setOptimizedOrder] = useState<Array<{ placeId: string; seq: number }>>([]);
   const [legs, setLegs] = useState<Leg[]>([]);
@@ -113,6 +121,19 @@ export const TripPlannerPage: React.FC<TripPlannerPageProps> = ({ city, country 
     setIsModalOpen(false);
     setIsTransportDrawerOpen(true);
     console.log('Transport drawer should now be open');
+  };
+
+  // Handle opening hotel drawer when transport option is selected
+  const handleOpenHotelDrawer = (data: {
+    destination: string;
+    checkInDate: string;
+    transportMode: 'bus' | 'train' | 'flight';
+    transportName: string;
+  }) => {
+    console.log('handleOpenHotelDrawer called with:', data);
+    setHotelDrawerData(data);
+    setIsTransportDrawerOpen(false); // Close transport drawer
+    setIsHotelDrawerOpen(true); // Open hotel drawer
   };
 
   // Handle transport drawer submission
@@ -292,8 +313,8 @@ export const TripPlannerPage: React.FC<TripPlannerPageProps> = ({ city, country 
           )}
         </main>
 
-        {/* FAB - Hide when TransportDrawer is open */}
-        {!isTransportDrawerOpen && (
+        {/* FAB - Hide when TransportDrawer or HotelDrawer is open */}
+        {!isTransportDrawerOpen && !isHotelDrawerOpen && (
           <SelectionFAB
             count={selectedPlaceIds.size}
             onClick={() => setIsModalOpen(true)}
@@ -318,6 +339,20 @@ export const TripPlannerPage: React.FC<TripPlannerPageProps> = ({ city, country 
           selectedDate={transportDrawerData?.selectedDate || new Date().toISOString().split('T')[0]}
           searchedPlace={city}
           onSubmit={handleTransportSubmit}
+          onOpenHotelDrawer={handleOpenHotelDrawer}
+        />
+
+        {/* Hotel drawer (opens after transport selection) */}
+        <HotelDrawer
+          isOpen={isHotelDrawerOpen}
+          onClose={() => setIsHotelDrawerOpen(false)}
+          destination={hotelDrawerData?.destination || city}
+          checkInDate={hotelDrawerData?.checkInDate || new Date().toISOString().split('T')[0]}
+          transportMode={hotelDrawerData?.transportMode || 'bus'}
+          onSubmit={(hotelData) => {
+            console.log('Hotel selected:', hotelData);
+            setIsHotelDrawerOpen(false);
+          }}
         />
       </div>
     );

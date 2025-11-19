@@ -90,7 +90,12 @@ export const OptimizeModal: React.FC<OptimizeModalProps> = ({
         onOpenTransportDrawer({
           startLocation,
           selectedDate: startDate,
-          selectedTypes
+          selectedTypes,
+          payload: {
+            travelTypes: selectedTypes,
+            budget: undefined,
+            includeRealtimeTransit: includeRealtime
+          }
         });
       } else {
         console.error('onOpenTransportDrawer callback not provided!');

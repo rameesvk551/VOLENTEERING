@@ -279,6 +279,11 @@ export interface OptimizeModalProps {
     startLocation: { lat: number; lng: number; address: string };
     selectedDate: string;
     selectedTypes: TravelType[];
+    payload?: {
+      travelTypes: TravelType[];
+      budget?: number;
+      includeRealtimeTransit: boolean;
+    };
   }) => void;
 }
 
@@ -317,3 +322,16 @@ export interface PdfPreviewModalProps {
   thumbnail?: string;
   pages: number;
 }
+
+export interface HotelData {
+  id: number;
+  name: string;
+  price: string;
+  rating: number;
+  amenities: string[];
+  distance: string;
+  image: string;
+  features?: string[];
+}
+
+export type HotelCategory = 'budget' | 'midrange' | 'luxury';

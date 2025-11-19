@@ -5,7 +5,7 @@
  */
 
 import React, { useState, useEffect, useRef } from 'react';
-import { X, MapPin, Calendar, Bus, Train, Plane, Clock } from 'lucide-react';
+import { X, MapPin, Calendar, Bus, Train, Plane, Clock, ArrowRight } from 'lucide-react';
 
 export interface TransportDrawerProps {
   isOpen: boolean;
@@ -20,6 +20,13 @@ export interface TransportDrawerProps {
     transportMode: 'bus' | 'train' | 'flight';
     useDummyData: boolean;
   }) => void;
+  onOpenHotelDrawer?: (data: {
+    destination: string;
+    checkInDate: string;
+    transportMode: 'bus' | 'train' | 'flight';
+    transportName: string;
+  }) => void;
+  onSkip?: () => void; // Skip transport selection and go to next step
 }
 
 const TRANSPORT_OPTIONS = [
@@ -65,6 +72,8 @@ export const TransportDrawer: React.FC<TransportDrawerProps> = ({
   startingLocation,
   selectedDate,
   searchedPlace,
+  onOpenHotelDrawer,
+  onSkip,
   // onSubmit - not used for now, showing dummy data
 }) => {
   const [selectedTransport, setSelectedTransport] = useState<'bus' | 'train' | 'flight'>('bus');
@@ -276,8 +285,27 @@ export const TransportDrawer: React.FC<TransportDrawerProps> = ({
                     key={option.id}
                     type="button"
                     onClick={() => {
-                      alert(`Selected: ${option.name} - ${option.price}`);
-                      onClose();
+                      console.log('Transport option clicked:', option.name);
+                      console.log('onOpenHotelDrawer exists?', !!onOpenHotelDrawer);
+                      
+                      if (onOpenHotelDrawer) {
+                        console.log('Opening HotelDrawer with data:', {
+                          destination: searchedPlace,
+                          checkInDate: selectedDate,
+                          transportMode: selectedTransport,
+                          transportName: option.name,
+                        });
+                        onOpenHotelDrawer({
+                          destination: searchedPlace,
+                          checkInDate: selectedDate,
+                          transportMode: selectedTransport,
+                          transportName: option.name,
+                        });
+                      } else {
+                        console.log('onOpenHotelDrawer not provided, showing alert');
+                        alert(`Selected: ${option.name} - ${option.price}`);
+                        onClose();
+                      }
                     }}
                     className="w-full p-4 bg-white border-2 border-slate-200 rounded-xl hover:border-blue-500 hover:shadow-md transition-all duration-200 text-left"
                   >
@@ -299,6 +327,18 @@ export const TransportDrawer: React.FC<TransportDrawerProps> = ({
                   </button>
                 ))}
               </div>
+            )}
+
+            {/* Skip & Continue button - Only show if onSkip is provided */}
+            {onSkip && (
+              <button
+                type="button"
+                onClick={onSkip}
+                className="w-full py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-200 flex items-center justify-center gap-2 shadow-md hover:shadow-lg"
+              >
+                <span>Skip & Continue</span>
+                <ArrowRight className="w-5 h-5" />
+              </button>
             )}
 
             {/* Cancel button */}

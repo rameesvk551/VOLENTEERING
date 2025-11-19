@@ -6,6 +6,7 @@ import { ResultCard } from './ResultCard';
 import { SelectionFAB } from '../SelectionFAB';
 import { OptimizeModal } from '../OptimizeModal';
 import { TransportDrawer } from '../TransportDrawer';
+import { HotelDrawer } from '../HotelDrawer';
 import { useOptimizeRouteMutation } from '../../hooks/useRouteOptimizer';
 import { useTripStore, getSelectionIdForDestination } from '../../store/tripStore';
 import type { TripDestination } from '../../store/tripStore';
@@ -78,10 +79,22 @@ export const VirtualizedAttractionFeed: React.FC<VirtualizedAttractionFeedProps>
   const [selectedDetails, setSelectedDetails] = useState<Record<string, DiscoveryEntity>>(() => getStoredDetails());
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isTransportDrawerOpen, setIsTransportDrawerOpen] = useState(false);
+  const [isHotelDrawerOpen, setIsHotelDrawerOpen] = useState(false);
   const [transportDrawerData, setTransportDrawerData] = useState<{
     startLocation: { lat: number; lng: number; address: string };
     selectedDate: string;
     selectedTypes: TravelType[];
+  } | null>(null);
+  const [hotelDrawerData, setHotelDrawerData] = useState<{
+    destination: string;
+    checkInDate: string;
+    transportMode: 'bus' | 'train' | 'flight';
+    transportName: string;
+  } | null>(null);
+  const [optimizePayload, setOptimizePayload] = useState<{
+    travelTypes: TravelType[];
+    budget?: number;
+    includeRealtimeTransit: boolean;
   } | null>(null);
   const destinations = useTripStore((state) => state.destinations);
   const navigate = useNavigate();
@@ -193,9 +206,13 @@ export const VirtualizedAttractionFeed: React.FC<VirtualizedAttractionFeedProps>
     startLocation: { lat: number; lng: number; address: string };
     selectedDate: string;
     selectedTypes: TravelType[];
+    payload?: { travelTypes: TravelType[]; budget?: number; includeRealtimeTransit: boolean };
   }) => {
     console.log('VirtualizedAttractionFeed: handleOpenTransportDrawer called with:', data);
     setTransportDrawerData(data);
+    if (data.payload) {
+      setOptimizePayload(data.payload);
+    }
     setIsModalOpen(false);
     setIsTransportDrawerOpen(true);
     console.log('Transport drawer should now be open');
@@ -218,6 +235,19 @@ export const VirtualizedAttractionFeed: React.FC<VirtualizedAttractionFeedProps>
     }
     
     setIsTransportDrawerOpen(false);
+  }, []);
+
+  // Handle opening hotel drawer when transport option is selected
+  const handleOpenHotelDrawer = useCallback((data: {
+    destination: string;
+    checkInDate: string;
+    transportMode: 'bus' | 'train' | 'flight';
+    transportName: string;
+  }) => {
+    console.log('VirtualizedAttractionFeed: handleOpenHotelDrawer called with:', data);
+    setHotelDrawerData(data);
+    setIsTransportDrawerOpen(false); // Close transport drawer
+    setIsHotelDrawerOpen(true); // Open hotel drawer
   }, []);
 
   const handleOptimizeSubmit = useCallback((payload: {
@@ -327,6 +357,24 @@ export const VirtualizedAttractionFeed: React.FC<VirtualizedAttractionFeedProps>
     });
   }, [selectedAttractions, items, optimizeRoute, selectedDetails, setOptimizationSnapshot, navigate]);
 
+  // Handle skipping transport selection - go directly to optimization
+  const handleSkipTransport = useCallback(() => {
+    console.log('Skipping transport selection, proceeding to optimization...');
+    setIsTransportDrawerOpen(false);
+    if (optimizePayload) {
+      handleOptimizeSubmit(optimizePayload);
+    }
+  }, [optimizePayload, handleOptimizeSubmit]);
+
+  // Handle skipping hotel selection - go directly to optimization
+  const handleSkipHotel = useCallback(() => {
+    console.log('Skipping hotel selection, proceeding to optimization...');
+    setIsHotelDrawerOpen(false);
+    if (optimizePayload) {
+      handleOptimizeSubmit(optimizePayload);
+    }
+  }, [optimizePayload, handleOptimizeSubmit]);
+
   if (!items || items.length === 0) {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-6 rounded-3xl border border-dashed border-gray-200 bg-white/60 p-12 text-center dark:border-gray-700 dark:bg-gray-900/60">
@@ -368,8 +416,8 @@ export const VirtualizedAttractionFeed: React.FC<VirtualizedAttractionFeedProps>
         ))}
       </div>
 
-      {/* Floating Action Button - triggers modal (hidden when modal is open) */}
-      {!isModalOpen && (
+      {/* Floating Action Button - triggers modal (hidden when any drawer/modal is open) */}
+      {!isModalOpen && !isTransportDrawerOpen && !isHotelDrawerOpen && (
         <SelectionFAB
           count={selectedAttractions.size}
           onClick={handlePlanTrip}
@@ -395,6 +443,22 @@ export const VirtualizedAttractionFeed: React.FC<VirtualizedAttractionFeedProps>
         selectedDate={transportDrawerData?.selectedDate || new Date().toISOString().split('T')[0]}
         searchedPlace={''}
         onSubmit={handleTransportSubmit}
+        onOpenHotelDrawer={handleOpenHotelDrawer}
+        onSkip={handleSkipTransport}
+      />
+
+      {/* Hotel drawer (opens after transport selection) */}
+      <HotelDrawer
+        isOpen={isHotelDrawerOpen}
+        onClose={() => setIsHotelDrawerOpen(false)}
+        destination={hotelDrawerData?.destination || ''}
+        checkInDate={hotelDrawerData?.checkInDate || new Date().toISOString().split('T')[0]}
+        transportMode={hotelDrawerData?.transportMode || 'bus'}
+        onSubmit={(hotelData) => {
+          console.log('Hotel selected:', hotelData);
+          setIsHotelDrawerOpen(false);
+        }}
+        onSkip={handleSkipHotel}
       />
     </div>
   );
