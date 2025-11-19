@@ -451,52 +451,65 @@ export const HotelDrawer: React.FC<HotelDrawerProps> = ({
                       key={hotel.id}
                       type="button"
                       onClick={() => handleHotelSelect(hotel)}
-                      className="w-full p-4 bg-white border-2 border-slate-200 rounded-xl hover:border-blue-500 hover:shadow-md transition-all duration-200 text-left"
+                      className="w-full p-4 bg-white border-2 border-slate-200 rounded-xl hover:border-blue-500 hover:shadow-md transition-all duration-200 text-left flex items-start gap-4"
                     >
-                      <div className="flex items-start justify-between mb-2">
-                        <div className="flex-1">
-                          <h4 className="font-semibold text-slate-900 mb-1">{hotel.name}</h4>
-                          <div className="flex items-center gap-1 text-amber-500 mb-1">
-                            {Array.from({ length: Math.floor(hotel.rating) }).map((_, i) => (
-                              <Star key={i} className="w-3.5 h-3.5 fill-current" />
-                            ))}
-                            {hotel.rating % 1 !== 0 && <Star className="w-3.5 h-3.5 fill-current opacity-50" />}
-                            <span className="text-xs text-slate-600 ml-1">({hotel.rating})</span>
+                      {/* Thumbnail */}
+                      <div className="w-20 h-14 bg-gray-100 rounded-md overflow-hidden flex-shrink-0">
+                        {/* if images exist in public/images use them, otherwise show placeholder */}
+                        <img
+                          src={`/images/${hotel.image}`}
+                          alt={hotel.name}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            // fallback styling if image not found
+                            (e.currentTarget as HTMLImageElement).style.display = 'none';
+                          }}
+                        />
+                        <div className="p-2">{/* intentionally empty: image or blank */}</div>
+                      </div>
+
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between mb-1">
+                          <h4 className="font-semibold text-slate-900 mb-0">{hotel.name}</h4>
+                          <div className="text-right">
+                            <div className="text-lg font-bold text-blue-600">{hotel.price}</div>
+                            <div className="text-xs text-slate-500">/night</div>
                           </div>
                         </div>
-                        <div className="text-right">
-                          <span className="text-lg font-bold text-blue-600">{hotel.price}</span>
-                          <div className="text-xs text-slate-500">/night</div>
-                        </div>
-                      </div>
 
-                      {/* Amenities */}
-                      <div className="flex items-center gap-3 mb-2 flex-wrap">
-                        {hotel.amenities.map((amenity) => {
-                          const AmenityIcon = AMENITY_ICONS[amenity];
-                          return AmenityIcon ? (
-                            <div key={amenity} className="flex items-center gap-1 text-slate-600" title={amenity}>
-                              <AmenityIcon className="w-4 h-4" />
-                            </div>
-                          ) : null;
-                        })}
-                      </div>
-
-                      {/* Luxury Features */}
-                      {selectedCategory === 'luxury' && (hotel as any).features && (
-                        <div className="flex items-center gap-2 mb-2 flex-wrap">
-                          {(hotel as any).features.map((feature: string) => (
-                            <span key={feature} className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full">
-                              {feature}
-                            </span>
+                        <div className="flex items-center gap-2 text-amber-500 mb-2">
+                          {Array.from({ length: Math.floor(hotel.rating) }).map((_, i) => (
+                            <Star key={i} className="w-3.5 h-3.5 fill-current" />
                           ))}
+                          {hotel.rating % 1 !== 0 && <Star className="w-3.5 h-3.5 fill-current opacity-50" />}
+                          <span className="text-xs text-slate-600 ml-1">({hotel.rating})</span>
                         </div>
-                      )}
 
-                      {/* Distance */}
-                      <div className="flex items-center gap-1 text-sm text-slate-600">
-                        <MapPin className="w-4 h-4" />
-                        <span>{hotel.distance}</span>
+                        <div className="flex items-center gap-3 mb-2 flex-wrap">
+                          {hotel.amenities.map((amenity) => {
+                            const AmenityIcon = AMENITY_ICONS[amenity];
+                            return AmenityIcon ? (
+                              <div key={amenity} className="flex items-center gap-1 text-slate-600" title={amenity}>
+                                <AmenityIcon className="w-4 h-4" />
+                              </div>
+                            ) : null;
+                          })}
+                        </div>
+
+                        {selectedCategory === 'luxury' && (hotel as any).features && (
+                          <div className="flex items-center gap-2 mb-2 flex-wrap">
+                            {(hotel as any).features.map((feature: string) => (
+                              <span key={feature} className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full">
+                                {feature}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+
+                        <div className="flex items-center gap-1 text-sm text-slate-600">
+                          <MapPin className="w-4 h-4" />
+                          <span>{hotel.distance}</span>
+                        </div>
                       </div>
                     </button>
                   ))}

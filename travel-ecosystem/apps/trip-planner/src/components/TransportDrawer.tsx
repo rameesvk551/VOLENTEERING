@@ -84,6 +84,13 @@ export const TransportDrawer: React.FC<TransportDrawerProps> = ({
 
   const drawerRef = useRef<HTMLDivElement>(null);
 
+  // Emoji/icon map to avoid inline type-narrowing comparisons
+  const TRANSPORT_EMOJI: Record<'bus' | 'train' | 'flight', string> = {
+    bus: '🚌',
+    train: '🚆',
+    flight: '✈️',
+  };
+
   // Reset showResults when drawer opens/closes
   useEffect(() => {
     if (!isOpen) {
@@ -266,7 +273,7 @@ export const TransportDrawer: React.FC<TransportDrawerProps> = ({
               <button
                 type="button"
                 onClick={() => setShowResults(true)}
-                className="w-full py-2.5 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2"
+                className="w-full py-2 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2"
               >
                 Find Routes
               </button>
@@ -281,50 +288,136 @@ export const TransportDrawer: React.FC<TransportDrawerProps> = ({
                 </h3>
                 
                 {transportResults.map((option) => (
-                  <button
-                    key={option.id}
-                    type="button"
-                    onClick={() => {
-                      console.log('Transport option clicked:', option.name);
-                      console.log('onOpenHotelDrawer exists?', !!onOpenHotelDrawer);
-                      
-                      if (onOpenHotelDrawer) {
-                        console.log('Opening HotelDrawer with data:', {
-                          destination: searchedPlace,
-                          checkInDate: selectedDate,
-                          transportMode: selectedTransport,
-                          transportName: option.name,
-                        });
-                        onOpenHotelDrawer({
-                          destination: searchedPlace,
-                          checkInDate: selectedDate,
-                          transportMode: selectedTransport,
-                          transportName: option.name,
-                        });
-                      } else {
-                        console.log('onOpenHotelDrawer not provided, showing alert');
-                        alert(`Selected: ${option.name} - ${option.price}`);
-                        onClose();
-                      }
-                    }}
-                    className="w-full p-4 bg-white border-2 border-slate-200 rounded-xl hover:border-blue-500 hover:shadow-md transition-all duration-200 text-left"
-                  >
-                    <div className="flex items-center justify-between mb-2">
-                      <h4 className="font-semibold text-slate-900">{option.name}</h4>
-                      <span className="text-lg font-bold text-blue-600">{option.price}</span>
-                    </div>
-                    <div className="flex items-center gap-4 text-sm text-slate-600">
-                      <div className="flex items-center gap-1">
-                        <Clock className="w-4 h-4" />
-                        <span>{option.time}</span>
+                  // Special flight-styled card
+                  selectedTransport === 'flight' ? (
+                    <div key={option.id} className="w-full bg-white border-2 border-slate-200 rounded-xl shadow-sm overflow-hidden">
+                      {/* Top row: carrier pill + route/date */}
+                      <div className="px-4 pt-3 pb-2 flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="inline-flex items-center gap-2 bg-red-600 text-white rounded-full px-3 py-1 text-xs font-semibold">
+                            <span className="w-4 h-4 inline-flex items-center justify-center">✈️</span>
+                            <span className="uppercase">{option.name.split(' ')[0]}</span>
+                          </div>
+                          <div className="text-xs text-slate-600">
+                            <span className="font-semibold text-slate-800">{(startingLocation?.address || 'FROM').split(',')[0]} </span>
+                            <span className="text-slate-400">›</span>
+                            <span className="font-semibold text-slate-800"> {searchedPlace || 'TO'}</span>
+                            <span className="inline-block ml-2">• {selectedDate}</span>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          className="text-slate-500 hover:text-slate-800"
+                          aria-label="Expand"
+                        >
+                          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 9l6 6 6-6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                        </button>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <span>{option.departure}</span>
-                        <span>→</span>
-                        <span>{option.arrival}</span>
+
+                      {/* Middle: times and transfer info */}
+                      <div className="px-4 pb-3">
+                        <div className="flex items-center justify-between">
+                          <div className="text-xl font-bold text-slate-900">{option.departure}</div>
+                          <div className="text-sm text-slate-500 text-center">
+                            <div className="mb-1 text-slate-400">{option.time}</div>
+                            <div className="inline-flex items-center gap-2 text-slate-600">
+                              <Plane className="w-4 h-4" />
+                              <span className="text-sm">Non-stop</span>
+                            </div>
+                          </div>
+                          <div className="text-xl font-bold text-slate-900">{option.arrival}</div>
+                        </div>
+                      </div>
+
+                      <div className="border-t border-slate-200" />
+
+                      {/* Bottom: price and reserve */}
+                      <div className="px-4 py-3 flex items-center justify-between">
+                        <div className="text-sm text-slate-700">
+                          <div className="text-base font-semibold text-slate-900">{option.price}</div>
+                          <div className="text-xs text-slate-500">Total</div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (onOpenHotelDrawer) {
+                              onOpenHotelDrawer({
+                                destination: searchedPlace,
+                                checkInDate: selectedDate,
+                                transportMode: selectedTransport,
+                                transportName: option.name,
+                              });
+                            } else {
+                              alert(`Reserved: ${option.name} — ${option.price}`);
+                              onClose();
+                            }
+                          }}
+                          className="bg-slate-900 text-white px-4 py-1.5 rounded-md text-sm font-semibold hover:bg-slate-800"
+                        >
+                          Reserve
+                        </button>
                       </div>
                     </div>
-                  </button>
+                  ) : (
+                    <button
+                      key={option.id}
+                      type="button"
+                      onClick={() => {
+                        console.log('Transport option clicked:', option.name);
+                        console.log('onOpenHotelDrawer exists?', !!onOpenHotelDrawer);
+
+                        if (onOpenHotelDrawer) {
+                          console.log('Opening HotelDrawer with data:', {
+                            destination: searchedPlace,
+                            checkInDate: selectedDate,
+                            transportMode: selectedTransport,
+                            transportName: option.name,
+                          });
+                          onOpenHotelDrawer({
+                            destination: searchedPlace,
+                            checkInDate: selectedDate,
+                            transportMode: selectedTransport,
+                            transportName: option.name,
+                          });
+                        } else {
+                          console.log('onOpenHotelDrawer not provided, showing alert');
+                          alert(`Selected: ${option.name} - ${option.price}`);
+                          onClose();
+                        }
+                      }}
+                      className="w-full p-4 bg-white border-2 border-slate-200 rounded-xl hover:border-blue-500 hover:shadow-md transition-all duration-200 text-left flex items-start gap-4"
+                    >
+                      {/* Left: Icon/thumbnail */}
+                      <div className="flex-shrink-0 w-14 h-14 rounded-md bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center">
+                        <span className="text-blue-600 text-lg">{TRANSPORT_EMOJI[selectedTransport]}</span>
+                      </div>
+
+                      {/* Middle: Details */}
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between mb-1">
+                          <h4 className="font-semibold text-slate-900">{option.name}</h4>
+                          <div className="text-right">
+                            <div className="text-lg font-bold text-blue-600">{option.price}</div>
+                            <div className="text-xs text-slate-500">per ticket</div>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-3 text-sm text-slate-600 mb-1">
+                          <div className="flex items-center gap-1">
+                            <Clock className="w-4 h-4" />
+                            <span>{option.time}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium">{option.departure}</span>
+                            <span className="text-slate-400">→</span>
+                            <span className="font-medium">{option.arrival}</span>
+                          </div>
+                        </div>
+
+                        <div className="text-sm text-slate-500">{option.name} — {option.time} • Departs {option.departure}</div>
+                      </div>
+                    </button>
+                  )
                 ))}
               </div>
             )}
@@ -334,7 +427,7 @@ export const TransportDrawer: React.FC<TransportDrawerProps> = ({
               <button
                 type="button"
                 onClick={onSkip}
-                className="w-full py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-200 flex items-center justify-center gap-2 shadow-md hover:shadow-lg"
+                className="w-full py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-200 flex items-center justify-center gap-2 shadow-md hover:shadow-lg"
               >
                 <span>Skip & Continue</span>
                 <ArrowRight className="w-5 h-5" />
@@ -345,7 +438,7 @@ export const TransportDrawer: React.FC<TransportDrawerProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="w-full py-2.5 text-slate-600 hover:text-slate-900 font-medium transition-colors text-sm sm:text-base"
+              className="w-full py-2 text-slate-600 hover:text-slate-900 font-medium transition-colors text-sm sm:text-base"
             >
               Cancel
             </button>

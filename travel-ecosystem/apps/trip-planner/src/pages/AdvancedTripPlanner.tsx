@@ -53,7 +53,7 @@ const AdvancedTripPlanner: React.FC = () => {
     switch (currentView) {
       case 'map':
         return (
-          <div className="h-full p-4">
+          <div className="h-full p-4 relative z-0">
             <TripMap />
           </div>
         );
@@ -113,7 +113,7 @@ const AdvancedTripPlanner: React.FC = () => {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-hidden relative">
+      <main className="flex-1 overflow-hidden relative z-0 pb-16">
         <AnimatePresence mode="wait">
           <motion.div
             key={currentView}

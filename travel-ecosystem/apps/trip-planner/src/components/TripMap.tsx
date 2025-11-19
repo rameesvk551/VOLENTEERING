@@ -72,7 +72,7 @@ const TripMap: React.FC = () => {
   ]);
 
   return (
-    <div className="relative w-full h-full rounded-2xl overflow-hidden shadow-2xl">
+    <div className="relative w-full h-full rounded-2xl overflow-hidden shadow-2xl z-0">
       <MapContainer
         center={center}
         zoom={zoom}

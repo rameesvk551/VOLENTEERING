@@ -124,28 +124,75 @@ export class RouteOptimizerService {
   async optimizeRoute(request: OptimizationRequest): Promise<OptimizationResponse> {
     const jobId = uuidv4();
 
+    // Step 0: Handle starting location if provided
+    let placesForOptimization = [...request.places];
+    let hasStartingLocation = false;
+    let startingPlaceId = '';
+
+    console.log('🔍 Backend received:', {
+      placesCount: request.places.length,
+      hasStartLocation: !!request.constraints.startLocation
+    });
+    request.places.forEach((p, idx) => {
+      console.log(`  Place ${idx + 1}: ${p.name} (${p.lat}, ${p.lng})`);
+    });
+
+    if (request.constraints.startLocation) {
+      console.log('📍 Starting location provided, adding as first place in route');
+      hasStartingLocation = true;
+      startingPlaceId = 'start-location';
+      
+      // Prepend starting location as a synthetic place
+      const startingPlace: Place = {
+        id: startingPlaceId,
+        name: 'Starting Point',
+        lat: request.constraints.startLocation.lat,
+        lng: request.constraints.startLocation.lng,
+        visitDuration: 0, // No visit duration for starting point
+        priority: 10, // Highest priority
+      };
+      
+      placesForOptimization = [startingPlace, ...request.places];
+      console.log('✅ Total places for optimization:', placesForOptimization.length);
+    }
+
     // Step 1: Build distance matrix
     console.log('📊 Building distance matrix...');
-    const matrix = await this.buildDistanceMatrix(request.places, request.constraints.travelTypes);
+    const matrix = await this.buildDistanceMatrix(placesForOptimization, request.constraints.travelTypes);
 
     // Step 2: Run TSP optimization
     console.log('🧮 Running TSP optimization...');
-    const optimizedIndices = this.runTSP(matrix.distances, request.places);
+    let optimizedIndices = this.runTSP(matrix.distances, placesForOptimization);
+
+    // Step 2.5: If we have a starting location, ensure it's first
+    if (hasStartingLocation) {
+      // Find starting location index in optimized route
+      const startIndex = optimizedIndices.indexOf(0); // Starting location is at index 0
+      if (startIndex !== 0) {
+        // Move starting location to the front
+        optimizedIndices = [0, ...optimizedIndices.filter(i => i !== 0)];
+        console.log('✅ Forced starting location to be first in route');
+      }
+    }
 
     // Step 3: Apply constraints
     console.log('⚖️ Applying constraints...');
+    console.log('  - Optimized indices before constraints:', optimizedIndices);
     const constrainedOrder = this.applyConstraints(
       optimizedIndices,
       matrix,
-      request.places,
+      placesForOptimization,
       request.constraints
     );
+    console.log('  - Constrained order after filtering:', constrainedOrder);
+    console.log('  - Places remaining:', constrainedOrder.length, 'out of', placesForOptimization.length);
 
     // Step 4: Calculate totals
     const legEnhancements = await this.buildLegsAndTimeline(
       constrainedOrder,
       matrix,
-      request
+      request,
+      placesForOptimization
     );
 
     const { totalDistance, totalDuration } = this.calculateTotals(
@@ -157,7 +204,7 @@ export class RouteOptimizerService {
 
     // Step 5: Build response
     const optimizedOrder = constrainedOrder.map((index, seq) => ({
-      placeId: request.places[index].id,
+      placeId: placesForOptimization[index].id,
       seq: seq + 1,
     }));
 
@@ -170,7 +217,9 @@ export class RouteOptimizerService {
       timeline: legEnhancements.timeline,
       routeGeometry: legEnhancements.routeGeometry,
       summary: legEnhancements.summary,
-      notes: legEnhancements.notes,
+      notes: hasStartingLocation 
+        ? legEnhancements.notes + ' Route starts from specified starting location.'
+        : legEnhancements.notes,
     };
   }
 
@@ -403,13 +452,24 @@ export class RouteOptimizerService {
     let constrainedRoute = [...route];
 
     // 1. Apply time budget constraint
-    if (constraints.timeBudgetMinutes) {
-      constrainedRoute = this.applyTimeBudgetConstraint(
-        constrainedRoute,
-        matrix,
-        places,
-        constraints.timeBudgetMinutes
-      );
+    // Skip time budget if starting location is very far from first attraction (multi-day trip)
+    if (constraints.timeBudgetMinutes && constrainedRoute.length >= 2) {
+      const firstStopIndex = constrainedRoute[0];
+      const secondStopIndex = constrainedRoute[1];
+      const initialTravelTime = matrix.durations[firstStopIndex]?.[secondStopIndex] || 0;
+      const initialTravelHours = initialTravelTime / 3600;
+      
+      // If first leg is more than 12 hours, this is likely a multi-day trip - skip time budget
+      if (initialTravelHours > 12) {
+        console.log(`⚠️  Skipping time budget constraint - first leg is ${initialTravelHours.toFixed(1)} hours (multi-day trip)`);
+      } else {
+        constrainedRoute = this.applyTimeBudgetConstraint(
+          constrainedRoute,
+          matrix,
+          places,
+          constraints.timeBudgetMinutes
+        );
+      }
     }
 
     // 2. Apply budget constraint (filter expensive segments)
@@ -449,24 +509,40 @@ export class RouteOptimizerService {
     let totalTime = 0;
     const constrainedRoute: number[] = [];
 
+    console.log('⏰ Applying time budget constraint:', {
+      timeBudgetMinutes,
+      timeBudgetSeconds,
+      routeLength: route.length
+    });
+
     for (let i = 0; i < route.length; i++) {
       const placeIndex = route[i];
       const visitDuration = (places[placeIndex].visitDuration || 60) * 60;
 
       if (i > 0) {
         const travelTime = matrix.durations[route[i - 1]][placeIndex];
+        console.log(`  Stop ${i}: ${places[placeIndex].name}`);
+        console.log(`    - Travel time from previous: ${(travelTime / 60).toFixed(1)} min`);
+        console.log(`    - Visit duration: ${visitDuration / 60} min`);
+        console.log(`    - Total time so far: ${(totalTime / 60).toFixed(1)} min / ${timeBudgetMinutes} min`);
         totalTime += travelTime;
+      } else {
+        console.log(`  Stop ${i}: ${places[placeIndex].name} (starting point)`);
+        console.log(`    - Visit duration: ${visitDuration / 60} min`);
       }
 
       totalTime += visitDuration;
 
       if (totalTime <= timeBudgetSeconds) {
         constrainedRoute.push(placeIndex);
+        console.log(`    ✅ Added (total: ${(totalTime / 60).toFixed(1)} min)`);
       } else {
+        console.log(`    ❌ SKIPPED - Would exceed budget (total would be: ${(totalTime / 60).toFixed(1)} min)`);
         break;
       }
     }
 
+    console.log(`⏰ Time budget result: ${constrainedRoute.length} of ${route.length} places included`);
     return constrainedRoute;
   }
 
@@ -605,7 +681,8 @@ export class RouteOptimizerService {
   private async buildLegsAndTimeline(
     route: number[],
     matrix: DistanceMatrix,
-    request: OptimizationRequest
+    request: OptimizationRequest,
+    places: Place[]
   ): Promise<LegTimelineBuildResult> {
     if (route.length === 0) {
       const nowIso = new Date().toISOString();
@@ -622,8 +699,6 @@ export class RouteOptimizerService {
         notes: 'No places provided.',
       };
     }
-
-  const places = request.places;
     const startTimestamp = this.resolveStartTimestamp(request.constraints.startTime);
     let currentTimeMs = startTimestamp;
     let totalVisitSeconds = 0;

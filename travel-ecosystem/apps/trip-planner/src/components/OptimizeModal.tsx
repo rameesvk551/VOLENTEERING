@@ -230,11 +230,13 @@ export const OptimizeModal: React.FC<OptimizeModalProps> = ({
               <PlaceAutocomplete
                 placeholder="Where will you start?"
                 onSelect={(place) => {
-                  setStartLocation({
+                  const locationData = {
                     lat: parseFloat(place.lat),
                     lng: parseFloat(place.lon),
                     address: place.display_name
-                  });
+                  };
+                  console.log('🎯 OptimizeModal: Selected starting location:', locationData);
+                  setStartLocation(locationData);
                   setLocationError('');
                 }}
                 error={locationError}

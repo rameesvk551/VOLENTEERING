@@ -255,13 +255,20 @@ export const VirtualizedAttractionFeed: React.FC<VirtualizedAttractionFeedProps>
     budget?: number;
     includeRealtimeTransit: boolean;
   }) => {
+    console.log('🔍 handleOptimizeSubmit called');
+    console.log('  - Selected attractions:', selectedAttractions.size);
+    console.log('  - Items available:', items.length);
+    console.log('  - Selected details stored:', Object.keys(selectedDetails).length);
+    
     // Get selected attraction details
   let selectedItems = items.filter(item => selectedAttractions.has(item.id));
+    console.log('  - Items found from current list:', selectedItems.length);
 
     if (selectedItems.length < selectedAttractions.size) {
       const missingIds = Array.from(selectedAttractions).filter(
         (id) => !selectedItems.some((item) => item.id === id)
       );
+      console.log('  - Missing IDs:', missingIds.length);
 
       missingIds.forEach((id) => {
         const stored = selectedDetails[id];
@@ -269,14 +276,17 @@ export const VirtualizedAttractionFeed: React.FC<VirtualizedAttractionFeedProps>
           selectedItems = [...selectedItems, stored];
         }
       });
+      console.log('  - Items after adding from storage:', selectedItems.length);
     }
 
     const validItems = selectedItems.filter((item) =>
       typeof item.location?.coordinates?.lat === 'number' &&
       typeof item.location?.coordinates?.lng === 'number'
     );
+    console.log('  - Valid items with coordinates:', validItems.length);
 
     if (validItems.length < 2) {
+      console.error('❌ Not enough valid items!');
       alert('We need at least two attractions with valid coordinates to optimize a route.');
       return;
     }
@@ -292,6 +302,9 @@ export const VirtualizedAttractionFeed: React.FC<VirtualizedAttractionFeedProps>
     const mappedTravelTypes = payload.travelTypes.map(
       (type) => travelTypeMap[type] || type.toLowerCase()
     );
+
+    // Get starting location if available
+    const startLocationData = transportDrawerData?.startLocation || undefined;
 
     // Build optimization request payload
     const optimizeRequest: OptimizeRouteRequest = {
@@ -310,7 +323,7 @@ export const VirtualizedAttractionFeed: React.FC<VirtualizedAttractionFeedProps>
         visitDuration: 60 // Default 60 minutes
       })),
       constraints: {
-        startLocation: undefined, // Will use user's current location if available
+        startLocation: startLocationData ? { lat: startLocationData.lat, lng: startLocationData.lng } : undefined, // Use selected starting location
         startTime: new Date().toISOString(),
         timeBudgetMinutes: 480, // 8 hours default
         travelTypes: mappedTravelTypes,
@@ -323,9 +336,27 @@ export const VirtualizedAttractionFeed: React.FC<VirtualizedAttractionFeedProps>
     };
 
     console.log('📤 Sending optimization request:', optimizeRequest);
+    console.log('📍 Starting location data:', {
+      hasStartLocation: !!startLocationData,
+      lat: startLocationData?.lat,
+      lng: startLocationData?.lng,
+      address: startLocationData?.address
+    });
+    console.log('🎯 Places being sent to backend:', optimizeRequest.places.length, 'places');
+    optimizeRequest.places.forEach((place, idx) => {
+      console.log(`  ${idx + 1}. ${place.name} (${place.lat}, ${place.lng})`);
+    });
 
     // Call API
-  const selectionSummaries = validItems.map((item) => ({
+  let selectionSummaries: Array<{
+      id: string;
+      name: string;
+      description?: string;
+      city?: string;
+      country?: string;
+      coordinates: { lat: number; lng: number };
+      imageUrl?: string;
+    }> = validItems.map((item) => ({
       id: item.id,
       name: item.title,
       description: item.description,
@@ -337,6 +368,22 @@ export const VirtualizedAttractionFeed: React.FC<VirtualizedAttractionFeedProps>
       },
       imageUrl: item.media?.images?.[0],
     }));
+
+    // Add starting location as first item if provided
+    if (startLocationData) {
+      selectionSummaries = [
+        {
+          id: 'start-location',
+          name: startLocationData.address || 'Starting Point',
+          description: 'Your starting location',
+          coordinates: {
+            lat: startLocationData.lat,
+            lng: startLocationData.lng,
+          },
+        },
+        ...selectionSummaries
+      ];
+    }
 
     optimizeRoute(optimizeRequest, {
       onSuccess: (data) => {
@@ -355,7 +402,7 @@ export const VirtualizedAttractionFeed: React.FC<VirtualizedAttractionFeedProps>
         alert(`Optimization failed: ${error.message}`);
       }
     });
-  }, [selectedAttractions, items, optimizeRoute, selectedDetails, setOptimizationSnapshot, navigate]);
+  }, [selectedAttractions, items, optimizeRoute, selectedDetails, setOptimizationSnapshot, navigate, transportDrawerData]);
 
   // Handle skipping transport selection - go directly to optimization
   const handleSkipTransport = useCallback(() => {

@@ -65,11 +65,15 @@ export default function RouteOptimizationResults() {
     return null; // Will redirect
   }
 
-  const { response, selections } = snapshot;
+  const { response, selections, request } = snapshot;
   const optimizedOrder = response.optimizedOrder ?? [];
   const timeline = response.timeline ?? [];
   const legs = response.legs ?? [];
   const routeGeometryLegs = response.routeGeometry?.legs ?? [];
+
+  // Check if we have a starting location and find it in selections
+  const startingLocationFromSelections = selections.find(s => s.id === 'start-location');
+  const hasStartingLocation = !!startingLocationFromSelections || !!request.constraints?.startLocation;
 
   const hasSummaryDuration =
     response.summary &&
@@ -85,23 +89,73 @@ export default function RouteOptimizationResults() {
   const totalCost = totalCostValue.toFixed(2);
 
   const renderRoute = (map: L.Map) => {
-    if (optimizedOrder.length === 0) return;
+    if (optimizedOrder.length === 0 && !hasStartingLocation) return;
 
     const bounds: L.LatLngBoundsExpression = [];
 
+    // Add starting location marker if it exists
+    if (startingLocationFromSelections) {
+      const { lat, lng } = startingLocationFromSelections.coordinates;
+      bounds.push([lat, lng]);
+
+      const startMarker = L.marker([lat, lng], {
+        icon: L.divIcon({
+          className: 'custom-marker',
+          html: `<div style="
+            background: #10b981;
+            color: white;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            border: 3px solid white;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+            font-size: 16px;
+          ">📍</div>`,
+          iconSize: [36, 36],
+          iconAnchor: [18, 18],
+        }),
+      }).addTo(map);
+
+      startMarker.bindPopup(`
+        <div style="min-width: 200px;">
+          <h3 style="margin: 0 0 8px 0; font-size: 16px; font-weight: bold; color: #10b981;">
+            🏁 Starting Point
+          </h3>
+          <p style="margin: 0 0 8px 0; font-size: 14px; color: #666;">${startingLocationFromSelections.name}</p>
+          ${startingLocationFromSelections.description ? `<p style="margin: 0; font-size: 12px; color: #999;">${startingLocationFromSelections.description}</p>` : ''}
+        </div>
+      `);
+    }
+
     // Add markers for each stop
+    let attractionCounter = 0; // Counter for actual attractions (not starting point)
+    
     optimizedOrder.forEach((stop, index) => {
+      // Skip the starting location if we already rendered it
+      if (stop.placeId === 'start-location' && hasStartingLocation) {
+        return;
+      }
+
+      attractionCounter++; // Increment only for actual attractions
+      
       const selection = selections.find((s) => s.id === stop.placeId);
       if (!selection) return;
 
       const { lat, lng } = selection.coordinates;
       bounds.push([lat, lng]);
 
+      // Display number: 1, 2, 3... for attractions (starting point has no number)
+      const displayIndex = attractionCounter;
+      
       const marker = L.marker([lat, lng], {
         icon: L.divIcon({
           className: 'custom-marker',
           html: `<div style="
-            background: ${index === 0 ? '#10b981' : index === optimizedOrder.length - 1 ? '#ef4444' : '#3b82f6'};
+            background: ${index === optimizedOrder.length - 1 ? '#ef4444' : '#3b82f6'};
             color: white;
             width: 32px;
             height: 32px;
@@ -112,7 +166,7 @@ export default function RouteOptimizationResults() {
             font-weight: bold;
             border: 3px solid white;
             box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-          ">${index + 1}</div>`,
+          ">${displayIndex}</div>`,
           iconSize: [32, 32],
           iconAnchor: [16, 16],
         }),
@@ -121,7 +175,7 @@ export default function RouteOptimizationResults() {
       marker.bindPopup(`
         <div style="min-width: 200px;">
           <h3 style="margin: 0 0 8px 0; font-size: 16px; font-weight: bold;">
-            ${index + 1}. ${selection.name}
+            ${displayIndex}. ${selection.name}
           </h3>
           ${selection.description ? `<p style="margin: 0 0 8px 0; font-size: 14px; color: #666;">${selection.description}</p>` : ''}
           <p style="margin: 0; font-size: 12px; color: #999;">
@@ -294,9 +348,40 @@ export default function RouteOptimizationResults() {
           </h2>
 
           <div className="space-y-6">
-            {timeline.map((entry, index) => {
-              const selection = selections.find((s) => s.id === entry.placeId);
-              const leg = legs[index - 1];
+            {/* Starting Location - Show first if it exists */}
+            {startingLocationFromSelections && (
+              <div className="relative">
+                <div className="flex items-start gap-4">
+                  <div className="flex-shrink-0 w-12 h-12 bg-green-600 text-white rounded-full flex items-center justify-center font-bold text-lg shadow-lg">
+                    📍
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-bold text-lg text-gray-900 mb-1">
+                      🏁 {startingLocationFromSelections.name}
+                    </h3>
+                    {startingLocationFromSelections.description && (
+                      <p className="text-sm text-gray-600 mb-2">{startingLocationFromSelections.description}</p>
+                    )}
+                    <div className="flex items-center gap-4 text-sm text-gray-500">
+                      <span className="flex items-center gap-1">
+                        <MapPin className="w-4 h-4" />
+                        Starting Point
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {timeline
+              .filter(entry => !(entry.placeId === 'start-location' && hasStartingLocation))
+              .map((entry, attractionIndex) => {
+                const originalIndex = timeline.findIndex(e => e.placeId === entry.placeId);
+                const selection = selections.find((s) => s.id === entry.placeId);
+                const leg = legs[originalIndex - 1];
+                
+                // Display number: 1, 2, 3... for attractions (starting point handled separately above)
+                const displayNumber = attractionIndex + 1;
 
               return (
                 <div key={entry.placeId} className="relative">
@@ -329,11 +414,9 @@ export default function RouteOptimizationResults() {
                   <div className="flex items-start gap-4">
                     <div className="flex-shrink-0">
                       <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold ${
-                        index === 0 ? 'bg-green-500' : 
-                        index === timeline.length - 1 ? 'bg-red-500' : 
-                        'bg-indigo-500'
+                        originalIndex === timeline.length - 1 ? 'bg-red-500' : 'bg-indigo-500'
                       }`}>
-                        {entry.seq}
+                        {displayNumber}
                       </div>
                     </div>
 
