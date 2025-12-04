@@ -1,0 +1,5 @@
+import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
+const HowItWorks = () => {
+    return (_jsxs("section", { className: "py-16 bg-gray-100 text-center", children: [_jsx("h2", { className: "text-3xl font-semibold mb-6", children: "How It Works" }), _jsxs("div", { className: "flex flex-col md:flex-row justify-center md:space-x-12 space-y-8 md:space-y-0 px-4", children: [_jsxs("div", { className: "md:w-1/3", children: [_jsx("h3", { className: "text-2xl mb-4", children: "Step 1: Choose Gear" }), _jsx("p", { children: "Select the gear you need for your adventure." })] }), _jsxs("div", { className: "md:w-1/3", children: [_jsx("h3", { className: "text-2xl mb-4", children: "Step 2: Book & Pay" }), _jsx("p", { children: "Complete your booking and payment securely." })] }), _jsxs("div", { className: "md:w-1/3", children: [_jsx("h3", { className: "text-2xl mb-4", children: "Step 3: Enjoy Your Adventure" }), _jsx("p", { children: "Pick up your gear and enjoy your journey!" })] })] })] }));
+};
+export default HowItWorks;
