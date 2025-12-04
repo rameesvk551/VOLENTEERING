@@ -1,26 +1,23 @@
 import React from "react";
-import { FaUser, FaGift, FaHeart } from "react-icons/fa";
+import { Check, Sparkles, Heart, Gift, ArrowRight } from "lucide-react";
 import axios from "axios";
 import server from "../../server/app";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { RootState } from "@/redux/store";
+import { Button } from "../ui/button";
+import { Badge } from "../ui/badge";
 
-// ✅ Extend Window interface for TypeScript
+// Extend Window interface for TypeScript
 declare global {
   interface Window {
-    Razorpay: any;
+    Razorpay: unknown;
   }
 }
 
-// ✅ Razorpay Key from Vite Environment Variable
+// Razorpay Key from Vite Environment Variable
 const razorpayKey = import.meta.env.VITE_RAZORPAY_KEY_ID as string;
-
-const MembershipPlans = () => {
-  const navigate=useNavigate()
-    const { volenteerData, isAuthenticated } = useSelector((state: RootState) => state.volenteer);
-    const  userId=volenteerData?.user?._id
 
 interface OrderResponse {
   amount: number;
@@ -28,95 +25,232 @@ interface OrderResponse {
   id: string;
 }
 
-const handlePayment = async (amount: number) => {
-  if (!window.Razorpay) {
-    alert("Razorpay SDK is not loaded. Please check your internet connection.");
-    return;
-  }
+const MembershipPlans = () => {
+  const navigate = useNavigate();
+  const { volenteerData } = useSelector((state: RootState) => state.volenteer);
+  const userId = volenteerData?.user?._id;
 
-  try {
-    // ✅ Step 1: Create an order from the backend
-    const { data } = await axios.post<OrderResponse>(
-      `${server}/payment/create-order`,
-      { amount, currency: "INR" }
-    );
-  
-    console.log("🛠️ Created Order:", data);
-  
-    const options = {
-      key: razorpayKey,
-      amount: data.amount,
-      currency: data.currency,
-      order_id: data.id,
-      name: "NomadicNook Travel",
-      description: "Volunteer Travel Booking",
-  
-      handler: async (response: any) => { 
-        console.log("🛠️ Full Payment Response:", response);
-        
-        try {
-          // ✅ Step 5: Send payment response for verification
-          const verification = await axios.post(
-            `${server}/payment/verify-payment`,
-            response,
-            { withCredentials: true }
-          );
-  
-          console.log("✅ Verification Response:", verification.data);
-          
-          if (verification.data.success) {
-          toast.success(" Payment successful!");
-          navigate(`/volenteer/profile/${userId}`)
-          } else {
-            toast.error(" Payment verification failed.");
+  const handlePayment = async (amount: number) => {
+    if (!window.Razorpay) {
+      alert("Razorpay SDK is not loaded. Please check your internet connection.");
+      return;
+    }
+
+    try {
+      const { data } = await axios.post<OrderResponse>(
+        `${server}/payment/create-order`,
+        { amount, currency: "INR" }
+      );
+
+      const options = {
+        key: razorpayKey,
+        amount: data.amount,
+        currency: data.currency,
+        order_id: data.id,
+        name: "RAIH Travel",
+        description: "Volunteer Travel Membership",
+        handler: async (response: { razorpay_payment_id: string; razorpay_order_id: string; razorpay_signature: string }) => {
+          try {
+            const verification = await axios.post(
+              `${server}/payment/verify-payment`,
+              response,
+              { withCredentials: true }
+            );
+
+            if (verification.data.success) {
+              toast.success("🎉 Payment successful!");
+              navigate(`/volenteer/profile/${userId}`);
+            } else {
+              toast.error("Payment verification failed.");
+            }
+          } catch {
+            toast.error("Payment verification failed.");
           }
-        } catch (error) {
-          console.error(" Payment verification error:", error);
-          toast.error(" Payment verification failed.");
-        }
-      },
-  
-      prefill: {
-        name: "Muhammed Ramees",
-        email: "ramees@example.com",
-        contact: "9876543210",
-      },
-      theme: { color: "#F37254" },
-    };
-  
-    // ✅ Step 4: Open Razorpay Payment Gateway
-    const paymentObject = new window.Razorpay(options);
-    paymentObject.open();
-  } catch (error) {
-    console.error("❌ Error while initiating payment:", error);
-    alert("❌ Failed to initiate payment.");
-  }
-}  
+        },
+        prefill: {
+          name: volenteerData?.user?.firstName || "Guest",
+          email: volenteerData?.user?.email || "",
+          contact: "",
+        },
+        theme: { color: "#FF5A5F" },
+      };
 
-  
-  // ✅ Membership Plans Data
+      const paymentObject = new (window.Razorpay as new (options: object) => { open: () => void })(options);
+      paymentObject.open();
+    } catch {
+      toast.error("Failed to initiate payment.");
+    }
+  };
+
   const plans = [
-    { name: "Solo Explorer", icon: <FaUser size={30} className="text-blue-500" />, description: "Ideal for solo travelers.", benefits: ["Verified hosts", "Community support"], price: 500 },
-    { name: "Couple Adventure", icon: <FaHeart size={30} className="text-red-500" />, description: "Perfect for couples.", benefits: ["Shared accommodation", "Partner volunteering"], price: 700 },
-    { name: "Gift a Journey", icon: <FaGift size={30} className="text-green-500" />, description: "Gift travel & volunteering.", benefits: ["Fully transferable", "Valid for 12 months"], price: 1000 },
+    {
+      id: "solo",
+      name: "Solo Explorer",
+      icon: Sparkles,
+      iconColor: "text-primary",
+      description: "Perfect for independent travelers seeking unique experiences",
+      price: 500,
+      period: "year",
+      popular: false,
+      features: [
+        "Access to verified hosts worldwide",
+        "Community support & forums",
+        "Host reviews & ratings",
+        "Basic trip planning tools",
+        "Email support",
+      ],
+    },
+    {
+      id: "couple",
+      name: "Couple Adventure",
+      icon: Heart,
+      iconColor: "text-rose-500",
+      description: "Ideal for couples traveling together on meaningful journeys",
+      price: 700,
+      period: "year",
+      popular: true,
+      features: [
+        "Everything in Solo Explorer",
+        "Shared accommodation preferences",
+        "Partner volunteering matching",
+        "Priority host responses",
+        "Advanced filtering options",
+        "Priority email support",
+      ],
+    },
+    {
+      id: "gift",
+      name: "Gift a Journey",
+      icon: Gift,
+      iconColor: "text-emerald-500",
+      description: "Give the gift of adventure and meaningful travel experiences",
+      price: 1000,
+      period: "year",
+      popular: false,
+      features: [
+        "Everything in Couple Adventure",
+        "Fully transferable membership",
+        "Valid for 12 months",
+        "Personalized gift message",
+        "Priority support 24/7",
+        "Exclusive host experiences",
+      ],
+    },
   ];
 
   return (
-    <div className="flex flex-col items-center justify-center h-[88vh] bg-gray-100 p-6">
-      <h2 className="text-4xl font-bold text-gray-800 mb-8">🌍 Volunteer Membership Plans</h2>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {plans.map((plan, index) => (
-          <div key={index} className="bg-white shadow-lg rounded-lg p-6 w-80 text-center border border-gray-300">
-            <div className="flex justify-center mb-4">{plan.icon}</div>
-            <h3 className="text-2xl font-semibold text-gray-900 mb-3">{plan.name}</h3>
-            <p className="text-gray-600 mb-4">{plan.description}</p>
-            <ul className="text-gray-700 text-sm mb-4 space-y-2">{plan.benefits.map((benefit, i) => <li key={i}>✅ {benefit}</li>)}</ul>
-            <p className="text-lg font-bold text-gray-900 mb-4">₹{plan.price}</p>
-            <button className="bg-blue-600 text-white px-6 py-2 rounded-full hover:bg-blue-700 transition" onClick={() => handlePayment(plan.price)}>
-              Choose Plan
-            </button>
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white py-16 px-4">
+      <div className="max-w-6xl mx-auto">
+        {/* Header */}
+        <div className="text-center mb-16">
+          <Badge variant="primary" className="mb-4">
+            Membership Plans
+          </Badge>
+          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
+            Choose Your Journey
+          </h1>
+          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+            Join thousands of travelers exchanging skills for experiences around the world
+          </p>
+        </div>
+
+        {/* Plans Grid */}
+        <div className="grid md:grid-cols-3 gap-8">
+          {plans.map((plan) => {
+            const IconComponent = plan.icon;
+            return (
+              <div
+                key={plan.id}
+                className={`relative bg-white rounded-3xl p-8 transition-all duration-300 hover:shadow-card-hover ${
+                  plan.popular
+                    ? "ring-2 ring-primary shadow-card-hover scale-105"
+                    : "shadow-card hover:-translate-y-1"
+                }`}
+              >
+                {/* Popular Badge */}
+                {plan.popular && (
+                  <div className="absolute -top-4 left-1/2 -translate-x-1/2">
+                    <Badge className="bg-primary text-white px-4 py-1">
+                      Most Popular
+                    </Badge>
+                  </div>
+                )}
+
+                {/* Icon */}
+                <div className={`inline-flex p-3 rounded-2xl ${plan.iconColor} bg-gray-100 mb-6`}>
+                  <IconComponent className="w-8 h-8" />
+                </div>
+
+                {/* Plan Name */}
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                  {plan.name}
+                </h3>
+
+                {/* Description */}
+                <p className="text-gray-600 mb-6">
+                  {plan.description}
+                </p>
+
+                {/* Price */}
+                <div className="flex items-baseline mb-8">
+                  <span className="text-4xl font-bold text-gray-900">₹{plan.price}</span>
+                  <span className="text-gray-500 ml-2">/{plan.period}</span>
+                </div>
+
+                {/* Features */}
+                <ul className="space-y-4 mb-8">
+                  {plan.features.map((feature, index) => (
+                    <li key={index} className="flex items-start gap-3">
+                      <div className="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center shrink-0 mt-0.5">
+                        <Check className="w-3 h-3 text-green-600" />
+                      </div>
+                      <span className="text-gray-600">{feature}</span>
+                    </li>
+                  ))}
+                </ul>
+
+                {/* CTA Button */}
+                <Button
+                  onClick={() => handlePayment(plan.price)}
+                  className={`w-full group ${
+                    plan.popular ? "" : "bg-gray-900 hover:bg-gray-800"
+                  }`}
+                  size="lg"
+                >
+                  Get Started
+                  <ArrowRight className="w-4 h-4 ml-2 transition-transform group-hover:translate-x-1" />
+                </Button>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Trust Badges */}
+        <div className="mt-16 text-center">
+          <p className="text-gray-500 mb-4">Trusted by travelers worldwide</p>
+          <div className="flex flex-wrap justify-center gap-8 items-center opacity-60">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-gray-200 rounded" />
+              <span className="font-medium text-gray-600">10,000+ Hosts</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-gray-200 rounded" />
+              <span className="font-medium text-gray-600">50+ Countries</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-gray-200 rounded" />
+              <span className="font-medium text-gray-600">100K+ Reviews</span>
+            </div>
           </div>
-        ))}
+        </div>
+
+        {/* Money Back Guarantee */}
+        <div className="mt-12 text-center p-6 bg-gray-50 rounded-2xl max-w-xl mx-auto">
+          <p className="text-gray-600">
+            <span className="font-semibold">30-day money-back guarantee.</span>{" "}
+            Not satisfied? Get a full refund, no questions asked.
+          </p>
+        </div>
       </div>
     </div>
   );

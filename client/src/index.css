@@ -1,94 +1,300 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* ===========================
+   MODERN TRAVEL-TECH DESIGN SYSTEM
+   Inspired by Airbnb, Worldpackers, Kayak
+   =========================== */
+
+/* Custom Scrollbar Styles */
 .scrollbar-container {
-    overflow-y: auto; /* Enable scrolling */
-    scrollbar-width: thin; /* Firefox: Show thin scrollbar */
-    scrollbar-color: transparent transparent; /* Default hidden */
-  }
-  
-  .scrollbar-container:hover {
-    scrollbar-color: auto; /* Show scrollbar on hover */
-  }
-  
-  .scrollbar-container::-webkit-scrollbar {
-    width: 6px; /* Width of scrollbar */
-  }
-  
-  .scrollbar-container::-webkit-scrollbar-thumb {
-    background: transparent; /* Hide by default */
-  }
-  
-  .scrollbar-container:hover::-webkit-scrollbar-thumb {
-    background: rgba(0, 0, 0, 0.3); /* Show on hover */
-  }
-  
-  
-  
-  @layer base {
-  :root {
-        --background: 0 0% 100%;
-        --foreground: 0 0% 3.9%;
-        --card: 0 0% 100%;
-        --card-foreground: 0 0% 3.9%;
-        --popover: 0 0% 100%;
-        --popover-foreground: 0 0% 3.9%;
-        --primary: 0 0% 9%;
-        --primary-foreground: 0 0% 98%;
-        --secondary: 0 0% 96.1%;
-        --secondary-foreground: 0 0% 9%;
-        --muted: 0 0% 96.1%;
-        --muted-foreground: 0 0% 45.1%;
-        --accent: 0 0% 96.1%;
-        --accent-foreground: 0 0% 9%;
-        --destructive: 0 84.2% 60.2%;
-        --destructive-foreground: 0 0% 98%;
-        --border: 0 0% 89.8%;
-        --input: 0 0% 89.8%;
-        --ring: 0 0% 3.9%;
-        --chart-1: 12 76% 61%;
-        --chart-2: 173 58% 39%;
-        --chart-3: 197 37% 24%;
-        --chart-4: 43 74% 66%;
-        --chart-5: 27 87% 67%;
-        --radius: 0.5rem
-    }
-  .dark {
-        --background: 0 0% 3.9%;
-        --foreground: 0 0% 98%;
-        --card: 0 0% 3.9%;
-        --card-foreground: 0 0% 98%;
-        --popover: 0 0% 3.9%;
-        --popover-foreground: 0 0% 98%;
-        --primary: 0 0% 98%;
-        --primary-foreground: 0 0% 9%;
-        --secondary: 0 0% 14.9%;
-        --secondary-foreground: 0 0% 98%;
-        --muted: 0 0% 14.9%;
-        --muted-foreground: 0 0% 63.9%;
-        --accent: 0 0% 14.9%;
-        --accent-foreground: 0 0% 98%;
-        --destructive: 0 62.8% 30.6%;
-        --destructive-foreground: 0 0% 98%;
-        --border: 0 0% 14.9%;
-        --input: 0 0% 14.9%;
-        --ring: 0 0% 83.1%;
-        --chart-1: 220 70% 50%;
-        --chart-2: 160 60% 45%;
-        --chart-3: 30 80% 55%;
-        --chart-4: 280 65% 60%;
-        --chart-5: 340 75% 55%
-    }
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
 }
+
+.scrollbar-container:hover {
+  scrollbar-color: hsl(var(--muted-foreground)) transparent;
+}
+
+.scrollbar-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.scrollbar-container::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 3px;
+}
+
+.scrollbar-container:hover::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted-foreground) / 0.3);
+}
+
+@layer base {
+  :root {
+    /* === BRAND COLORS === */
+    /* Primary - Vibrant Coral/Salmon (Airbnb-inspired) */
+    --primary: 356 100% 66%;
+    --primary-foreground: 0 0% 100%;
+    
+    /* Secondary - Deep Teal */
+    --secondary: 174 62% 47%;
+    --secondary-foreground: 0 0% 100%;
+    
+    /* Accent - Warm Gold */
+    --accent: 38 92% 50%;
+    --accent-foreground: 0 0% 10%;
+    
+    /* === NEUTRAL COLORS === */
+    --background: 0 0% 100%;
+    --foreground: 222 47% 11%;
+    
+    /* Card & Surface */
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+    
+    /* Popover */
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+    
+    /* Muted */
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215 16% 47%;
+    
+    /* Border & Input */
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 356 100% 66%;
+    
+    /* Destructive */
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+    
+    /* Success */
+    --success: 142 76% 36%;
+    --success-foreground: 0 0% 100%;
+    
+    /* Warning */
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 10%;
+    
+    /* === CHART COLORS === */
+    --chart-1: 356 100% 66%;
+    --chart-2: 174 62% 47%;
+    --chart-3: 38 92% 50%;
+    --chart-4: 262 83% 58%;
+    --chart-5: 199 89% 48%;
+    
+    /* === SPACING & SIZING === */
+    --radius: 0.75rem;
+    --radius-sm: 0.5rem;
+    --radius-lg: 1rem;
+    --radius-xl: 1.5rem;
+    
+    /* === SHADOWS === */
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+    
+    /* === TRANSITIONS === */
+    --transition-fast: 150ms;
+    --transition-normal: 200ms;
+    --transition-slow: 300ms;
+  }
   
-  
-  
-  @layer base {
+  .dark {
+    --primary: 356 100% 70%;
+    --primary-foreground: 0 0% 100%;
+    
+    --secondary: 174 62% 55%;
+    --secondary-foreground: 0 0% 100%;
+    
+    --background: 222 47% 7%;
+    --foreground: 210 40% 98%;
+    
+    --card: 222 47% 11%;
+    --card-foreground: 210 40% 98%;
+    
+    --popover: 222 47% 11%;
+    --popover-foreground: 210 40% 98%;
+    
+    --muted: 217 33% 17%;
+    --muted-foreground: 215 20% 65%;
+    
+    --border: 217 33% 17%;
+    --input: 217 33% 17%;
+    --ring: 356 100% 70%;
+    
+    --destructive: 0 62% 50%;
+    --destructive-foreground: 0 0% 98%;
+    
+    --success: 142 70% 45%;
+    --success-foreground: 0 0% 100%;
+    
+    --chart-1: 356 100% 70%;
+    --chart-2: 174 62% 55%;
+    --chart-3: 38 92% 55%;
+    --chart-4: 262 83% 65%;
+    --chart-5: 199 89% 55%;
+  }
+}
+
+@layer base {
   * {
     @apply border-border;
-    }
+  }
+  
   body {
-    @apply bg-background text-foreground;
-    }
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+  
+  /* Smooth transitions for interactive elements */
+  a, button, input, select, textarea {
+    @apply transition-colors duration-200;
+  }
+}
+
+@layer components {
+  /* === PREMIUM CARD HOVER EFFECTS === */
+  .card-hover {
+    @apply transition-all duration-300 ease-out;
+  }
+  
+  .card-hover:hover {
+    @apply shadow-xl -translate-y-1;
+  }
+  
+  /* === GRADIENT BACKGROUNDS === */
+  .gradient-primary {
+    background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--secondary)) 100%);
+  }
+  
+  .gradient-hero {
+    background: linear-gradient(180deg, hsl(var(--background)) 0%, hsl(var(--muted)) 100%);
+  }
+  
+  /* === GLASSMORPHISM === */
+  .glass {
+    @apply bg-white/80 backdrop-blur-md;
+  }
+  
+  .glass-dark {
+    @apply bg-black/20 backdrop-blur-md;
+  }
+  
+  /* === FOCUS RING === */
+  .focus-ring {
+    @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary;
+  }
+  
+  /* === SKELETON LOADING === */
+  .skeleton {
+    @apply animate-pulse bg-muted rounded;
+  }
+  
+  /* === BADGE VARIANTS === */
+  .badge {
+    @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors;
+  }
+  
+  .badge-primary {
+    @apply bg-primary/10 text-primary;
+  }
+  
+  .badge-secondary {
+    @apply bg-secondary/10 text-secondary;
+  }
+  
+  .badge-success {
+    @apply bg-green-100 text-green-800;
+  }
+  
+  .badge-warning {
+    @apply bg-amber-100 text-amber-800;
+  }
+  
+  /* === CONTAINER === */
+  .container-modern {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+  
+  /* === SECTION SPACING === */
+  .section-padding {
+    @apply py-12 md:py-16 lg:py-20;
+  }
+  
+  /* === IMAGE CONTAINER === */
+  .img-container {
+    @apply relative overflow-hidden rounded-lg;
+  }
+  
+  .img-container img {
+    @apply w-full h-full object-cover transition-transform duration-500;
+  }
+  
+  .img-container:hover img {
+    @apply scale-105;
+  }
+  
+  /* === STICKY HEADER === */
+  .sticky-header {
+    @apply sticky top-0 z-50 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80;
+  }
+}
+
+@layer utilities {
+  /* === TEXT GRADIENTS === */
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary;
+  }
+  
+  /* === LINE CLAMP === */
+  .line-clamp-1 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 1;
+  }
+  
+  .line-clamp-2 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+  
+  .line-clamp-3 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+  }
+  
+  /* === ASPECT RATIOS === */
+  .aspect-card {
+    aspect-ratio: 4/3;
+  }
+  
+  .aspect-photo {
+    aspect-ratio: 3/2;
+  }
+  
+  .aspect-hero {
+    aspect-ratio: 16/9;
+  }
+  
+  /* === HIDE SCROLLBAR === */
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
 }
   

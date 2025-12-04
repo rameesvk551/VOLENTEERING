@@ -1,54 +1,74 @@
 import { useEffect, useRef, useState } from "react";
-import { GiHamburgerMenu } from "react-icons/gi";
-import { FaHeart, FaTimes, FaEnvelope } from "react-icons/fa";
-import { MdHotel, MdOutlineFlight } from "react-icons/md";
-import { FaTaxi } from "react-icons/fa6";
+import { Menu, X, MessageCircle, ChevronDown, Compass, Home, Map, LogOut, User, Settings } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { AppDispatch, RootState } from "../redux/store";
-import { useSelector } from "react-redux";
-import { BiMessageMinus } from "react-icons/bi";
+import { useSelector, useDispatch } from "react-redux";
 import { loadHost } from "@/redux/thunks/hostTunk";
-import { useDispatch } from "react-redux";
 import axios from "axios";
 import server from "@/server/app";
 import toast from "react-hot-toast";
+import { Button } from "./ui/button";
 
 const Navbar = () => {
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
-  const [showFavorites, setShowFavorites] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
   const dropdownRef = useRef<HTMLDivElement | null>(null);
   const navigate = useNavigate();
+  const dispatch = useDispatch<AppDispatch>();
+  
+  const { hostData } = useSelector((state: RootState) => state.host);
+  const { volenteerData, isAuthenticated } = useSelector((state: RootState) => state.volenteer);
 
   const menuItems = [
-    { id: 2, icon: <MdHotel size={22} className="text-black" />, text: "Stay", route: "/hotels" },
-    { id: 3, icon: <FaEnvelope size={22} className="text-black" />, text: "Volunteering", route: "/volunteering-oppertunities" },
-    { id: 4, icon: <FaTaxi size={22} className="text-black" />, text: "Plan Your Trip", route: "/trip-planning" },
-   
+    { 
+      id: 1, 
+      icon: <Home className="w-5 h-5" />, 
+      text: "Stay", 
+      route: "/hotels",
+      description: "Find accommodations"
+    },
+    { 
+      id: 2, 
+      icon: <Compass className="w-5 h-5" />, 
+      text: "Volunteering", 
+      route: "/volunteering-oppertunities",
+      description: "Discover opportunities"
+    },
+    { 
+      id: 3, 
+      icon: <Map className="w-5 h-5" />, 
+      text: "Plan Your Trip", 
+      route: "/trip-planning",
+      description: "Create itineraries"
+    },
   ];
-  const dispatch=useDispatch<AppDispatch>()
-  const { hostData, loading, error } = useSelector((state: RootState) => state.host);
+
+  // Handle scroll effect
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 10);
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   useEffect(() => {
     if (!hostData?.host) {
       dispatch(loadHost());
-      console.log("host data fetching...");
     }
   }, [dispatch, hostData?.host]);
-  
-    const handleSigninbtn=()=>{
-      navigate("user/login")
-    }
 
-  const { volenteerData, isAuthenticated } = useSelector((state: RootState) => state.volenteer);
-
+  const handleSigninbtn = () => {
+    navigate("user/login");
+  };
 
   const goToTheMessage = () => {
     navigate(`/message`);
   };
+
   const goToProfile = () => {
     setShowProfileMenu(false);
-  
     if (hostData?.host?._id) {
       navigate(`/host/profile/${hostData.host._id}`);
     } else if (volenteerData?.user?.role === "volunteer") {
@@ -57,14 +77,11 @@ const Navbar = () => {
       navigate(`/user/profile/${volenteerData?.user?._id}`);
     }
   };
-  
 
   const logOutHandler = async () => {
     setShowProfileMenu(false);
-  
     try {
-      let url = '';
-  
+      let url = "";
       if (hostData?.host?._id) {
         url = `${server}/host/logout`;
       } else if (volenteerData?.user) {
@@ -73,26 +90,23 @@ const Navbar = () => {
         toast.error("User type not identified");
         return;
       }
-  
       const res = await axios.post(url, {}, { withCredentials: true });
-  
       if (res.data.success) {
-        location.reload()
+        location.reload();
         toast.success("Logged out successfully");
-
       } else {
         toast.error("Something went wrong during logout");
       }
-    } catch (error) {
+    } catch {
       toast.error("Logout failed");
     }
   };
-  
+
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         setIsOpen(false);
-        setShowFavorites(false);
+        setShowProfileMenu(false);
       }
     };
 
@@ -104,117 +118,235 @@ const Navbar = () => {
 
     document.addEventListener("keydown", handleKeyDown);
     document.addEventListener("mousedown", handleClickOutside);
-
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
 
-  return (
-    <div>
-      {/* Navbar */}
-      <div className="h-20 w-full bg-gradient-to-b from-blue-100 to-blue-50 shadow-md py-3 px-6 flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <GiHamburgerMenu
-            size={30}
-            className="cursor-pointer text-gray-700 hover:text-gray-900 transition"
-            onClick={() => setIsOpen(true)}
-          />
-          <Link to={"/"}>
-            <h5 className="text-3xl font-bold tracking-widest text-gray-900 uppercase cursor-default">
-              <span className="bg-gradient-to-r from-blue-500 to-green-500 text-transparent bg-clip-text">RAIH</span>
-            </h5>
-          </Link>
-        </div>
+  const userName = hostData?.host?.firstName
+    ? `${hostData.host.firstName}`
+    : volenteerData?.user?.firstName || "Guest";
 
-        {/* Right side - Heart + Profile */}
-        <div className="flex items-center gap-4 relative">
-          {isAuthenticated || hostData ? (
-            <>
+  const userImage = hostData?.host?.profileImage || volenteerData?.user?.profileImage;
+
+  return (
+    <>
+      {/* Main Navbar */}
+      <nav
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+          scrolled
+            ? "bg-white/95 backdrop-blur-md shadow-sm border-b border-gray-100"
+            : "bg-white"
+        }`}
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16 lg:h-20">
+            {/* Left Section - Logo & Menu */}
+            <div className="flex items-center gap-4">
+              {/* Mobile Menu Button */}
               <button
-                onClick={goToTheMessage}
-                className="flex items-center justify-center p-2 rounded-full border border-blue-500 text-blue-500 hover:bg-blue-500 hover:text-white transition-all shadow-md"
+                onClick={() => setIsOpen(true)}
+                className="lg:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                aria-label="Open menu"
               >
-                <BiMessageMinus size={20} />
+                <Menu className="w-6 h-6 text-gray-700" />
               </button>
 
-              <div className="relative">
-                <img
-                  src={hostData?.host?.profileImage
-                    ? `${hostData.host.profileImage} (Host)`
-                    : volenteerData?.user?.profileImage }
-                  alt="Profile"
-                  className="w-10 h-10 rounded-full cursor-pointer border-2 border-gray-300 hover:border-blue-500 transition-all"
-                  onClick={() => setShowProfileMenu((prev) => !prev)}
-                />
+              {/* Logo */}
+              <Link to="/" className="flex items-center gap-2">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
+                  <span className="text-white font-bold text-lg">R</span>
+                </div>
+                <span className="hidden sm:block text-xl font-bold text-gradient">
+                  RAIH
+                </span>
+              </Link>
 
-                {showProfileMenu && (
-                  <div
-                    ref={dropdownRef}
-                    className="absolute right-0 top-12 w-60 bg-white rounded-lg shadow-xl border border-gray-200 z-50 overflow-hidden transition-all duration-300 transform scale-100 opacity-100"
+              {/* Desktop Navigation */}
+              <nav className="hidden lg:flex items-center ml-8 gap-1">
+                {menuItems.map((item) => (
+                  <Link
+                    key={item.id}
+                    to={item.route}
+                    className="flex items-center gap-2 px-4 py-2 rounded-lg text-gray-700 hover:bg-gray-100 hover:text-primary transition-all duration-200"
                   >
-                    <div className="px-5 py-4 text-gray-800 font-semibold text-center bg-gray-100">
-                    {hostData?.host?.firstName
-  ? `${hostData.host.firstName} (Host)`
-  : volenteerData?.user?.firstName || "Guest"}
+                    {item.icon}
+                    <span className="font-medium">{item.text}</span>
+                  </Link>
+                ))}
+              </nav>
+            </div>
 
-                    </div>
-                    <hr />
+            {/* Right Section - User Actions */}
+            <div className="flex items-center gap-3">
+              {isAuthenticated || hostData ? (
+                <>
+                  {/* Message Button */}
+                  <button
+                    onClick={goToTheMessage}
+                    className="relative p-2.5 rounded-full border border-gray-200 hover:border-primary hover:bg-primary/5 transition-all duration-200"
+                    aria-label="Messages"
+                  >
+                    <MessageCircle className="w-5 h-5 text-gray-600" />
+                    <span className="absolute -top-1 -right-1 w-4 h-4 bg-primary text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                      2
+                    </span>
+                  </button>
+
+                  {/* Profile Dropdown */}
+                  <div className="relative" ref={dropdownRef}>
                     <button
-                      className="w-full text-left px-5 py-3 text-gray-700 hover:bg-gray-100 transition-all"
-                      onClick={goToProfile}
+                      onClick={() => setShowProfileMenu((prev) => !prev)}
+                      className="flex items-center gap-2 p-1.5 pr-3 rounded-full border border-gray-200 hover:shadow-md transition-all duration-200"
                     >
-                      Profile
+                      <img
+                        src={userImage || `https://ui-avatars.com/api/?name=${userName}&background=random`}
+                        alt={userName}
+                        className="w-8 h-8 rounded-full object-cover"
+                      />
+                      <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform duration-200 ${showProfileMenu ? 'rotate-180' : ''}`} />
                     </button>
-                    <button
-                      className="w-full text-left px-5 py-3 text-red-500 hover:bg-gray-100 transition-all"
-                      onClick={logOutHandler}
-                    >
-                      Logout
-                    </button>
+
+                    {/* Dropdown Menu */}
+                    {showProfileMenu && (
+                      <div className="absolute right-0 top-full mt-2 w-64 bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden animate-slide-down">
+                        {/* User Info */}
+                        <div className="px-4 py-3 bg-gray-50 border-b border-gray-100">
+                          <p className="font-semibold text-gray-900">{userName}</p>
+                          <p className="text-sm text-gray-500">
+                            {hostData?.host ? "Host Account" : "Volunteer"}
+                          </p>
+                        </div>
+
+                        {/* Menu Items */}
+                        <div className="py-2">
+                          <button
+                            onClick={goToProfile}
+                            className="w-full flex items-center gap-3 px-4 py-2.5 text-gray-700 hover:bg-gray-50 transition-colors"
+                          >
+                            <User className="w-5 h-5" />
+                            <span>My Profile</span>
+                          </button>
+                          <button
+                            className="w-full flex items-center gap-3 px-4 py-2.5 text-gray-700 hover:bg-gray-50 transition-colors"
+                          >
+                            <Settings className="w-5 h-5" />
+                            <span>Settings</span>
+                          </button>
+                        </div>
+
+                        {/* Logout */}
+                        <div className="border-t border-gray-100 py-2">
+                          <button
+                            onClick={logOutHandler}
+                            className="w-full flex items-center gap-3 px-4 py-2.5 text-red-600 hover:bg-red-50 transition-colors"
+                          >
+                            <LogOut className="w-5 h-5" />
+                            <span>Log out</span>
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                )}
+                </>
+              ) : (
+                <div className="flex items-center gap-3">
+                  <Button
+                    variant="ghost"
+                    onClick={() => navigate("host/login")}
+                    className="hidden sm:flex"
+                  >
+                    Become a Host
+                  </Button>
+                  <Button onClick={handleSigninbtn}>
+                    Sign In
+                  </Button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </nav>
+
+      {/* Mobile Sidebar */}
+      <div
+        className={`fixed inset-0 z-50 lg:hidden ${
+          isOpen ? "visible" : "invisible"
+        }`}
+      >
+        {/* Backdrop */}
+        <div
+          className={`absolute inset-0 bg-black/50 transition-opacity duration-300 ${
+            isOpen ? "opacity-100" : "opacity-0"
+          }`}
+          onClick={() => setIsOpen(false)}
+        />
+
+        {/* Sidebar */}
+        <div
+          className={`absolute top-0 left-0 bottom-0 w-80 max-w-[85vw] bg-white shadow-2xl transform transition-transform duration-300 ${
+            isOpen ? "translate-x-0" : "-translate-x-full"
+          }`}
+        >
+          {/* Sidebar Header */}
+          <div className="flex items-center justify-between p-4 border-b border-gray-100">
+            <Link to="/" className="flex items-center gap-2" onClick={() => setIsOpen(false)}>
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
+                <span className="text-white font-bold text-lg">R</span>
               </div>
-            </>
-          ) : (
-            <button className="px-6 py-2 rounded-full bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-all shadow-md " onClick={handleSigninbtn}>
-              Sign In
+              <span className="text-xl font-bold text-gradient">RAIH</span>
+            </Link>
+            <button
+              onClick={() => setIsOpen(false)}
+              className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+            >
+              <X className="w-6 h-6 text-gray-500" />
             </button>
+          </div>
+
+          {/* Sidebar Menu */}
+          <nav className="p-4">
+            <div className="space-y-1">
+              {menuItems.map((item) => (
+                <Link
+                  key={item.id}
+                  to={item.route}
+                  onClick={() => setIsOpen(false)}
+                  className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-100 transition-colors"
+                >
+                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+                    {item.icon}
+                  </div>
+                  <div>
+                    <p className="font-medium text-gray-900">{item.text}</p>
+                    <p className="text-sm text-gray-500">{item.description}</p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </nav>
+
+          {/* Sidebar Footer */}
+          {!isAuthenticated && !hostData && (
+            <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-100">
+              <Button
+                onClick={() => {
+                  setIsOpen(false);
+                  handleSigninbtn();
+                }}
+                className="w-full"
+              >
+                Sign In
+              </Button>
+            </div>
           )}
         </div>
       </div>
 
-      {/* Left Sidebar */}
-      <div
-        className={`fixed top-0 left-0 h-full w-64 bg-gradient-to-b from-blue-100 to-blue-50 shadow-lg rounded-r-2xl transform ${
-          isOpen ? "translate-x-0" : "-translate-x-full"
-        } transition-transform duration-300 ease-in-out z-50`}
-      >
-        <div className="p-4 flex justify-end">
-          <FaTimes
-            size={24}
-            className="cursor-pointer text-gray-600 hover:text-gray-900"
-            onClick={() => setIsOpen(false)}
-          />
-        </div>
-
-        <ul className="px-6 py-4 text-gray-700 space-y-4">
-          {menuItems.map((item) => (
-            <li
-              key={item.id}
-              className="flex items-center gap-3 cursor-pointer px-4 py-2 rounded-md hover:bg-gray-100 transition"
-              onClick={() => setIsOpen(false)}
-            >
-              <Link to={item.route} className="flex items-center gap-3 w-full">
-                <span className="text-black font-bold">{item.icon}</span>
-                {item.text}
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </div>
-    </div>
+      {/* Spacer for fixed navbar */}
+      <div className="h-16 lg:h-20" />
+    </>
   );
 };
 
