@@ -191,7 +191,7 @@ const HostDetails = () => {
                 </div>
                 <div className="flex items-center gap-1.5">
                   <Clock className="w-4 h-4" />
-                  <span>Last active: {formatDate(host.lastActive)}</span>
+                  <span>Last active: {host.lastActive ? formatDate(host.lastActive) : 'N/A'}</span>
                 </div>
                 <Badge variant="success" className="flex items-center gap-1">
                   <CheckCircle className="w-3 h-3" />
@@ -228,7 +228,7 @@ const HostDetails = () => {
               {activeTab === 2 && <PhotosSection images={host.images} />}
               {activeTab === 3 && (
                 <div className="h-[400px] rounded-xl overflow-hidden">
-                  <MapComponent lat={latitude} lon={longitude} />
+                  <MapComponent lat={latitude ? parseFloat(latitude) : 0} lon={longitude ? parseFloat(longitude) : 0} />
                 </div>
               )}
               {activeTab === 4 && (

@@ -20,7 +20,7 @@ const HostCard: React.FC<HostCardProps> = ({ host }) => {
 
   // Calculate average rating
   const avgRating =
-    host?.reviews?.length > 0
+    host?.reviews && host.reviews.length > 0
       ? (
           host.reviews.reduce((sum: number, r: { rating: number }) => sum + r.rating, 0) /
           host.reviews.length
