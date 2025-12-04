@@ -1,63 +1,72 @@
 /**
- * Global Styles
- * Purpose: Base styles and Tailwind imports
- * Architecture: Tailwind CSS with custom utilities
+ * Global Styles - 2025 Minimal Design
+ * Purpose: Clean, professional travel blog styling
  */
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Custom base styles */
+/* Clean base styles */
 @layer base {
+  html {
+    @apply scroll-smooth;
+  }
+  
   body {
-    @apply bg-white text-gray-900 dark:bg-gray-900 dark:text-gray-100;
+    @apply bg-white text-gray-800 dark:bg-gray-900 dark:text-gray-100;
     @apply font-sans antialiased;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
 
-  h1,
-  h2,
-  h3,
-  h4,
-  h5,
-  h6 {
-    @apply font-bold;
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-semibold tracking-tight;
   }
 
   a {
-    @apply text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300;
-    @apply transition-colors duration-200;
+    @apply text-gray-900 dark:text-gray-100;
+    @apply transition-colors duration-150;
+  }
+  
+  a:hover {
+    @apply text-primary-600 dark:text-primary-400;
   }
 }
 
-/* Custom component styles */
+/* Minimal component styles */
 @layer components {
   .btn {
-    @apply px-4 py-2 rounded-lg font-medium transition-all duration-200;
+    @apply px-4 py-2 rounded-lg font-medium transition-all duration-150;
     @apply focus:outline-none focus:ring-2 focus:ring-offset-2;
   }
 
   .btn-primary {
-    @apply btn bg-primary-600 text-white hover:bg-primary-700;
-    @apply focus:ring-primary-500;
-  }
-
-  .btn-secondary {
-    @apply btn bg-gray-200 text-gray-900 hover:bg-gray-300;
-    @apply dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600;
+    @apply btn bg-gray-900 text-white hover:bg-gray-800;
+    @apply dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100;
     @apply focus:ring-gray-500;
   }
 
+  .btn-secondary {
+    @apply btn bg-gray-100 text-gray-700 hover:bg-gray-200;
+    @apply dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700;
+    @apply focus:ring-gray-400;
+  }
+
   .card {
-    @apply bg-white dark:bg-gray-800 rounded-lg shadow-md;
-    @apply border border-gray-200 dark:border-gray-700;
-    @apply transition-shadow duration-200 hover:shadow-lg;
+    @apply bg-white dark:bg-gray-800/50 rounded-xl;
+    @apply border border-gray-100 dark:border-gray-700/50;
+    @apply transition-all duration-200;
+  }
+
+  .card:hover {
+    @apply shadow-lg border-gray-200 dark:border-gray-600;
   }
 
   .input {
-    @apply w-full px-4 py-2 rounded-lg border border-gray-300;
-    @apply focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent;
-    @apply dark:bg-gray-800 dark:border-gray-600 dark:text-gray-100;
+    @apply w-full px-3 py-2 rounded-lg border border-gray-200;
+    @apply focus:outline-none focus:ring-1 focus:ring-gray-400 focus:border-gray-400;
+    @apply dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100;
+    @apply text-sm placeholder:text-gray-400;
   }
 }
 

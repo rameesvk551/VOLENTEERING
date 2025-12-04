@@ -254,11 +254,15 @@ export const VirtualizedAttractionFeed: React.FC<VirtualizedAttractionFeedProps>
     travelTypes: TravelType[];
     budget?: number;
     includeRealtimeTransit: boolean;
+    startLocation?: { lat: number; lng: number; address: string };
+    tripDurationHours?: number;
+    startTime?: string;
   }) => {
     console.log('🔍 handleOptimizeSubmit called');
     console.log('  - Selected attractions:', selectedAttractions.size);
     console.log('  - Items available:', items.length);
     console.log('  - Selected details stored:', Object.keys(selectedDetails).length);
+    console.log('  - Start location from payload:', payload.startLocation);
     
     // Get selected attraction details
   let selectedItems = items.filter(item => selectedAttractions.has(item.id));
@@ -303,8 +307,9 @@ export const VirtualizedAttractionFeed: React.FC<VirtualizedAttractionFeedProps>
       (type) => travelTypeMap[type] || type.toLowerCase()
     );
 
-    // Get starting location if available
-    const startLocationData = transportDrawerData?.startLocation || undefined;
+    // Get starting location - prefer from payload, fallback to transportDrawerData
+    const startLocationData = payload.startLocation || transportDrawerData?.startLocation || undefined;
+    console.log('📍 Using start location:', startLocationData);
 
     // Build optimization request payload
     const optimizeRequest: OptimizeRouteRequest = {

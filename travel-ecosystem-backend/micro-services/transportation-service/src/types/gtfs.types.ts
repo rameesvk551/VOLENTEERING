@@ -142,6 +142,11 @@ export interface RouteStep {
   tripId?: string;
   instructions?: string;
   polyline?: string;
+  // Enhanced transit details
+  departureStop?: string;
+  arrivalStop?: string;
+  headsign?: string;
+  agency?: string;
 }
 
 export interface TransportStep {

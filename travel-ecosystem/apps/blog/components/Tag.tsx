@@ -14,18 +14,18 @@ interface TagProps {
 }
 
 const Tag: React.FC<TagProps> = ({ name, onClick, variant = 'default', size = 'md' }) => {
-  const baseClasses = 'inline-flex max-w-full items-center rounded-full font-medium transition-colors break-words';
+  const baseClasses = 'inline-flex items-center rounded-md font-medium transition-colors';
 
   const variantClasses = {
-    default: 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700',
-    primary: 'bg-primary-100 text-primary-700 hover:bg-primary-200 dark:bg-primary-900 dark:text-primary-300',
-    secondary: 'bg-secondary-100 text-secondary-700 hover:bg-secondary-200 dark:bg-secondary-900 dark:text-secondary-300',
+    default: 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700',
+    primary: 'bg-primary-50 text-primary-600 hover:bg-primary-100 dark:bg-primary-900/50 dark:text-primary-400',
+    secondary: 'bg-gray-50 text-gray-500 hover:bg-gray-100 dark:bg-gray-800 dark:text-gray-400',
   };
 
   const sizeClasses = {
     sm: 'px-2 py-0.5 text-xs',
-    md: 'px-3 py-1 text-sm',
-    lg: 'px-4 py-1.5 text-base',
+    md: 'px-2.5 py-0.5 text-xs',
+    lg: 'px-3 py-1 text-sm',
   };
 
   const className = `${baseClasses} ${variantClasses[variant]} ${sizeClasses[size]} ${
@@ -43,7 +43,7 @@ const Tag: React.FC<TagProps> = ({ name, onClick, variant = 'default', size = 'm
 
   return (
     <span className={className} onClick={handleClick}>
-      #{name}
+      {name}
     </span>
   );
 };

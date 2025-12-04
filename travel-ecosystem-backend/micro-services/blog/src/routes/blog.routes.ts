@@ -21,6 +21,7 @@ import {
   getSitemap,
   getRobotsTxt
 } from '../controllers/blog.controller.js';
+import validators from '../validators/blog.validators.js';
 
 const router = express.Router();
 
@@ -37,20 +38,20 @@ router.get('/sitemap.xml', getSitemap);
 router.get('/robots.txt', getRobotsTxt);
 
 // Admin/Internal routes for CRUD operations
-router.post('/', createBlog);  // Create blog
+router.post('/', validators.createBlogValidators, createBlog);  // Create blog
 router.get('/all', getAllBlogsForAdmin);  // Get all blogs including drafts
 router.get('/edit/:id', getBlogByIdForEdit);  // Get blog by ID for editing
-router.put('/:id', updateBlog);  // Update blog
-router.delete('/:id', deleteBlog);  // Delete blog
-router.post('/:id/publish', publishBlog);  // Publish blog
+router.put('/:id', validators.updateBlogValidators, updateBlog);  // Update blog
+router.delete('/:id', validators.idParamValidator, deleteBlog);  // Delete blog
+router.post('/:id/publish', validators.idParamValidator, publishBlog);  // Publish blog
 
 // Public blog detail routes (must be after specific routes)
 router.get('/id/:id', getBlogById);
 router.get('/:slug', getBlogBySlug);
 
 // Protected routes (optional auth - handled by headers)
-router.post('/:id/like', toggleLike);
-router.post('/:id/rate', rateBlog);
-router.get('/:id/rating', getUserRating);
+router.post('/:id/like', validators.idParamValidator, toggleLike);
+router.post('/:id/rate', validators.rateValidator, rateBlog);
+router.get('/:id/rating', validators.idParamValidator, getUserRating);
 
 export default router;

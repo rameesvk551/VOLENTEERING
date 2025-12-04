@@ -78,40 +78,23 @@ export const OptimizeModal: React.FC<OptimizeModalProps> = ({
       return;
     }
 
-    // Check if PUBLIC_TRANSPORT is selected - open TransportDrawer
-    if (selectedTypes.includes('PUBLIC_TRANSPORT')) {
-      console.log('Opening transport drawer with data:', {
-        startLocation,
-        selectedDate: startDate,
-        selectedTypes
-      });
-      // Pass data to parent to open transport drawer
-      if (onOpenTransportDrawer) {
-        onOpenTransportDrawer({
-          startLocation,
-          selectedDate: startDate,
-          selectedTypes,
-          payload: {
-            travelTypes: selectedTypes,
-            budget: undefined,
-            includeRealtimeTransit: includeRealtime
-          }
-        });
-      } else {
-        console.error('onOpenTransportDrawer callback not provided!');
-      }
-      return;
-    }
+    // ALWAYS go directly to optimization - use real transit data from Google API
+    // The TransportDrawer is now optional for booking transport TO the destination
+    console.log('Submitting optimization with travel types:', selectedTypes);
+    console.log('Start location:', startLocation);
+    console.log('Include realtime transit:', includeRealtime);
 
     // Default trip duration: 24 hours (1 day)
     const durationHours = 24;
 
+    // Submit with all required data including startLocation
     onSubmit({
       travelTypes: selectedTypes,
       startLocation: startLocation,
       tripDurationHours: durationHours,
       includeRealtimeTransit: includeRealtime,
-      startTime: startDate
+      startTime: startDate,
+      budget: undefined
     });
   };
 
@@ -315,7 +298,7 @@ export const OptimizeModal: React.FC<OptimizeModalProps> = ({
                     Optimizing route...
                   </span>
                 ) : selectedTypes.includes('PUBLIC_TRANSPORT') ? (
-                  'Select Transportation'
+                  'Optimize with Transit'
                 ) : (
                   'Optimize Route'
                 )}

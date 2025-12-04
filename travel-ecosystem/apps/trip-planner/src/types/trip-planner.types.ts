@@ -273,6 +273,7 @@ export interface OptimizeModalProps {
     tripDurationHours?: number;
     includeRealtimeTransit: boolean;
     startTime?: string;
+    budget?: number;
   }) => void;
   isLoading?: boolean;
   onOpenTransportDrawer?: (data: {

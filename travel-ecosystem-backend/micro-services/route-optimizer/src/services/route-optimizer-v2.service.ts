@@ -862,8 +862,9 @@ export class RouteOptimizerService {
           const distanceMeters = Math.round(selected.totalDistance || fallbackDistance);
           const steps: TransportLegStep[] = (selected.steps || []).map((step: any) => ({
             mode: step.mode || 'transit',
-            from: step.from,
-            to: step.to,
+            // Use stop names if available, otherwise use coordinates
+            from: step.departureStop || step.from,
+            to: step.arrivalStop || step.to,
             distanceMeters: Math.round(step.distance || 0),
             durationSeconds: Math.round(step.duration || 0),
             route: step.route,
@@ -872,10 +873,24 @@ export class RouteOptimizerService {
             arrivalTime: step.arrivalTime,
             stops: step.stops,
             delaySeconds: typeof step.delay === 'number' ? step.delay : undefined,
+            // Additional details
+            headsign: step.headsign,
+            agency: step.agency,
           }));
 
+          // Find the primary transit mode from steps (bus, metro, train, etc.)
+          const transitStep = steps.find((s) => 
+            ['bus', 'metro', 'metro_rail', 'rail', 'train', 'subway', 'tram', 'ferry'].includes(
+              (s.mode || '').toLowerCase()
+            )
+          );
+          // Use actual transit mode name (Bus, Metro, Train) or normalized mode
+          const primaryMode = transitStep?.mode || 
+            this.normalizeTransportMode(steps[0]?.mode) || 
+            this.determineFallbackTravelType(constraints.travelTypes);
+
           return {
-            travelType: this.normalizeTransportMode(steps[0]?.mode) || this.determineFallbackTravelType(constraints.travelTypes),
+            travelType: primaryMode,
             travelTimeSeconds,
             distanceMeters,
             cost: Number(selected.estimatedCost ?? this.estimateFallbackCost(distanceMeters, constraints.travelTypes)),
@@ -952,21 +967,91 @@ export class RouteOptimizerService {
       return null;
     }
 
-    const preferredModes = this.mapTravelTypesToTransportModes(travelTypes);
-    const getModePriority = (mode: string) => {
-      const normalized = this.normalizeTransportMode(mode);
-      const index = preferredModes.indexOf(normalized as any);
-      return index >= 0 ? index : preferredModes.length;
+    // Maximum practical distances for each mode (in meters)
+    const MAX_WALKING_DISTANCE = 5000; // 5 km max for walking
+    const MAX_CYCLING_DISTANCE = 30000; // 30 km max for cycling
+    const MAX_ESCOOTER_DISTANCE = 20000; // 20 km max for e-scooter
+
+    // Helper to determine the primary mode of a leg (not just first step)
+    const getPrimaryMode = (leg: any): string => {
+      const steps = leg.steps || [];
+      // Check all steps for transit modes (bus, metro, train, etc.)
+      const transitStep = steps.find((s: any) => 
+        ['bus', 'metro', 'metro_rail', 'rail', 'train', 'subway', 'tram', 'ferry'].includes(
+          (s.mode || '').toLowerCase()
+        )
+      );
+      if (transitStep) {
+        return transitStep.mode; // Return actual transit mode (bus, metro, etc.)
+      }
+      // If no transit, return the first non-walking step or first step
+      const nonWalkingStep = steps.find((s: any) => 
+        (s.mode || '').toLowerCase() !== 'walking'
+      );
+      return nonWalkingStep?.mode || steps[0]?.mode || 'driving';
     };
 
-    return [...legs].sort((a, b) => {
-      const modeA = getModePriority(a.steps?.[0]?.mode);
-      const modeB = getModePriority(b.steps?.[0]?.mode);
-      if (modeA !== modeB) {
-        return modeA - modeB;
+    // Filter out unrealistic transport options
+    const realisticLegs = legs.filter((leg) => {
+      const distance = leg.totalDistance || 0;
+      const mode = this.normalizeTransportMode(getPrimaryMode(leg));
+
+      if (mode === 'walking' && distance > MAX_WALKING_DISTANCE) {
+        return false; // Too far to walk
+      }
+      if (mode === 'cycling' && distance > MAX_CYCLING_DISTANCE) {
+        return false; // Too far to cycle
+      }
+      if (mode === 'escooter' && distance > MAX_ESCOOTER_DISTANCE) {
+        return false; // Too far for e-scooter
+      }
+      return true;
+    });
+
+    // If no realistic options, use all legs but prefer driving/transit
+    const legsToSort = realisticLegs.length > 0 ? realisticLegs : legs;
+
+    const preferredModes = this.mapTravelTypesToTransportModes(travelTypes);
+    
+    // Add driving as fallback if not already included and distance is long
+    const hasLongDistance = legs.some((leg) => (leg.totalDistance || 0) > MAX_WALKING_DISTANCE);
+    const effectiveModes = hasLongDistance && !preferredModes.includes('driving') && realisticLegs.length === 0
+      ? [...preferredModes, 'driving']
+      : preferredModes;
+
+    console.log('📋 pickBestTransportLeg:', {
+      totalLegs: legs.length,
+      realisticLegs: realisticLegs.length,
+      preferredModes,
+      effectiveModes
+    });
+
+    const getModePriority = (mode: string) => {
+      const normalized = this.normalizeTransportMode(mode);
+      const index = effectiveModes.indexOf(normalized as any);
+      return index >= 0 ? index : effectiveModes.length;
+    };
+
+    const sortedLegs = [...legsToSort].sort((a, b) => {
+      const modeA = getPrimaryMode(a);
+      const modeB = getPrimaryMode(b);
+      const priorityA = getModePriority(modeA);
+      const priorityB = getModePriority(modeB);
+      
+      console.log('  Comparing:', {
+        legA: { mode: modeA, priority: priorityA, duration: a.totalDuration },
+        legB: { mode: modeB, priority: priorityB, duration: b.totalDuration }
+      });
+      
+      if (priorityA !== priorityB) {
+        return priorityA - priorityB;
       }
       return (a.totalDuration || 0) - (b.totalDuration || 0);
-    })[0];
+    });
+
+    const selected = sortedLegs[0];
+    console.log('  Selected leg:', { mode: getPrimaryMode(selected), duration: selected?.totalDuration });
+    return selected;
   }
 
   private normalizeTransportMode(mode?: string): 'transit' | 'walking' | 'cycling' | 'driving' | 'escooter' | undefined {
@@ -975,19 +1060,20 @@ export class RouteOptimizerService {
     }
 
     const normalized = mode.toLowerCase();
-    if (['transit', 'bus', 'metro', 'rail'].includes(normalized)) {
+    // Transit modes: bus, metro, train, subway, tram, etc.
+    if (['transit', 'bus', 'metro', 'rail', 'train', 'subway', 'tram', 'monorail', 'ferry', 'cable_car', 'gondola', 'funicular', 'shared_taxi'].includes(normalized)) {
       return 'transit';
     }
     if (['walk', 'walking'].includes(normalized)) {
       return 'walking';
     }
-    if (['bike', 'cycling'].includes(normalized)) {
+    if (['bike', 'cycling', 'bicycle', 'bicycling'].includes(normalized)) {
       return 'cycling';
     }
-    if (['drive', 'driving', 'car', 'ride'].includes(normalized)) {
+    if (['drive', 'driving', 'car', 'ride', 'taxi', 'uber', 'ola'].includes(normalized)) {
       return 'driving';
     }
-    if (['scooter', 'escooter'].includes(normalized)) {
+    if (['scooter', 'escooter', 'e-scooter'].includes(normalized)) {
       return 'escooter';
     }
     return undefined;
@@ -1011,6 +1097,24 @@ export class RouteOptimizerService {
 
   private estimateFallbackCost(distanceMeters: number, travelTypes: string[]): number {
     const distanceKm = distanceMeters / 1000;
+    
+    // VALIDATION: Check if distance is realistic for the travel type
+    const MAX_WALKING_KM = 5;
+    const MAX_CYCLING_KM = 30;
+    const MAX_DAILY_TRAVEL_KM = 500;
+    
+    if (distanceKm > MAX_DAILY_TRAVEL_KM) {
+      console.warn(`⚠️ UNREALISTIC: ${distanceKm.toFixed(1)}km exceeds maximum daily travel distance`);
+    }
+    
+    if (travelTypes.includes('WALKING') && distanceKm > MAX_WALKING_KM) {
+      console.warn(`⚠️ UNREALISTIC: ${distanceKm.toFixed(1)}km is too far to walk (max ${MAX_WALKING_KM}km)`);
+    }
+    
+    if (travelTypes.includes('CYCLING') && distanceKm > MAX_CYCLING_KM) {
+      console.warn(`⚠️ UNREALISTIC: ${distanceKm.toFixed(1)}km is too far to cycle (max ${MAX_CYCLING_KM}km)`);
+    }
+    
     if (travelTypes.includes('PUBLIC_TRANSPORT')) {
       return Number((distanceKm * 0.3).toFixed(2));
     }
@@ -1021,6 +1125,72 @@ export class RouteOptimizerService {
       return Number((distanceKm * 0.5).toFixed(2));
     }
     return Number((distanceKm * 0.8).toFixed(2));
+  }
+
+  /**
+   * Validate that a route leg is realistic
+   * Returns true if realistic, false if the leg should be flagged
+   */
+  private validateRouteLeg(
+    origin: Place,
+    destination: Place,
+    travelType: string,
+    distanceMeters: number,
+    durationSeconds: number
+  ): { isValid: boolean; warning?: string } {
+    const distanceKm = distanceMeters / 1000;
+    const durationMinutes = durationSeconds / 60;
+    
+    // Maximum realistic values
+    const LIMITS = {
+      walking: { maxDistanceKm: 5, maxDurationMinutes: 90 },
+      cycling: { maxDistanceKm: 30, maxDurationMinutes: 120 },
+      escooter: { maxDistanceKm: 20, maxDurationMinutes: 90 },
+      driving: { maxDistanceKm: 500, maxDurationMinutes: 600 },
+      transit: { maxDistanceKm: 300, maxDurationMinutes: 480 },
+      bus: { maxDistanceKm: 300, maxDurationMinutes: 480 },
+      metro: { maxDistanceKm: 50, maxDurationMinutes: 120 },
+      train: { maxDistanceKm: 1000, maxDurationMinutes: 720 }
+    };
+    
+    const mode = travelType.toLowerCase();
+    const limit = LIMITS[mode as keyof typeof LIMITS] || LIMITS.driving;
+    
+    if (distanceKm > limit.maxDistanceKm) {
+      return {
+        isValid: false,
+        warning: `⚠️ Distance ${distanceKm.toFixed(1)}km exceeds realistic limit of ${limit.maxDistanceKm}km for ${mode}`
+      };
+    }
+    
+    if (durationMinutes > limit.maxDurationMinutes) {
+      return {
+        isValid: false,
+        warning: `⚠️ Duration ${durationMinutes.toFixed(0)}min exceeds realistic limit of ${limit.maxDurationMinutes}min for ${mode}`
+      };
+    }
+    
+    // Check for unrealistic speed (too fast or too slow)
+    const speedKmH = (distanceKm / durationMinutes) * 60;
+    const SPEED_LIMITS = {
+      walking: { min: 3, max: 7 },
+      cycling: { min: 10, max: 30 },
+      driving: { min: 20, max: 120 },
+      transit: { min: 15, max: 100 },
+      bus: { min: 15, max: 80 },
+      metro: { min: 25, max: 90 },
+      train: { min: 40, max: 200 }
+    };
+    
+    const speedLimit = SPEED_LIMITS[mode as keyof typeof SPEED_LIMITS] || SPEED_LIMITS.driving;
+    if (speedKmH < speedLimit.min || speedKmH > speedLimit.max) {
+      return {
+        isValid: false,
+        warning: `⚠️ Speed ${speedKmH.toFixed(1)}km/h is unrealistic for ${mode} (expected ${speedLimit.min}-${speedLimit.max}km/h)`
+      };
+    }
+    
+    return { isValid: true };
   }
 
   private async fetchPolylineForLeg(

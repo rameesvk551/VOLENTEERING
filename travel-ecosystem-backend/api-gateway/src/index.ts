@@ -19,6 +19,7 @@ const AUTH_SERVICE_URL = process.env.AUTH_SERVICE_URL || 'http://localhost:4001'
 const BLOG_SERVICE_URL = process.env.BLOG_SERVICE_URL || 'http://localhost:4003';
 const ADMIN_SERVICE_URL = process.env.ADMIN_SERVICE_URL || 'http://localhost:4002';
 const ROUTE_OPTIMIZER_SERVICE_URL = process.env.ROUTE_OPTIMIZER_SERVICE_URL || 'http://localhost:3007';
+const DISCOVERY_ENGINE_URL = process.env.DISCOVERY_ENGINE_URL || 'http://localhost:3000';
 
 // Middleware
 app.use(helmet());
@@ -266,6 +267,39 @@ app.use('/api/v2/optimizations', optionalAuthMiddleware, createProxyMiddleware({
       message: 'Route optimizer service unavailable',
       error: err.message 
     });
+  }
+}));
+
+// Discovery Engine - Proxy POST /api/v1/discover to discovery-engine microservice
+app.use('/api/v1/discover', optionalAuthMiddleware, createProxyMiddleware({
+  target: DISCOVERY_ENGINE_URL,
+  changeOrigin: true,
+  pathRewrite: {
+    '^/api/v1/discover': '/api/v1/discover'
+  },
+  timeout: 30000,
+  proxyTimeout: 30000,
+  onProxyReq: (proxyReq, req: any) => {
+    console.log('Proxying to Discovery Engine:', req.method, req.url);
+    // Forward user info if authenticated
+    if (req.user) {
+      proxyReq.setHeader('X-User-Id', req.user.id);
+      proxyReq.setHeader('X-User-Email', req.user.email);
+      proxyReq.setHeader('X-User-Role', req.user.role);
+    }
+  },
+  onProxyRes: (proxyRes, req, res) => {
+    console.log('Discovery Engine Response:', proxyRes.statusCode);
+  },
+  onError: (err, req, res) => {
+    console.error('Discovery Engine Proxy Error:', err);
+    if (!res.headersSent) {
+      res.status(503).json({ 
+        success: false, 
+        message: 'Discovery service unavailable',
+        error: err.message 
+      });
+    }
   }
 }));
 

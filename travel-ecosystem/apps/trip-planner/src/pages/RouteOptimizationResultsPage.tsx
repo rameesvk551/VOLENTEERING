@@ -17,6 +17,11 @@ import {
   Calendar,
   TrendingUp,
   AlertCircle,
+  ChevronDown,
+  ChevronUp,
+  Bus,
+  Train,
+  X,
 } from 'lucide-react';
 import { buildTripPlannerPath } from '../utils/navigation';
 
@@ -25,10 +30,222 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import polyline from '@mapbox/polyline';
 
+// Transit Step Detail Modal Component
+interface TransitStep {
+  mode: string;
+  from?: string;
+  to?: string;
+  distanceMeters?: number;
+  durationSeconds?: number;
+  route?: string;
+  routeColor?: string;
+  departureTime?: string;
+  arrivalTime?: string;
+  stops?: number;
+}
+
+interface TransitDetailModalProps {
+  step: TransitStep;
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+const TransitDetailModal: React.FC<TransitDetailModalProps> = ({ step, isOpen, onClose }) => {
+  if (!isOpen) return null;
+
+  const getModeIcon = (mode: string) => {
+    const m = mode?.toLowerCase() || '';
+    if (m === 'bus') return '🚌';
+    if (m === 'metro_rail' || m === 'subway' || m === 'metro') return '🚇';
+    if (m === 'rail' || m === 'train') return '🚆';
+    if (m === 'tram') return '🚊';
+    if (m === 'ferry') return '⛴️';
+    if (m === 'walking') return '🚶';
+    if (m === 'driving') return '🚗';
+    return '🚌';
+  };
+
+  const getModeColor = (mode: string) => {
+    const m = mode?.toLowerCase() || '';
+    if (m === 'bus') return 'bg-blue-500';
+    if (m === 'metro_rail' || m === 'subway' || m === 'metro') return 'bg-purple-500';
+    if (m === 'rail' || m === 'train') return 'bg-green-500';
+    if (m === 'tram') return 'bg-orange-500';
+    if (m === 'ferry') return 'bg-cyan-500';
+    return 'bg-gray-500';
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={onClose}>
+      <div 
+        className="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header with color bar */}
+        <div 
+          className={`${step.routeColor ? '' : getModeColor(step.mode)} p-4 text-white`}
+          style={step.routeColor ? { backgroundColor: step.routeColor } : {}}
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <span className="text-3xl">{getModeIcon(step.mode)}</span>
+              <div>
+                <h3 className="text-xl font-bold capitalize">
+                  {step.mode?.toLowerCase().replace(/_/g, ' ')}
+                </h3>
+                {step.route && (
+                  <p className="text-white/90 font-medium">{step.route}</p>
+                )}
+              </div>
+            </div>
+            <button
+              onClick={onClose}
+              className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+
+        {/* Details */}
+        <div className="p-4 space-y-4">
+          {/* Time */}
+          {(step.departureTime || step.arrivalTime) && (
+            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
+              <div className="text-center">
+                <p className="text-xs text-gray-500 uppercase">Departure</p>
+                <p className="text-lg font-bold text-gray-900">{step.departureTime || '--:--'}</p>
+              </div>
+              <div className="flex-1 px-4">
+                <div className="h-0.5 bg-gray-300 relative">
+                  <div className="absolute left-0 top-1/2 -translate-y-1/2 w-2 h-2 bg-green-500 rounded-full" />
+                  <div className="absolute right-0 top-1/2 -translate-y-1/2 w-2 h-2 bg-red-500 rounded-full" />
+                </div>
+              </div>
+              <div className="text-center">
+                <p className="text-xs text-gray-500 uppercase">Arrival</p>
+                <p className="text-lg font-bold text-gray-900">{step.arrivalTime || '--:--'}</p>
+              </div>
+            </div>
+          )}
+
+          {/* Route Info */}
+          <div className="grid grid-cols-2 gap-3">
+            {step.durationSeconds && (
+              <div className="p-3 bg-blue-50 rounded-xl">
+                <div className="flex items-center gap-2 text-blue-600 mb-1">
+                  <Clock className="w-4 h-4" />
+                  <span className="text-xs font-medium uppercase">Duration</span>
+                </div>
+                <p className="text-lg font-bold text-gray-900">
+                  {Math.round(step.durationSeconds / 60)} min
+                </p>
+              </div>
+            )}
+
+            {step.distanceMeters && (
+              <div className="p-3 bg-green-50 rounded-xl">
+                <div className="flex items-center gap-2 text-green-600 mb-1">
+                  <Navigation className="w-4 h-4" />
+                  <span className="text-xs font-medium uppercase">Distance</span>
+                </div>
+                <p className="text-lg font-bold text-gray-900">
+                  {(step.distanceMeters / 1000).toFixed(1)} km
+                </p>
+              </div>
+            )}
+
+            {step.stops && (
+              <div className="p-3 bg-purple-50 rounded-xl">
+                <div className="flex items-center gap-2 text-purple-600 mb-1">
+                  <MapPin className="w-4 h-4" />
+                  <span className="text-xs font-medium uppercase">Stops</span>
+                </div>
+                <p className="text-lg font-bold text-gray-900">{step.stops} stops</p>
+              </div>
+            )}
+
+            {step.route && (
+              <div className="p-3 bg-orange-50 rounded-xl">
+                <div className="flex items-center gap-2 text-orange-600 mb-1">
+                  <Bus className="w-4 h-4" />
+                  <span className="text-xs font-medium uppercase">Route</span>
+                </div>
+                <p className="text-sm font-bold text-gray-900 truncate">{step.route}</p>
+              </div>
+            )}
+          </div>
+
+          {/* From/To */}
+          {(step.from || step.to) && (
+            <div className="space-y-3 p-3 bg-gray-50 rounded-xl">
+              <h4 className="text-xs font-semibold text-gray-500 uppercase">Route Details</h4>
+              {step.from && (
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
+                    <div className="w-3 h-3 bg-green-500 rounded-full" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-xs text-gray-500 uppercase font-medium">Boarding Point</p>
+                    <p className="text-sm font-semibold text-gray-900">
+                      {/* Check if it's a coordinate string and show appropriate label */}
+                      {step.from.includes(',') && /^-?\d+\.?\d*,-?\d+\.?\d*$/.test(step.from.replace(/\s/g, ''))
+                        ? `📍 Location ${step.from.split(',')[0].slice(0, 7)}...`
+                        : step.from}
+                    </p>
+                  </div>
+                </div>
+              )}
+              
+              {/* Journey indicator */}
+              <div className="flex items-center gap-3 pl-3">
+                <div className="w-0.5 h-6 bg-gray-300 ml-[14px]" />
+                <div className="flex items-center gap-2 text-xs text-gray-500">
+                  <span>↓</span>
+                  <span>{step.stops ? `${step.stops} stops` : 'Direct'}</span>
+                  <span>•</span>
+                  <span>{Math.round((step.durationSeconds || 0) / 60)} min</span>
+                </div>
+              </div>
+              
+              {step.to && (
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
+                    <div className="w-3 h-3 bg-red-500 rounded-full" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-xs text-gray-500 uppercase font-medium">Drop-off Point</p>
+                    <p className="text-sm font-semibold text-gray-900">
+                      {step.to.includes(',') && /^-?\d+\.?\d*,-?\d+\.?\d*$/.test(step.to.replace(/\s/g, ''))
+                        ? `📍 Location ${step.to.split(',')[0].slice(0, 7)}...`
+                        : step.to}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="p-4 border-t border-gray-100">
+          <button
+            onClick={onClose}
+            className="w-full py-3 bg-gray-900 text-white font-medium rounded-xl hover:bg-gray-800 transition-colors"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export default function RouteOptimizationResults() {
   const navigate = useNavigate();
   const snapshot = useRouteOptimizationStore((state) => state.snapshot);
   const [isExporting, setIsExporting] = useState(false);
+  const [selectedTransitStep, setSelectedTransitStep] = useState<TransitStep | null>(null);
   const mapRef = useRef<L.Map | null>(null);
   const mapContainerRef = useRef<HTMLDivElement>(null);
 
@@ -390,7 +607,13 @@ export default function RouteOptimizationResults() {
                     <div className="ml-8 mb-4 p-4 bg-gray-50 rounded-lg border-l-4 border-blue-500">
                       <div className="flex items-center gap-2 text-sm text-gray-600 mb-2">
                         <TrendingUp className="w-4 h-4" />
-                        <span className="font-medium capitalize">{leg.travelType}</span>
+                        <span className="font-medium capitalize">
+                          {/* Show actual transit mode from steps if available */}
+                          {leg.steps && leg.steps.length > 0 && leg.steps[0].mode && 
+                           !['fallback', 'driving'].includes(leg.steps[0].mode.toLowerCase())
+                            ? leg.steps[0].mode.replace(/_/g, ' ')
+                            : leg.travelType}
+                        </span>
                         <span className="mx-2">•</span>
                         <span>{(leg.travelTimeSeconds / 60).toFixed(0)} min</span>
                         <span className="mx-2">•</span>
@@ -402,9 +625,51 @@ export default function RouteOptimizationResults() {
                           </>
                         )}
                       </div>
-                      {leg.steps && leg.steps.length > 1 && (
-                        <div className="text-xs text-gray-500">
-                          {leg.steps.length} steps • {leg.provider === 'transport-service' ? '✅ Real-time' : '⚠️ Estimated'}
+                      {/* Show transit steps details if available - CLICKABLE */}
+                      {leg.steps && leg.steps.length > 0 && (
+                        <div className="mt-2 space-y-1">
+                          {leg.steps.filter(step => step.mode && step.mode.toLowerCase() !== 'fallback').map((step, stepIdx) => {
+                            const isTransit = ['bus', 'metro', 'metro_rail', 'subway', 'rail', 'train', 'tram', 'ferry'].includes(
+                              (step.mode || '').toLowerCase()
+                            );
+                            return (
+                              <button
+                                key={stepIdx}
+                                onClick={() => isTransit ? setSelectedTransitStep(step as TransitStep) : null}
+                                className={`flex items-center gap-2 text-xs text-gray-600 bg-white px-3 py-2 rounded-lg w-full text-left transition-all ${
+                                  isTransit 
+                                    ? 'hover:bg-blue-50 hover:shadow-md cursor-pointer border border-transparent hover:border-blue-200' 
+                                    : 'cursor-default'
+                                }`}
+                              >
+                                <span className="text-lg">
+                                  {step.mode?.toUpperCase() === 'BUS' ? '🚌' : 
+                                   step.mode?.toUpperCase() === 'METRO_RAIL' || step.mode?.toUpperCase() === 'SUBWAY' || step.mode?.toUpperCase() === 'METRO' ? '🚇' :
+                                   step.mode?.toUpperCase() === 'RAIL' || step.mode?.toUpperCase() === 'TRAIN' ? '🚆' :
+                                   step.mode?.toUpperCase() === 'TRAM' ? '🚊' :
+                                   step.mode?.toUpperCase() === 'FERRY' ? '⛴️' :
+                                   step.mode?.toUpperCase() === 'WALKING' ? '🚶' :
+                                   step.mode?.toUpperCase() === 'DRIVING' ? '🚗' : '🚌'}
+                                </span>
+                                <span className="capitalize font-medium">{step.mode?.toLowerCase().replace(/_/g, ' ')}</span>
+                                {step.route && (
+                                  <span 
+                                    className="font-semibold px-2 py-0.5 rounded text-white text-xs"
+                                    style={{ backgroundColor: step.routeColor || '#3b82f6' }}
+                                  >
+                                    {step.route}
+                                  </span>
+                                )}
+                                <span className="text-gray-400 ml-auto">• {Math.round((step.durationSeconds || 0) / 60)} min</span>
+                                {isTransit && (
+                                  <ChevronDown className="w-4 h-4 text-gray-400" />
+                                )}
+                              </button>
+                            );
+                          })}
+                          <div className="text-xs text-gray-500 mt-1 px-1">
+                            {leg.steps.length} steps • {leg.provider === 'transport-service' ? '✅ Real-time' : '⚠️ Estimated'}
+                          </div>
                         </div>
                       )}
                     </div>
@@ -485,6 +750,13 @@ export default function RouteOptimizationResults() {
           </div>
         )}
       </div>
+
+      {/* Transit Detail Modal */}
+      <TransitDetailModal
+        step={selectedTransitStep || { mode: '' }}
+        isOpen={!!selectedTransitStep}
+        onClose={() => setSelectedTransitStep(null)}
+      />
     </div>
   );
 }
