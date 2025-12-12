@@ -6,12 +6,23 @@
  * 2. TSP optimization (2-opt, simulated annealing, genetic)
  * 3. RAPTOR algorithm (for public transport)
  * 4. Constraint application (budget, time, opening hours)
- * 5. Returns optimized ORDER only (no transport details yet)
+ * 5. Multi-day trip segmentation with accommodation
+ * 6. Smart transport mode selection based on distance
+ * 7. Opening hours validation
  */
 
 import { v4 as uuidv4 } from 'uuid';
 import haversine from 'haversine-distance';
 import axios from 'axios';
+import {
+  validateTrip,
+  breakIntoMultiDaySegments,
+  recommendTransportMode,
+  adjustItineraryForOpeningHours,
+  isAttractionOpenAt,
+  type AttractionTimeWindow,
+
+} from '../utils/trip-validator.js';
 
 // ========== TYPES ==========
 
@@ -22,6 +33,7 @@ interface Place {
   lng: number;
   priority?: number;
   visitDuration?: number;
+  timeWindow?: AttractionTimeWindow;
 }
 
 interface OptimizationRequest {
@@ -95,6 +107,12 @@ export interface OptimizationResponse {
   routeGeometry: RouteGeometry;
   summary: RouteSummary;
   notes?: string;
+  validation?: {
+    isValid: boolean;
+    errors: string[];
+    warnings: string[];
+    suggestions: string[];
+  };
 }
 
 interface DistanceMatrix {
@@ -160,6 +178,22 @@ export class RouteOptimizerService {
     console.log('📊 Building distance matrix...');
     const matrix = await this.buildDistanceMatrix(placesForOptimization, request.constraints.travelTypes);
 
+    // Step 1.5: Validate trip feasibility and get recommendations
+    console.log('✅ Validating trip constraints...');
+    const validation = validateTrip(placesForOptimization, matrix.durations, matrix.distances);
+    
+    if (!validation.isValid) {
+      console.warn('⚠️  Trip validation failed:', validation.errors);
+    }
+    
+    if (validation.warnings.length > 0) {
+      console.warn('⚠️  Trip warnings:', validation.warnings);
+    }
+    
+    if (validation.suggestions.length > 0) {
+      console.log('💡 Trip suggestions:', validation.suggestions);
+    }
+
     // Step 2: Run TSP optimization
     console.log('🧮 Running TSP optimization...');
     let optimizedIndices = this.runTSP(matrix.distances, placesForOptimization);
@@ -178,14 +212,73 @@ export class RouteOptimizerService {
     // Step 3: Apply constraints
     console.log('⚖️ Applying constraints...');
     console.log('  - Optimized indices before constraints:', optimizedIndices);
+    
+    // First, apply opening hours validation
+    const startTime = request.constraints.startTime 
+      ? new Date(request.constraints.startTime) 
+      : new Date();
+    startTime.setHours(startTime.getHours() || 9, 0, 0, 0); // Default to 9 AM if not specified
+    
+    const optimizedPlaces = optimizedIndices.map(idx => placesForOptimization[idx]);
+    const openingHoursAdjustment = adjustItineraryForOpeningHours(
+      optimizedPlaces,
+      matrix.durations,
+      startTime
+    );
+    
+    if (openingHoursAdjustment.removedPlaces.length > 0) {
+      console.warn('⚠️  Places removed due to opening hours:', 
+        openingHoursAdjustment.removedPlaces.map(p => p.name)
+      );
+    }
+    
+    console.log('🕐 Opening hours adjustments:', openingHoursAdjustment.adjustments);
+    
+    // Update indices based on adjusted places
+    const adjustedIndices = openingHoursAdjustment.adjustedPlaces.map(place => 
+      placesForOptimization.indexOf(place)
+    );
+    
     const constrainedOrder = this.applyConstraints(
-      optimizedIndices,
+      adjustedIndices,
       matrix,
       placesForOptimization,
-      request.constraints
+      request.constraints,
+      validation
     );
     console.log('  - Constrained order after filtering:', constrainedOrder);
     console.log('  - Places remaining:', constrainedOrder.length, 'out of', placesForOptimization.length);
+
+    // Check if we have any valid places left
+    if (constrainedOrder.length === 0) {
+      console.error('❌ No valid places remaining after constraints');
+      const errorMessage = openingHoursAdjustment.removedPlaces.length > 0
+        ? `All ${openingHoursAdjustment.removedPlaces.length} place(s) were removed due to opening hours constraints.`
+        : 'No places remaining after applying constraints.';
+      
+      return {
+        jobId,
+        optimizedOrder: [],
+        estimatedDurationMinutes: 0,
+        totalDistanceMeters: 0,
+        legs: [],
+        timeline: [],
+        routeGeometry: { legs: [] },
+        summary: {
+          startsAt: new Date().toISOString(),
+          endsAt: new Date().toISOString(),
+          totalVisitMinutes: 0,
+          totalTravelMinutes: 0,
+        },
+        notes: `❌ Unable to create itinerary: ${errorMessage} ${validation.warnings.length > 0 ? '⚠️ Warnings: ' + validation.warnings.join(' ') : ''}`,
+        validation: {
+          isValid: false,
+          errors: [errorMessage],
+          warnings: validation.warnings,
+          suggestions: validation.suggestions,
+        },
+      };
+    }
 
     // Step 4: Calculate totals
     const legEnhancements = await this.buildLegsAndTimeline(
@@ -202,11 +295,32 @@ export class RouteOptimizerService {
       legEnhancements.summary
     );
 
-    // Step 5: Build response
-    const optimizedOrder = constrainedOrder.map((index, seq) => ({
-      placeId: placesForOptimization[index].id,
-      seq: seq + 1,
-    }));
+    // Step 5: Build response with validation feedback
+    const optimizedOrder = constrainedOrder
+      .filter(index => placesForOptimization[index] !== undefined)
+      .map((index, seq) => ({
+        placeId: placesForOptimization[index].id,
+        seq: seq + 1,
+      }));
+
+    // Compile comprehensive notes
+    let comprehensiveNotes = legEnhancements.notes;
+    
+    if (hasStartingLocation) {
+      comprehensiveNotes += ' Route starts from specified starting location.';
+    }
+    
+    if (validation.warnings.length > 0) {
+      comprehensiveNotes += ' ⚠️ Warnings: ' + validation.warnings.join(' ');
+    }
+    
+    if (validation.suggestions.length > 0) {
+      comprehensiveNotes += ' 💡 Suggestions: ' + validation.suggestions.join(' ');
+    }
+    
+    if (openingHoursAdjustment.removedPlaces.length > 0) {
+      comprehensiveNotes += ` 🕐 ${openingHoursAdjustment.removedPlaces.length} place(s) removed due to opening hours constraints.`;
+    }
 
     return {
       jobId,
@@ -217,9 +331,13 @@ export class RouteOptimizerService {
       timeline: legEnhancements.timeline,
       routeGeometry: legEnhancements.routeGeometry,
       summary: legEnhancements.summary,
-      notes: hasStartingLocation 
-        ? legEnhancements.notes + ' Route starts from specified starting location.'
-        : legEnhancements.notes,
+      notes: comprehensiveNotes,
+      validation: {
+        isValid: validation.isValid,
+        errors: validation.errors,
+        warnings: validation.warnings,
+        suggestions: validation.suggestions,
+      },
     };
   }
 
@@ -447,7 +565,8 @@ export class RouteOptimizerService {
     route: number[],
     matrix: DistanceMatrix,
     places: Place[],
-    constraints: any
+    constraints: any,
+    validation?: any
   ): number[] {
     let constrainedRoute = [...route];
 
@@ -517,17 +636,25 @@ export class RouteOptimizerService {
 
     for (let i = 0; i < route.length; i++) {
       const placeIndex = route[i];
-      const visitDuration = (places[placeIndex].visitDuration || 60) * 60;
+      const place = places[placeIndex];
+      
+      // Skip if place doesn't exist (safety check)
+      if (!place) {
+        console.warn(`  ⚠️  Warning: Place at index ${placeIndex} not found, skipping`);
+        continue;
+      }
+      
+      const visitDuration = (place.visitDuration || 60) * 60;
 
       if (i > 0) {
-        const travelTime = matrix.durations[route[i - 1]][placeIndex];
-        console.log(`  Stop ${i}: ${places[placeIndex].name}`);
+        const travelTime = matrix.durations[route[i - 1]][placeIndex] || 0;
+        console.log(`  Stop ${i}: ${place.name}`);
         console.log(`    - Travel time from previous: ${(travelTime / 60).toFixed(1)} min`);
         console.log(`    - Visit duration: ${visitDuration / 60} min`);
         console.log(`    - Total time so far: ${(totalTime / 60).toFixed(1)} min / ${timeBudgetMinutes} min`);
         totalTime += travelTime;
       } else {
-        console.log(`  Stop ${i}: ${places[placeIndex].name} (starting point)`);
+        console.log(`  Stop ${i}: ${place.name} (starting point)`);
         console.log(`    - Visit duration: ${visitDuration / 60} min`);
       }
 
@@ -709,9 +836,27 @@ export class RouteOptimizerService {
 
     // Seed timeline with first place
     const firstIndex = route[0];
-    const firstVisitDurationSeconds = this.getVisitDurationSeconds(places[firstIndex]);
+    const firstPlace = places[firstIndex];
+    
+    if (!firstPlace) {
+      console.error(`❌ First place at index ${firstIndex} not found`);
+      return {
+        legs: [],
+        timeline: [],
+        routeGeometry: { legs: [] },
+        summary: {
+          startsAt: new Date(startTimestamp).toISOString(),
+          endsAt: new Date(startTimestamp).toISOString(),
+          totalVisitMinutes: 0,
+          totalTravelMinutes: 0,
+        },
+        notes: 'Error: First place not found in route.',
+      };
+    }
+    
+    const firstVisitDurationSeconds = this.getVisitDurationSeconds(firstPlace);
     timeline.push({
-      placeId: places[firstIndex].id,
+      placeId: firstPlace.id,
       seq: 1,
       arrivalTime: new Date(currentTimeMs).toISOString(),
       departureTime: new Date(currentTimeMs + firstVisitDurationSeconds * 1000).toISOString(),
@@ -725,6 +870,12 @@ export class RouteOptimizerService {
       const destinationIndex = route[i];
       const origin = places[originIndex];
       const destination = places[destinationIndex];
+
+      // Skip if either place doesn't exist
+      if (!origin || !destination) {
+        console.warn(`⚠️  Skipping leg ${i}: origin or destination not found (indices: ${originIndex}, ${destinationIndex})`);
+        continue;
+      }
 
       const fallbackDistance = matrix.distances[originIndex]?.[destinationIndex] ?? this.getHaversineDistance(origin, destination);
       const fallbackDuration = matrix.durations[originIndex]?.[destinationIndex] ?? fallbackDistance / 1.4;
@@ -794,6 +945,45 @@ export class RouteOptimizerService {
       })),
     };
 
+    // Check for multi-day trip and add accommodation recommendations
+    const totalHours = (totalTravelSeconds + totalVisitSeconds) / 3600;
+    const routePlaces = route.map(idx => places[idx]).filter(p => p !== undefined);
+    
+    if (totalHours > 10 && routePlaces.length > 0) {
+      const segments = breakIntoMultiDaySegments(
+        routePlaces,
+        matrix.durations,
+        matrix.distances,
+        new Date(startTimestamp)
+      );
+      
+      if (segments.length > 1) {
+        legNotes.push(
+          `⚠️ Multi-day trip: ${segments.length} days required. Accommodation needed after: ${
+            segments
+              .filter(s => s.requiresAccommodation)
+              .map(s => s.places[s.places.length - 1].name)
+              .join(', ')
+          }.`
+        );
+      }
+    }
+
+    // Add transport mode recommendations for very long legs
+    for (let i = 0; i < legs.length; i++) {
+      const leg = legs[i];
+      const distanceKm = leg.distanceMeters / 1000;
+      
+      if (distanceKm > 500) {
+        const recommendation = recommendTransportMode(distanceKm);
+        if (!recommendation.recommended.includes(leg.travelType.toLowerCase())) {
+          legNotes.push(
+            `💡 Leg ${i + 1} (${leg.from.name} → ${leg.to.name}): ${distanceKm.toFixed(0)}km - ${recommendation.reason}. Consider: ${recommendation.recommended.join(', ')}.`
+          );
+        }
+      }
+    }
+
     return {
       legs,
       timeline,
@@ -830,6 +1020,18 @@ export class RouteOptimizerService {
     fallbackDistance: number,
     fallbackDuration: number
   ): Promise<Omit<TransportLegDetail, 'from' | 'to' | 'polyline'>> {
+    // Smart transport mode selection based on distance
+    const distanceKm = fallbackDistance / 1000;
+    const modeRecommendation = recommendTransportMode(distanceKm);
+    
+    let adjustedModes = this.mapTravelTypesToTransportModes(constraints.travelTypes);
+    
+    // Override for very long distances - suggest flights
+    if (distanceKm > 500 && !adjustedModes.includes('transit')) {
+      console.log(`💡 Long distance detected (${distanceKm.toFixed(0)}km). Adding flight option.`);
+      adjustedModes = ['transit', ...adjustedModes]; // Add transit which may include flights
+    }
+    
     const payload = {
       origin: {
         name: origin.name,
@@ -843,7 +1045,7 @@ export class RouteOptimizerService {
       },
       departureTime,
       preferences: {
-        modes: this.mapTravelTypesToTransportModes(constraints.travelTypes),
+        modes: adjustedModes,
         budget: this.mapBudgetToPreference(constraints.budget),
         maxWalkDistance: options.includeRealtimeTransit ? 1200 : undefined,
       },

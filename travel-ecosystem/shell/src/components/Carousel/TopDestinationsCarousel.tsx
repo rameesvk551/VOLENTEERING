@@ -14,33 +14,37 @@ interface TopDestinationsCarouselProps {
 
 const TopDestinationsCarousel: React.FC<TopDestinationsCarouselProps> = ({ data }) => {
   return (
-    <CarouselWrapper
-      title="Trending Destinations"
-      cardWidth="w-[260px] md:w-[300px] lg:w-[320px] xl:w-[340px]"
-      cardGap="gap-6 md:gap-7 lg:gap-8"
-      className="mb-12"
-    >
-      {data.map((item) => (
-        <div
-          key={item.id}
-          className="bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden group cursor-pointer flex flex-col h-full"
-        >
-          <div className="relative aspect-[4/3] w-full overflow-hidden">
-            <img
-              src={item.image}
-              alt={item.title}
-              className="object-cover w-full h-full group-hover:scale-105 transition-all duration-300"
-            />
-            <span className="absolute left-3 top-3 bg-black/60 text-white text-xs px-2 py-1 rounded font-semibold tracking-wide">
-              {item.label}
-            </span>
-          </div>
-          <div className="p-4 flex flex-col flex-1">
-            <h3 className="font-bold text-lg text-gray-900 leading-tight line-clamp-2 mb-1">{item.title}</h3>
-          </div>
+    <section className="py-12 px-4 bg-white">
+      <div className="max-w-7xl mx-auto">
+        <h2 className="text-2xl md:text-3xl font-bold text-neutral-900 mb-6">
+          Top Destinations
+        </h2>
+        
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {data.slice(0, 4).map((item) => (
+            <div
+              key={item.id}
+              className="group relative rounded-xl overflow-hidden cursor-pointer h-64 shadow-soft hover:shadow-medium transition-all duration-300"
+            >
+              {/* Background image */}
+              <img
+                src={item.image}
+                alt={item.title}
+                className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+              />
+              
+              {/* Overlay gradient */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent"></div>
+              
+              {/* Content */}
+              <div className="absolute bottom-0 left-0 right-0 p-4">
+                <h3 className="text-white font-bold text-xl mb-1">{item.title}</h3>
+              </div>
+            </div>
+          ))}
         </div>
-      ))}
-    </CarouselWrapper>
+      </div>
+    </section>
   );
 };
 

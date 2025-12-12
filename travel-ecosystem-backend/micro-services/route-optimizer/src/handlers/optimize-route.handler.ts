@@ -119,6 +119,10 @@ const PlaceSchema = z.object({
   imageUrl: z.string().optional(),
   priority: z.number().min(1).max(10).optional(),
   visitDuration: z.number().min(0).optional(), // minutes
+  timeWindow: z.object({
+    open: z.string().regex(/^\d{2}:\d{2}$/).optional(), // HH:MM format
+    close: z.string().regex(/^\d{2}:\d{2}$/).optional(), // HH:MM format
+  }).optional(),
 });
 
 const OptimizeRouteRequestSchema = z.object({

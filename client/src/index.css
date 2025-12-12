@@ -1,6 +1,8 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Custom Scrollbar Styles */
 .scrollbar-container {
     overflow-y: auto; /* Enable scrolling */
     scrollbar-width: thin; /* Firefox: Show thin scrollbar */
@@ -21,6 +23,31 @@
   
   .scrollbar-container:hover::-webkit-scrollbar-thumb {
     background: rgba(0, 0, 0, 0.3); /* Show on hover */
+  }
+
+  /* Custom Scrollbar for Trip Planner */
+  .custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(59, 130, 246, 0.5) rgba(59, 130, 246, 0.1);
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 8px;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: rgba(59, 130, 246, 0.1);
+    border-radius: 10px;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(59, 130, 246, 0.5);
+    border-radius: 10px;
+    transition: background 0.3s;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(59, 130, 246, 0.8);
   }
   
   

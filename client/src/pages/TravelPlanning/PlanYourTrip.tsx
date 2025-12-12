@@ -14,9 +14,9 @@ const PlanYourTrip = () => {
  
   return (
     <div className="bg-gradient-to-b from-blue-50 to-white">
-    <div className="py-10 px-6 sm:px-10">
-      <div className="mx-auto">
-        <div className="md:flex-row gap-8">
+    <div className="w-full">
+      <div className="w-full">
+        <div className="w-full">
        
 
 
