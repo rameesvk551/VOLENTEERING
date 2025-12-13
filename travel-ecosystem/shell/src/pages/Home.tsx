@@ -4,6 +4,7 @@ import HeroSection from '../components/Home/HeroSection';
 import BenefitsSection from '../components/Home/BenefitsSection';
 import FlexibilitySection from '../components/Home/FlexibilitySection';
 import RouteFinderSection from '../components/Home/RouteFinderSection';
+import YatraServicesSection from '../components/Home/YatraServicesSection';
 import Navbar from '../components/Navbar/Navbar';
 import Sidebar from '../components/Sidebar/Sidebar';
 import Footer from '../components/Footer/Footer';
@@ -42,6 +43,7 @@ const Home: React.FC = () => {
         <ToursCarousel data={topTours} />
         <WarmDestinationsCarousel data={warmDestinations} />
         <BlogCarousel data={blogPosts} />
+        <YatraServicesSection />
         <RouteFinderSection />
       </div>
       
