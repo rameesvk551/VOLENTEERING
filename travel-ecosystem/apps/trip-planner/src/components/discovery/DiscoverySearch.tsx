@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { Search, TrendingUp, Loader2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { buildTripPlannerPath } from '../../utils/navigation';
 import { useDiscovery } from '../../hooks/useDiscovery';
 
 import { ResultsGrid } from './ResultsGrid';
@@ -13,6 +15,7 @@ interface DiscoverySearchProps {
 
 export const DiscoverySearch: React.FC<DiscoverySearchProps> = ({ onResultSelect }) => {
   const [query, setQuery] = useState('');
+  const navigate = useNavigate();
 
   const {
     results,
@@ -25,7 +28,8 @@ export const DiscoverySearch: React.FC<DiscoverySearchProps> = ({ onResultSelect
 
   const handleSearch = async () => {
     if (!query.trim()) return;
-    await search(query);
+    // Navigate to search results page with query parameter
+    navigate(buildTripPlannerPath(`search?q=${encodeURIComponent(query)}`));
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
