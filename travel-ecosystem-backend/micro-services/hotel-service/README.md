@@ -240,6 +240,8 @@ Payment request sent to Payment Service.
 - npm 9+
 - Kafka (optional, set KAFKA_ENABLED=false to disable)
 
+**NOTE**: This service runs on port **4005** (changed from legacy port 4002 to avoid conflicts with admin service).
+
 ### Installation
 ```bash
 cd travel-ecosystem-backend/micro-services/hotel-service
