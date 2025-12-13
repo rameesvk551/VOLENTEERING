@@ -18,6 +18,7 @@ const PORT = Number(process.env.PORT) || 4000;
 const AUTH_SERVICE_URL = process.env.AUTH_SERVICE_URL || 'http://localhost:4001';
 const BLOG_SERVICE_URL = process.env.BLOG_SERVICE_URL || 'http://localhost:4003';
 const ADMIN_SERVICE_URL = process.env.ADMIN_SERVICE_URL || 'http://localhost:4002';
+const HOTEL_SERVICE_URL = process.env.HOTEL_SERVICE_URL || 'http://localhost:4005';
 
 // Middleware
 app.use(helmet());
@@ -71,7 +72,8 @@ app.get('/', (req: Request, res: Response) => {
     services: {
       auth: '/api/auth',
       blog: '/api/blog',
-      admin: '/api/admin'
+      admin: '/api/admin',
+      hotels: '/api/hotels'
     },
     health: '/health'
   });
@@ -174,6 +176,31 @@ adminServicePaths.forEach((path) => {
   app.use(path, authMiddleware, adminServiceProxy);
 });
 
+// Hotel Service - Public search with optional auth, protected reservations
+app.use('/api/hotels', optionalAuthMiddleware, createProxyMiddleware({
+  target: HOTEL_SERVICE_URL,
+  changeOrigin: true,
+  pathRewrite: {
+    '^/api/hotels': '/api/hotels'
+  },
+  onProxyReq: (proxyReq, req: any) => {
+    // Forward user info if authenticated
+    if (req.user) {
+      proxyReq.setHeader('X-User-Id', req.user.id);
+      proxyReq.setHeader('X-User-Email', req.user.email);
+      proxyReq.setHeader('X-User-Role', req.user.role);
+    }
+  },
+  onError: (err, req, res) => {
+    console.error('Hotel Service Proxy Error:', err);
+    res.status(503).json({ 
+      success: false, 
+      message: 'Hotel service unavailable',
+      error: err.message 
+    });
+  }
+}));
+
 // 404 Handler
 app.use((req: Request, res: Response) => {
   res.status(404).json({
@@ -192,6 +219,7 @@ const server = app.listen(PORT, () => {
   console.log(`🔗 Auth Service: ${AUTH_SERVICE_URL}`);
   console.log(`🔗 Blog Service: ${BLOG_SERVICE_URL}`);
   console.log(`🔗 Admin Service: ${ADMIN_SERVICE_URL}`);
+  console.log(`🔗 Hotel Service: ${HOTEL_SERVICE_URL}`);
 });
 
 // Graceful error handling for server startup

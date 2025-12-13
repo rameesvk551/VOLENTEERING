@@ -1,33 +1,63 @@
-import Fastify, { type FastifyReply, type FastifyRequest } from 'fastify';
+import Fastify from 'fastify';
+import cors from '@fastify/cors';
+import rateLimit from '@fastify/rate-limit';
 import dotenv from 'dotenv';
 import { Kafka, logLevel, type EachMessagePayload } from 'kafkajs';
 import { HotelProvider } from './hotelProvider.js';
+import { MetaSearchService } from './services/metaSearch.service.js';
+import { ReservationService } from './services/reservation.service.js';
+import { CacheService } from './services/cache.service.js';
+import { EventEmitter } from './services/eventEmitter.service.js';
+import { registerRoutes } from './routes/index.js';
 import type { Hotel } from './hotelCatalog.js';
 
 dotenv.config();
 
-const fastify = Fastify({ logger: true });
+const fastify = Fastify({ 
+  logger: true,
+  trustProxy: true
+});
+
+// Initialize services
+const eventEmitter = new EventEmitter();
+const metaSearch = new MetaSearchService();
+const reservationService = new ReservationService(eventEmitter);
+const cache = new CacheService();
 const provider = new HotelProvider();
+
 const kafkaEnabled = (process.env.KAFKA_ENABLED ?? 'true') !== 'false';
 
+// Register plugins
+await fastify.register(cors, {
+  origin: true,
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+});
+
+await fastify.register(rateLimit, {
+  max: parseInt(process.env.RATE_LIMIT_MAX || '100'),
+  timeWindow: parseInt(process.env.RATE_LIMIT_WINDOW || '60000'), // 1 minute
+  cache: 10000
+});
+
+// Health check
+fastify.get('/health', async () => ({ 
+  status: 'ok',
+  service: 'hotel-discovery-booking-service',
+  timestamp: new Date().toISOString(),
+  circuitBreaker: provider.getCircuitBreakerState()
+}));
+
+// Legacy endpoint for backward compatibility
 interface HotelQuery {
   city?: string;
   country?: string;
   limit?: string;
 }
 
-interface HotelRequestMessage {
-  correlationId?: string;
-  replyTopic?: string;
-  city?: string;
-  country?: string;
-  limit?: number;
-}
-
-fastify.get('/health', async () => ({ status: 'ok' }));
-
-fastify.get('/hotels', async (request: FastifyRequest<{ Querystring: HotelQuery }>, reply: FastifyReply) => {
-  const { city, country, limit } = request.query;
+fastify.get('/hotels', async (request, reply) => {
+  const { city, country, limit } = request.query as HotelQuery;
 
   if (!city) {
     reply.code(400);
@@ -48,7 +78,18 @@ fastify.get('/hotels', async (request: FastifyRequest<{ Querystring: HotelQuery 
   };
 });
 
-const port = Number(process.env.PORT) || 4002;
+// Register new routes
+await registerRoutes(fastify, metaSearch, reservationService, cache);
+
+const port = Number(process.env.PORT) || 4005;
+
+interface HotelRequestMessage {
+  correlationId?: string;
+  replyTopic?: string;
+  city?: string;
+  country?: string;
+  limit?: number;
+}
 
 async function startKafka(): Promise<void> {
   const brokers = (process.env.KAFKA_BROKERS ?? '')
@@ -142,10 +183,14 @@ async function startKafka(): Promise<void> {
 
 fastify
   .listen({ port, host: '0.0.0.0' })
-  .then(() => {
-    fastify.log.info(`Hotel service listening on port ${port}`);
+  .then(async () => {
+    fastify.log.info(`🏨 Hotel Discovery & Booking Service listening on port ${port}`);
+    fastify.log.info(`📍 Environment: ${process.env.NODE_ENV || 'development'}`);
 
+    // Connect event emitter
     if (kafkaEnabled) {
+      await eventEmitter.connect();
+      
       startKafka().catch((error: unknown) => {
         fastify.log.error({ err: error }, 'Failed to initialize Kafka consumer');
       });
@@ -155,3 +200,18 @@ fastify
     fastify.log.error(error, 'Failed to start hotel service');
     process.exit(1);
   });
+
+// Graceful shutdown
+process.on('SIGINT', async () => {
+  fastify.log.info('Shutting down gracefully...');
+  await eventEmitter.disconnect();
+  await fastify.close();
+  process.exit(0);
+});
+
+process.on('SIGTERM', async () => {
+  fastify.log.info('Shutting down gracefully...');
+  await eventEmitter.disconnect();
+  await fastify.close();
+  process.exit(0);
+});
