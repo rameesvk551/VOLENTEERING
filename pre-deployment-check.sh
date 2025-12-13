@@ -57,7 +57,7 @@ else
         echo -e "${YELLOW}Please commit or stash your changes before deployment.${NC}"
         echo ""
         echo "Changed files:"
-        git status --short
+        git status --porcelain
         echo ""
         echo -e "${YELLOW}To proceed anyway, use: $0 --force${NC}"
         echo ""
