@@ -126,7 +126,7 @@ jobs:
         run: npm test -- --watch=false
 
       - name: Server tests placeholder
-        run: echo "TODO: add server test command"
+        run: echo "TODO - add server test command"
 
   e2e-playwright:
     name: Playwright (Placeholder)
@@ -137,7 +137,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: TODO Playwright setup
-        run: echo "TODO: configure Playwright"
+        run: echo "TODO - configure Playwright"
 
   lighthouse:
     name: Lighthouse (Placeholder)
@@ -148,4 +148,4 @@ jobs:
         uses: actions/checkout@v4
 
       - name: TODO Lighthouse setup
-        run: echo "TODO: configure Lighthouse CI"
+        run: echo "TODO - configure Lighthouse CI"
