@@ -126,7 +126,8 @@ async function startKafka(): Promise<void> {
         const { correlationId, replyTopic, city, country, limit } = decoded;
 
         if (!correlationId || !replyTopic || !city) {
-          fastify.log.warn('Received malformed hotel request payload, skipping.', {
+          fastify.log.warn({
+            msg: 'Received malformed hotel request payload, skipping.',
             correlationId,
             replyTopic
           });
