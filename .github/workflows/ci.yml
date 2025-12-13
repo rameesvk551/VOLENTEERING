@@ -45,6 +45,17 @@ jobs:
         working-directory: travel-ecosystem
         run: npm install
 
+      - name: Check for uncommitted changes
+        run: |
+          if [[ -n $(git status --porcelain) ]]; then
+            echo "::error::Uncommitted changes detected after install. Please commit these changes."
+            git status
+            git diff
+            exit 1
+          else
+            echo "No uncommitted changes detected."
+          fi
+
   lint-and-typecheck:
     name: Lint & Typecheck
     needs: install-and-cache
