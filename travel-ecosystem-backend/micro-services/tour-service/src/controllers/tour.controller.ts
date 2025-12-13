@@ -189,12 +189,11 @@ export class TourController {
   };
 
   /**
-   * Clear cache (admin operation)
+   * Clear cache (admin operation - protected by middleware)
    * POST /api/tours/cache/clear
    */
   clearCache = async (req: Request, res: Response): Promise<void> => {
     try {
-      // TODO: Add admin authentication check
       this.cacheService.clear();
       
       res.json({

@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { TourController } from '../controllers/tour.controller.js';
+import { requireAdmin } from '../middleware/auth.middleware.js';
 
 const router = Router();
 const tourController = new TourController();
@@ -23,7 +24,7 @@ router.post('/conversion', tourController.trackConversion);
 // Health check
 router.get('/health', tourController.getHealth);
 
-// Clear cache (admin)
-router.post('/cache/clear', tourController.clearCache);
+// Clear cache (admin only)
+router.post('/cache/clear', requireAdmin, tourController.clearCache);
 
 export default router;

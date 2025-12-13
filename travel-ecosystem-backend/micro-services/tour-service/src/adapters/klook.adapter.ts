@@ -1,6 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import { ITourProvider, ProviderError } from './base-provider.adapter.js';
 import { Tour, TourSearchQuery } from '../models/tour.model.js';
+import { DEFAULT_LOCATION, DEFAULT_COUNTRY } from '../config/constants.js';
 
 /**
  * Klook Provider Adapter (Future-ready)
@@ -74,8 +75,8 @@ export class KlookAdapter implements ITourProvider {
   }
 
   private getMockData(query: TourSearchQuery): Tour[] {
-    const location = query.location || 'Paris';
-    const country = query.country || 'France';
+    const location = query.location || DEFAULT_LOCATION;
+    const country = query.country || DEFAULT_COUNTRY;
 
     const mockTours: Tour[] = [
       {

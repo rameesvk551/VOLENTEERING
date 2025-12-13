@@ -83,10 +83,33 @@ export const useTourSearch = () => {
    * Auto-search when filters or page changes
    */
   useEffect(() => {
-    if (filters.location?.trim()) {
-      search();
-    }
-  }, [filters, currentPage]); // eslint-disable-line react-hooks/exhaustive-deps
+    const performSearch = async () => {
+      if (!filters.location?.trim()) {
+        setTours([], 0);
+        return;
+      }
+
+      setLoading(true);
+      setError(null);
+
+      try {
+        const response = await tourApi.searchTours(filters, currentPage, pageSize);
+        
+        if (response.success) {
+          setTours(response.data.tours, response.data.total);
+        } else {
+          setError('Failed to search tours');
+        }
+      } catch (err: any) {
+        setError(err.response?.data?.message || 'An error occurred while searching');
+        setTours([], 0);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    performSearch();
+  }, [filters, currentPage, pageSize, setTours, setLoading, setError]);
 
   return {
     tours,

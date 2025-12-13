@@ -6,6 +6,11 @@ import { ViatorAdapter } from '../adapters/viator.adapter.js';
 import { KlookAdapter } from '../adapters/klook.adapter.js';
 import { CacheService } from './cache.service.js';
 import { AnalyticsService } from './analytics.service.js';
+import { 
+  POPULARITY_RATING_WEIGHT, 
+  POPULARITY_REVIEW_WEIGHT, 
+  MAX_REVIEW_COUNT_FOR_NORMALIZATION 
+} from '../config/constants.js';
 
 /**
  * Tour Aggregator Service
@@ -282,13 +287,10 @@ export class TourAggregatorService {
    * Calculate popularity score based on rating and review count
    */
   private calculatePopularityScore(tour: Tour): number {
-    const ratingWeight = 0.6;
-    const reviewCountWeight = 0.4;
-    
     const normalizedRating = (tour.rating.average / 5) * 100;
-    const normalizedReviews = Math.min((tour.rating.count / 10000) * 100, 100);
+    const normalizedReviews = Math.min((tour.rating.count / MAX_REVIEW_COUNT_FOR_NORMALIZATION) * 100, 100);
     
-    return (normalizedRating * ratingWeight) + (normalizedReviews * reviewCountWeight);
+    return (normalizedRating * POPULARITY_RATING_WEIGHT) + (normalizedReviews * POPULARITY_REVIEW_WEIGHT);
   }
 
   /**
