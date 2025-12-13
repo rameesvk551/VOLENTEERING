@@ -43,9 +43,9 @@ echo "0. CHECKING GIT STATUS"
 echo "=================================="
 echo ""
 
-# Check for uncommitted changes
+# Check for uncommitted changes (both tracked and untracked files)
 echo -n "→ Git Working Tree Status... "
-if git diff-index --quiet HEAD -- 2>/dev/null; then
+if git diff-index --quiet HEAD -- 2>/dev/null && [ -z "$(git status --porcelain)" ]; then
     echo -e "${GREEN}✓ No uncommitted changes${NC}"
 else
     if [ "$FORCE_DEPLOY" = true ]; then
