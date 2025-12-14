@@ -1,7 +1,7 @@
 {
   "name": "hotel-service",
   "version": "1.0.0",
-  "description": "Hotel Aggregation Service - Fetches, normalizes, deduplicates, and ranks hotels from multiple providers",
+  "description": "Hotel Discovery & Booking microservice for the travel ecosystem",
   "main": "dist/index.js",
   "type": "module",
   "scripts": {
@@ -14,13 +14,17 @@
     "test": "echo \"No tests yet\" && exit 0"
   },
   "dependencies": {
+    "@fastify/cors": "^8.4.2",
+    "@fastify/rate-limit": "^9.1.0",
     "axios": "^1.7.7",
     "dotenv": "^16.4.5",
     "fastify": "^4.27.2",
-    "kafkajs": "^2.2.4"
+    "kafkajs": "^2.2.4",
+    "uuid": "^9.0.1"
   },
   "devDependencies": {
     "@types/node": "^20.11.30",
+    "@types/uuid": "^9.0.7",
     "tslib": "^2.6.2",
     "tsx": "^4.19.2",
     "typescript": "^5.4.5"

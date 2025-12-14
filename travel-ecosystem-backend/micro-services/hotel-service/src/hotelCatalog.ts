@@ -1,3 +1,5 @@
+import { HotelSource } from './types/index.js';
+
 export interface Hotel {
   id: string;
   name: string;
@@ -23,6 +25,8 @@ export interface Hotel {
   url: string;
   availability?: boolean;
   distanceFromCenter?: number;
+  source: HotelSource;
+  externalBookingUrl?: string;
 }
 
 const catalog: Record<string, Hotel[]> = {
@@ -47,7 +51,8 @@ const catalog: Record<string, Hotel[]> = {
       roomTypes: ['Deluxe Room', 'Suite', 'Presidential Suite'],
       url: 'https://theimperialindia.com',
       availability: true,
-      distanceFromCenter: 1.2
+      distanceFromCenter: 1.2,
+      source: HotelSource.INTERNAL
     },
     {
       id: 'hotel-delhi-2',
@@ -69,7 +74,8 @@ const catalog: Record<string, Hotel[]> = {
       roomTypes: ['Premier Room', 'Luxury Suite', 'Royal Suite'],
       url: 'https://www.theleela.com',
       availability: true,
-      distanceFromCenter: 5.5
+      distanceFromCenter: 5.5,
+      source: HotelSource.INTERNAL
     }
   ],
   paris: [
@@ -89,7 +95,8 @@ const catalog: Record<string, Hotel[]> = {
       amenities: ['Pool', 'Spa', 'Art Gallery', 'WiFi', 'Restaurant', 'Bar'],
       url: 'https://www.raffles.com',
       availability: true,
-      distanceFromCenter: 2.5
+      distanceFromCenter: 2.5,
+      source: HotelSource.INTERNAL
     }
   ],
   tokyo: [
@@ -109,7 +116,8 @@ const catalog: Record<string, Hotel[]> = {
       amenities: ['Sky Pool', 'Spa', 'Multiple Restaurants', 'WiFi', 'Gym'],
       url: 'https://www.ritzcarlton.com',
       availability: true,
-      distanceFromCenter: 3.2
+      distanceFromCenter: 3.2,
+      source: HotelSource.INTERNAL
     }
   ]
 };

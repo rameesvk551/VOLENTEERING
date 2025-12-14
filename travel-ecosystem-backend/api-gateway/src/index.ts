@@ -18,6 +18,7 @@ const PORT = Number(process.env.PORT) || 4000;
 const AUTH_SERVICE_URL = process.env.AUTH_SERVICE_URL || 'http://localhost:4001';
 const BLOG_SERVICE_URL = process.env.BLOG_SERVICE_URL || 'http://localhost:4003';
 const ADMIN_SERVICE_URL = process.env.ADMIN_SERVICE_URL || 'http://localhost:4002';
+const HOTEL_SERVICE_URL = process.env.HOTEL_SERVICE_URL || 'http://localhost:4005';
 const ROUTE_OPTIMIZER_SERVICE_URL = process.env.ROUTE_OPTIMIZER_SERVICE_URL || 'http://localhost:3007';
 const DISCOVERY_ENGINE_URL = process.env.DISCOVERY_ENGINE_URL || 'http://localhost:3000';
 
@@ -82,7 +83,8 @@ app.get('/', (req: Request, res: Response) => {
     services: {
       auth: '/api/auth',
       blog: '/api/blog',
-      admin: '/api/admin'
+      admin: '/api/admin',
+      hotels: '/api/hotels'
     },
     health: '/health'
   });
@@ -185,6 +187,14 @@ adminServicePaths.forEach((path) => {
   app.use(path, authMiddleware, adminServiceProxy);
 });
 
+// Hotel Service - Public search with optional auth, protected reservations
+app.use('/api/hotels', optionalAuthMiddleware, createProxyMiddleware({
+  target: HOTEL_SERVICE_URL,
+  changeOrigin: true,
+  pathRewrite: {
+    '^/api/hotels': '/api/hotels'
+  },
+  onProxyReq: (proxyReq, req: any) => {
 // Route Optimizer Service - Public route with optional auth
 app.use('/api/v1/optimize-route', optionalAuthMiddleware, createProxyMiddleware({
   target: ROUTE_OPTIMIZER_SERVICE_URL,
@@ -230,6 +240,14 @@ app.use('/api/v2/optimize-route', optionalAuthMiddleware, createProxyMiddleware(
     if (req.user) {
       proxyReq.setHeader('X-User-Id', req.user.id);
       proxyReq.setHeader('X-User-Email', req.user.email);
+      proxyReq.setHeader('X-User-Role', req.user.role);
+    }
+  },
+  onError: (err, req, res) => {
+    console.error('Hotel Service Proxy Error:', err);
+    res.status(503).json({ 
+      success: false, 
+      message: 'Hotel service unavailable',
     }
   },
   onProxyRes: (proxyRes, req, res) => {
@@ -321,6 +339,7 @@ const server = app.listen(PORT, () => {
   console.log(`🔗 Auth Service: ${AUTH_SERVICE_URL}`);
   console.log(`🔗 Blog Service: ${BLOG_SERVICE_URL}`);
   console.log(`🔗 Admin Service: ${ADMIN_SERVICE_URL}`);
+  console.log(`🔗 Hotel Service: ${HOTEL_SERVICE_URL}`);
   console.log(`🔗 Route Optimizer: ${ROUTE_OPTIMIZER_SERVICE_URL}`);
 });
 
