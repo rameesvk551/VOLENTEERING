@@ -17,6 +17,7 @@ const VisaExplorer = lazy(() => import('visaExplorer/App'));
 const AdminDashboard = lazy(() => import('adminDashboard/App'));
 const TripPlanner = lazy(() => import('tripPlanner/App'));
 const Volunteering = lazy(() => import('volunteering/Router'));
+const HotelBooking = lazy(() => import('hotelBooking/App'));
 
 function App() {
   return (
@@ -117,6 +118,14 @@ function App() {
                 <ProtectedRoute>
                   <MainLayout>
                     <Volunteering />
+                  </MainLayout>
+                </ProtectedRoute>
+              } />
+
+              <Route path="/hotel-booking/*" element={
+                <ProtectedRoute>
+                  <MainLayout>
+                    <HotelBooking />
                   </MainLayout>
                 </ProtectedRoute>
               } />
