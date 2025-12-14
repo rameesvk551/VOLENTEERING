@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { Search, TrendingUp, Loader2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { buildTripPlannerPath } from '../../utils/navigation';
 import { useDiscovery } from '../../hooks/useDiscovery';
 
 import { ResultsGrid } from './ResultsGrid';
@@ -13,17 +15,10 @@ interface DiscoverySearchProps {
 
 export const DiscoverySearch: React.FC<DiscoverySearchProps> = ({ onResultSelect }) => {
   const [query, setQuery] = useState('');
-  const [suggestions] = useState([
-    'Delhi in October',
-    'Paris food tours',
-    'Bali beaches',
-    'Tokyo cherry blossoms',
-    'New York museums'
-  ]);
+  const navigate = useNavigate();
 
   const {
     results,
-    entities,
     recommendations,
     isLoading,
     error,
@@ -33,12 +28,8 @@ export const DiscoverySearch: React.FC<DiscoverySearchProps> = ({ onResultSelect
 
   const handleSearch = async () => {
     if (!query.trim()) return;
-    await search(query);
-  };
-
-  const handleSuggestionClick = (suggestion: string) => {
-    setQuery(suggestion);
-    search(suggestion);
+    // Navigate to search results page with query parameter
+    navigate(buildTripPlannerPath(`search?q=${encodeURIComponent(query)}`));
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -48,12 +39,12 @@ export const DiscoverySearch: React.FC<DiscoverySearchProps> = ({ onResultSelect
   };
 
   return (
-    <div className="discovery-search-container max-w-7xl mx-auto">
+    <div className="discovery-search-container w-full">
       {/* Hero Search Section */}
       <div
-        className="hero-section bg-white dark:bg-gray-900 p-6 sm:p-8 rounded-2xl sm:rounded-3xl mb-6 sm:mb-8 border border-gray-200 dark:border-gray-700 shadow-sm"
+        className="hero-section bg-white dark:bg-gray-900 py-6 mb-6 sm:mb-8 border-b border-gray-200 dark:border-gray-700 shadow-sm"
       >
-        <div className="flex items-center gap-3 mb-4">
+        <div className="flex items-center gap-3 mb-4 px-4">
           <Search className="w-6 h-6 text-gray-500" />
           <h1 className="text-2xl md:text-3xl font-semibold text-gray-900 dark:text-white">
             Discover destinations with one search
@@ -62,7 +53,7 @@ export const DiscoverySearch: React.FC<DiscoverySearchProps> = ({ onResultSelect
 
 
         {/* Search Bar */}
-        <div className="search-bar-container">
+        <div className="search-bar-container px-4">
           <div className="relative">
             <input
               type="text"

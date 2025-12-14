@@ -1,0 +1,649 @@
+openapi: 3.0.3
+info:
+  title: Trip Planner & Route Optimization API
+  description: |
+    Complete API specification for the mobile-first trip planning flow:
+    - Attraction selection
+    - Route optimization (TSP/RAPTOR algorithms)
+    - Multimodal transport options (GTFS + Google Directions)
+    - PDF itinerary generation
+  version: 1.0.0
+  contact:
+    name: API Support
+    email: support@tripplanner.com
+
+servers:
+  - url: http://localhost:3001/api/v1
+    description: Discovery Engine (Development)
+  - url: http://localhost:3007/api
+    description: Route Optimizer (Development)
+  - url: http://localhost:3008/transport
+    description: Transportation Service (Development)
+  - url: http://localhost:3009/api
+    description: PDF Service (Development)
+
+tags:
+  - name: discovery
+    description: Attraction discovery and information
+  - name: route-optimization
+    description: Route optimization algorithms
+  - name: transport
+    description: Multimodal transport options
+  - name: pdf
+    description: PDF itinerary generation
+
+paths:
+  /attractions:
+    get:
+      tags: [discovery]
+      summary: Get attractions for a city
+      description: Fetch real attractions from Google Places API
+      operationId: getAttractions
+      parameters:
+        - name: city
+          in: query
+          required: true
+          schema:
+            type: string
+            example: "Singapore"
+        - name: country
+          in: query
+          required: true
+          schema:
+            type: string
+            example: "Singapore"
+        - name: interests
+          in: query
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
+            example: ["culture", "food"]
+      responses:
+        '200':
+          description: List of attractions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  city:
+                    type: string
+                  country:
+                    type: string
+                  attractions:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Attraction'
+                  count:
+                    type: integer
+
+  /optimize-route:
+    post:
+      tags: [route-optimization]
+      summary: Optimize route between attractions
+      description: |
+        Uses advanced algorithms (TSP, RAPTOR, Genetic, etc.) to find the optimal
+        visiting order for selected attractions. Returns order only, not transport details.
+      operationId: optimizeRoute
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OptimizeRouteRequest'
+      responses:
+        '200':
+          description: Optimized route
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OptimizeRouteResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /optimize/{jobId}/status:
+    get:
+      tags: [route-optimization]
+      summary: Get optimization job status
+      description: Poll job status for long-running optimizations
+      operationId: getOptimizationStatus
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Job status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  jobId:
+                    type: string
+                    format: uuid
+                  status:
+                    type: string
+                    enum: [queued, processing, completed, failed]
+                  progress:
+                    type: number
+                    minimum: 0
+                    maximum: 100
+                  result:
+                    $ref: '#/components/schemas/OptimizeRouteResponse'
+                  error:
+                    type: string
+
+  /transport/multi-modal-route:
+    post:
+      tags: [transport]
+      summary: Get multimodal transport options for a leg
+      description: |
+        Returns transport options (walking, cycling, public transit, driving, e-scooter)
+        for a single leg. Uses GTFS + GTFS-RT for transit, Google Directions as fallback.
+      operationId: getMultiModalRoute
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MultiModalRouteRequest'
+      responses:
+        '200':
+          description: Transport options
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MultiModalRouteResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /transport/nearby-stops:
+    get:
+      tags: [transport]
+      summary: Get nearby transit stops
+      description: Find transit stops near a location (GTFS data)
+      operationId: getNearbyStops
+      parameters:
+        - name: lat
+          in: query
+          required: true
+          schema:
+            type: number
+            format: double
+        - name: lng
+          in: query
+          required: true
+          schema:
+            type: number
+            format: double
+        - name: radius
+          in: query
+          required: false
+          schema:
+            type: number
+            default: 500
+            description: Radius in meters
+      responses:
+        '200':
+          description: Nearby stops
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TransitStop'
+
+  /generate-pdf:
+    post:
+      tags: [pdf]
+      summary: Generate PDF itinerary
+      description: |
+        Generates a downloadable PDF with maps, timings, costs, and images.
+        Asynchronous job processing with signed URL response.
+      operationId: generatePDF
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GeneratePDFRequest'
+      responses:
+        '200':
+          description: PDF generated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GeneratePDFResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  schemas:
+    Attraction:
+      type: object
+      required:
+        - id
+        - name
+        - latitude
+        - longitude
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        latitude:
+          type: number
+          format: double
+          minimum: -90
+          maximum: 90
+        longitude:
+          type: number
+          format: double
+          minimum: -180
+          maximum: 180
+        imageUrl:
+          type: string
+          format: uri
+        category:
+          type: string
+          enum: [monument, museum, park, religious, food, shopping, entertainment]
+        priority:
+          type: integer
+          minimum: 1
+          maximum: 10
+        visitDurationMinutes:
+          type: integer
+          minimum: 0
+        rating:
+          type: number
+          minimum: 0
+          maximum: 5
+        priceLevel:
+          type: integer
+          minimum: 1
+          maximum: 4
+
+    OptimizeRouteRequest:
+      type: object
+      required:
+        - places
+        - constraints
+        - options
+      properties:
+        userId:
+          type: string
+          format: uuid
+          nullable: true
+        places:
+          type: array
+          minItems: 2
+          items:
+            type: object
+            required: [id, name, lat, lng]
+            properties:
+              id:
+                type: string
+              name:
+                type: string
+              lat:
+                type: number
+                format: double
+              lng:
+                type: number
+                format: double
+              imageUrl:
+                type: string
+              priority:
+                type: integer
+              visitDuration:
+                type: integer
+        constraints:
+          type: object
+          required: [travelTypes]
+          properties:
+            startLocation:
+              type: object
+              properties:
+                lat:
+                  type: number
+                lng:
+                  type: number
+            startTime:
+              type: string
+              format: date-time
+            timeBudgetMinutes:
+              type: integer
+            travelTypes:
+              type: array
+              items:
+                type: string
+                enum: [WALKING, CYCLING, PUBLIC_TRANSPORT, DRIVE, E_SCOOTER]
+            budget:
+              type: number
+        options:
+          type: object
+          required: [includeRealtimeTransit]
+          properties:
+            includeRealtimeTransit:
+              type: boolean
+            algorithm:
+              type: string
+              enum: [RAPTOR, TSP_2OPT, ACO, GREEDY, GENETIC, CHRISTOFIDES, auto]
+              default: auto
+
+    OptimizeRouteResponse:
+      type: object
+      required:
+        - jobId
+        - optimizedOrder
+        - estimatedDurationMinutes
+        - totalDistanceMeters
+      properties:
+        jobId:
+          type: string
+          format: uuid
+        optimizedOrder:
+          type: array
+          items:
+            type: object
+            properties:
+              placeId:
+                type: string
+              seq:
+                type: integer
+        estimatedDurationMinutes:
+          type: integer
+        totalDistanceMeters:
+          type: integer
+        notes:
+          type: string
+
+    MultiModalRouteRequest:
+      type: object
+      required:
+        - from
+        - to
+        - departureTime
+        - modes
+      properties:
+        from:
+          type: object
+          required: [lat, lng]
+          properties:
+            lat:
+              type: number
+            lng:
+              type: number
+        to:
+          type: object
+          required: [lat, lng]
+          properties:
+            lat:
+              type: number
+            lng:
+              type: number
+        departureTime:
+          type: string
+          format: date-time
+        modes:
+          type: array
+          items:
+            type: string
+            enum: [WALKING, CYCLING, PUBLIC_TRANSPORT, DRIVE, E_SCOOTER]
+        preferences:
+          type: object
+          properties:
+            minTransfers:
+              type: integer
+            maxWalkMeters:
+              type: integer
+        user:
+          type: object
+          properties:
+            id:
+              type: string
+            profile:
+              type: string
+
+    MultiModalRouteResponse:
+      type: object
+      required:
+        - legId
+        - options
+      properties:
+        legId:
+          type: string
+        options:
+          type: array
+          items:
+            $ref: '#/components/schemas/TransportOption'
+
+    TransportOption:
+      type: object
+      required:
+        - mode
+        - durationMinutes
+        - distanceMeters
+        - cost
+      properties:
+        mode:
+          type: string
+          enum: [WALKING, CYCLING, PUBLIC_TRANSPORT, DRIVE, E_SCOOTER]
+        durationMinutes:
+          type: integer
+        distanceMeters:
+          type: integer
+        cost:
+          type: number
+          format: double
+        transfers:
+          type: integer
+        steps:
+          type: array
+          items:
+            $ref: '#/components/schemas/TransportStep'
+        realtime:
+          type: object
+          properties:
+            expectedDelaySeconds:
+              type: integer
+            vehicleId:
+              type: string
+        fareEstimate:
+          type: object
+          properties:
+            currency:
+              type: string
+            amount:
+              type: number
+        badge:
+          type: string
+          enum: [Fastest, Cheapest, Least Walking, Eco-Friendly]
+        confidence:
+          type: number
+          minimum: 0
+          maximum: 1
+
+    TransportStep:
+      type: object
+      required:
+        - type
+        - start
+        - end
+      properties:
+        type:
+          type: string
+          enum: [walk, transit, drive, bike]
+        start:
+          $ref: '#/components/schemas/Location'
+        end:
+          $ref: '#/components/schemas/Location'
+        startTime:
+          type: string
+          format: date-time
+        endTime:
+          type: string
+          format: date-time
+        route:
+          type: object
+          properties:
+            agency:
+              type: string
+            routeId:
+              type: string
+            routeName:
+              type: string
+            headsign:
+              type: string
+        instructions:
+          type: string
+
+    TransitStop:
+      type: object
+      properties:
+        stopId:
+          type: string
+        stopName:
+          type: string
+        location:
+          $ref: '#/components/schemas/Location'
+        distanceMeters:
+          type: number
+        routes:
+          type: array
+          items:
+            type: string
+
+    Location:
+      type: object
+      required:
+        - latitude
+        - longitude
+      properties:
+        latitude:
+          type: number
+          format: double
+        longitude:
+          type: number
+          format: double
+        address:
+          type: string
+
+    GeneratePDFRequest:
+      type: object
+      required:
+        - tripName
+        - optimizedOrder
+        - legs
+      properties:
+        userId:
+          type: string
+          format: uuid
+        tripName:
+          type: string
+        optimizedOrder:
+          type: array
+          items:
+            type: object
+            properties:
+              placeId:
+                type: string
+              seq:
+                type: integer
+        legs:
+          type: array
+          items:
+            type: object
+            required: [from, to, selectedMode, optionId, departure, arrival, cost]
+            properties:
+              from:
+                type: string
+              to:
+                type: string
+              selectedMode:
+                type: string
+              optionId:
+                type: string
+              departure:
+                type: string
+                format: date-time
+              arrival:
+                type: string
+                format: date-time
+              cost:
+                type: number
+        images:
+          type: array
+          items:
+            type: string
+            format: uri
+        notes:
+          type: string
+        format:
+          type: string
+          enum: [A4, Letter]
+          default: A4
+        locale:
+          type: string
+          default: en_US
+
+    GeneratePDFResponse:
+      type: object
+      required:
+        - pdfUrl
+        - pages
+      properties:
+        pdfUrl:
+          type: string
+          format: uri
+          description: Signed URL for PDF download (expires in 24h)
+        pages:
+          type: integer
+        thumbnail:
+          type: string
+          format: uri
+        jobId:
+          type: string
+          format: uuid
+
+    Error:
+      type: object
+      required:
+        - error
+        - message
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+        details:
+          type: object
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+security:
+  - BearerAuth: []

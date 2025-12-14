@@ -19,6 +19,8 @@ const AUTH_SERVICE_URL = process.env.AUTH_SERVICE_URL || 'http://localhost:4001'
 const BLOG_SERVICE_URL = process.env.BLOG_SERVICE_URL || 'http://localhost:4003';
 const ADMIN_SERVICE_URL = process.env.ADMIN_SERVICE_URL || 'http://localhost:4002';
 const HOTEL_SERVICE_URL = process.env.HOTEL_SERVICE_URL || 'http://localhost:4005';
+const ROUTE_OPTIMIZER_SERVICE_URL = process.env.ROUTE_OPTIMIZER_SERVICE_URL || 'http://localhost:3007';
+const DISCOVERY_ENGINE_URL = process.env.DISCOVERY_ENGINE_URL || 'http://localhost:3000';
 
 // Middleware
 app.use(helmet());
@@ -45,14 +47,23 @@ app.use(morgan('dev'));
 // app.use(express.urlencoded({ extended: true }));
 app.use(loggerMiddleware);
 
-// Rate limiting
+// Rate limiting - More permissive in development
 const limiter = rateLimit({
-  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000'),
-  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '100'),
-  message: 'Too many requests from this IP, please try again later.'
+  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000'), // 15 minutes
+  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '1000'), // Increased from 100 to 1000
+  message: 'Too many requests from this IP, please try again later.',
+  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+  skip: (req) => {
+    // Skip rate limiting for health checks and in development if needed
+    return req.path === '/health' || process.env.NODE_ENV === 'development';
+  }
 });
 
-app.use('/api/', limiter);
+// Apply rate limiter only in production or when explicitly enabled
+if (process.env.ENABLE_RATE_LIMIT !== 'false') {
+  app.use('/api/', limiter);
+}
 
 // Health check
 app.get('/health', (req: Request, res: Response) => {
@@ -184,6 +195,47 @@ app.use('/api/hotels', optionalAuthMiddleware, createProxyMiddleware({
     '^/api/hotels': '/api/hotels'
   },
   onProxyReq: (proxyReq, req: any) => {
+// Route Optimizer Service - Public route with optional auth
+app.use('/api/v1/optimize-route', optionalAuthMiddleware, createProxyMiddleware({
+  target: ROUTE_OPTIMIZER_SERVICE_URL,
+  changeOrigin: true,
+  pathRewrite: {
+    '^/api/v1/optimize-route': '/api/optimize-route'
+  },
+  timeout: 60000, // 60 seconds for complex optimizations
+  proxyTimeout: 60000,
+  onProxyReq: (proxyReq, req: any) => {
+    console.log('Proxying to Route Optimizer:', req.method, req.url);
+    // Forward user info if authenticated
+    if (req.user) {
+      proxyReq.setHeader('X-User-Id', req.user.id);
+      proxyReq.setHeader('X-User-Email', req.user.email);
+    }
+  },
+  onProxyRes: (proxyRes, req, res) => {
+    console.log('Route Optimizer Response:', proxyRes.statusCode);
+  },
+  onError: (err, req, res) => {
+    console.error('Route Optimizer Proxy Error:', err);
+    res.status(503).json({ 
+      success: false, 
+      message: 'Route optimizer service unavailable',
+      error: err.message 
+    });
+  }
+}));
+
+// Route Optimizer Service V2 - Enhanced with persistence & transport
+app.use('/api/v2/optimize-route', optionalAuthMiddleware, createProxyMiddleware({
+  target: ROUTE_OPTIMIZER_SERVICE_URL,
+  changeOrigin: true,
+  pathRewrite: {
+    '^/api/v2/optimize-route': '/api/v2/optimize-route'
+  },
+  timeout: 60000, // 60 seconds for complex optimizations
+  proxyTimeout: 60000,
+  onProxyReq: (proxyReq, req: any) => {
+    console.log('Proxying to Route Optimizer V2:', req.method, req.url);
     // Forward user info if authenticated
     if (req.user) {
       proxyReq.setHeader('X-User-Id', req.user.id);
@@ -196,8 +248,76 @@ app.use('/api/hotels', optionalAuthMiddleware, createProxyMiddleware({
     res.status(503).json({ 
       success: false, 
       message: 'Hotel service unavailable',
+    }
+  },
+  onProxyRes: (proxyRes, req, res) => {
+    console.log('Route Optimizer V2 Response:', proxyRes.statusCode);
+  },
+  onError: (err, req, res) => {
+    console.error('Route Optimizer V2 Proxy Error:', err);
+    res.status(503).json({ 
+      success: false, 
+      message: 'Route optimizer service unavailable',
       error: err.message 
     });
+  }
+}));
+
+// Route Optimizer Service V2 - Additional endpoints
+app.use('/api/v2/optimizations', optionalAuthMiddleware, createProxyMiddleware({
+  target: ROUTE_OPTIMIZER_SERVICE_URL,
+  changeOrigin: true,
+  pathRewrite: {
+    '^/api/v2/optimizations': '/api/v2/optimizations'
+  },
+  timeout: 30000,
+  proxyTimeout: 30000,
+  onProxyReq: (proxyReq, req: any) => {
+    if (req.user) {
+      proxyReq.setHeader('X-User-Id', req.user.id);
+      proxyReq.setHeader('X-User-Email', req.user.email);
+    }
+  },
+  onError: (err, req, res) => {
+    console.error('Route Optimizer V2 Optimizations Proxy Error:', err);
+    res.status(503).json({ 
+      success: false, 
+      message: 'Route optimizer service unavailable',
+      error: err.message 
+    });
+  }
+}));
+
+// Discovery Engine - Proxy POST /api/v1/discover to discovery-engine microservice
+app.use('/api/v1/discover', optionalAuthMiddleware, createProxyMiddleware({
+  target: DISCOVERY_ENGINE_URL,
+  changeOrigin: true,
+  pathRewrite: {
+    '^/api/v1/discover': '/api/v1/discover'
+  },
+  timeout: 30000,
+  proxyTimeout: 30000,
+  onProxyReq: (proxyReq, req: any) => {
+    console.log('Proxying to Discovery Engine:', req.method, req.url);
+    // Forward user info if authenticated
+    if (req.user) {
+      proxyReq.setHeader('X-User-Id', req.user.id);
+      proxyReq.setHeader('X-User-Email', req.user.email);
+      proxyReq.setHeader('X-User-Role', req.user.role);
+    }
+  },
+  onProxyRes: (proxyRes, req, res) => {
+    console.log('Discovery Engine Response:', proxyRes.statusCode);
+  },
+  onError: (err, req, res) => {
+    console.error('Discovery Engine Proxy Error:', err);
+    if (!res.headersSent) {
+      res.status(503).json({ 
+        success: false, 
+        message: 'Discovery service unavailable',
+        error: err.message 
+      });
+    }
   }
 }));
 
@@ -220,6 +340,7 @@ const server = app.listen(PORT, () => {
   console.log(`🔗 Blog Service: ${BLOG_SERVICE_URL}`);
   console.log(`🔗 Admin Service: ${ADMIN_SERVICE_URL}`);
   console.log(`🔗 Hotel Service: ${HOTEL_SERVICE_URL}`);
+  console.log(`🔗 Route Optimizer: ${ROUTE_OPTIMIZER_SERVICE_URL}`);
 });
 
 // Graceful error handling for server startup

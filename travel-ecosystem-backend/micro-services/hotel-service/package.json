@@ -6,8 +6,12 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/index.ts",
+    "dev:aggregator": "tsx watch src/aggregator-server.ts",
+    "test:aggregator": "tsx src/test-aggregator.ts",
     "start": "node dist/index.js",
-    "build": "tsc --project tsconfig.json"
+    "start:aggregator": "node dist/aggregator-server.js",
+    "build": "tsc --project tsconfig.json",
+    "test": "echo \"No tests yet\" && exit 0"
   },
   "dependencies": {
     "@fastify/cors": "^8.4.2",

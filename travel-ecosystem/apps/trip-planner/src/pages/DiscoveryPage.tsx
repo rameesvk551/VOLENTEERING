@@ -1,11 +1,8 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
 import { DiscoverySearch } from '../components/discovery/DiscoverySearch';
 import type { DiscoveryEntity } from '../hooks/useDiscovery';
 
 export const DiscoveryPage: React.FC = () => {
-  const navigate = useNavigate();
-
   const handleResultSelect = (result: DiscoveryEntity) => {
     // Result is already added to trip store by ResultCard
     // Optionally navigate to trip planner or show detail modal
@@ -17,7 +14,7 @@ export const DiscoveryPage: React.FC = () => {
       dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 transition-colors duration-300">
 
       {/* Main Content */}
-      <main className="pt-4 sm:pt-6 md:pt-8 pb-16 px-4 sm:px-6 lg:px-8">
+      <main className="pt-20 sm:pt-24 md:pt-28 pb-16">
         <DiscoverySearch onResultSelect={handleResultSelect} />
       </main>
 

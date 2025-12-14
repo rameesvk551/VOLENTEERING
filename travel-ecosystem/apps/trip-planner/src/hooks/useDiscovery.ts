@@ -100,8 +100,21 @@ const transformBackendResponse = (backendResponse: DiscoveryResponse, query: str
     allAttractions: attractions 
   });
 
-  const transformedAttractions: DiscoveryEntity[] = (attractions || []).map((attr: any) => ({
-    id: attr.placeId || attr.id || `${attr.name}-${Date.now()}`,
+  const createStableId = (attr: any, index: number) => {
+    if (attr.placeId) return attr.placeId;
+    if (attr.id) return attr.id;
+
+    const base = attr.name || `attraction-${index}`;
+    const locationHint = attr.address || `${attr.coordinates?.lat ?? ''}-${attr.coordinates?.lng ?? ''}`;
+    return `${base}-${locationHint}`
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)/g, '')
+      || `attraction-${index}`;
+  };
+
+  const transformedAttractions: DiscoveryEntity[] = (attractions || []).map((attr: any, index: number) => ({
+    id: createStableId(attr, index),
     type: 'attraction' as const,
     title: attr.name,
     description: attr.description || 'No description available',

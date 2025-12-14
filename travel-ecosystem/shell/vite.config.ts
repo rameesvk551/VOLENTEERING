@@ -7,7 +7,8 @@ const sharedDeps = {
   'react-dom': { singleton: true, eager: true, requiredVersion: '^18.2.0' },
   'react-router-dom': { singleton: true, eager: true, requiredVersion: '^6.20.0' },
   'react-redux': { singleton: true, eager: true, requiredVersion: '^9.0.4' },
-  '@reduxjs/toolkit': { singleton: true, requiredVersion: '^2.0.1' }
+  '@reduxjs/toolkit': { singleton: true, requiredVersion: '^2.0.1' },
+  '@tanstack/react-query': { singleton: true, eager: true, requiredVersion: '^5.90.9' }
 } satisfies Record<string, Record<string, unknown>>;
 
 export default defineConfig({

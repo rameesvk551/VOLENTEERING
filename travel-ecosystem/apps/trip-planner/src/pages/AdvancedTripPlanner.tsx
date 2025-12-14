@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { WifiOff, Sparkles, Route } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { buildTripPlannerPath } from '../utils/navigation';
 import { useTripStore } from '../store/tripStore';
 import BottomNav from '../components/BottomNav';
 import FloatingActionButton from '../components/FloatingActionButton';
@@ -15,7 +16,7 @@ const AdvancedTripPlanner: React.FC = () => {
   const { currentView, isOffline, setIsOffline } = useTripStore();
   const navigate = useNavigate();
   const [showAddDestinationModal, setShowAddDestinationModal] = useState(false);
-  const [showAddNoteModal, setShowAddNoteModal] = useState(false);
+  const [, setShowAddNoteModal] = useState(false);
 
   // Handle offline/online status
   useEffect(() => {
@@ -53,7 +54,7 @@ const AdvancedTripPlanner: React.FC = () => {
     switch (currentView) {
       case 'map':
         return (
-          <div className="h-full p-4">
+          <div className="h-full p-4 relative z-0">
             <TripMap />
           </div>
         );
@@ -85,7 +86,7 @@ const AdvancedTripPlanner: React.FC = () => {
             
             <div className="flex items-center gap-2">
               <button
-                onClick={() => navigate('discover')}
+                onClick={() => navigate(buildTripPlannerPath('discover'))}
                 className="flex items-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg 
                   bg-gradient-to-r from-cyan-500 to-purple-500 text-white text-xs sm:text-sm 
                   font-medium hover:shadow-lg hover:scale-105 transition-all duration-300"
@@ -96,7 +97,7 @@ const AdvancedTripPlanner: React.FC = () => {
               </button>
               
               <button
-                onClick={() => navigate('route-optimizer')}
+                onClick={() => navigate(buildTripPlannerPath('route-optimizer'))}
                 className="flex items-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg 
                   bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600
                   text-gray-700 dark:text-gray-300 text-xs sm:text-sm font-medium
@@ -113,7 +114,7 @@ const AdvancedTripPlanner: React.FC = () => {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-hidden relative">
+      <main className="flex-1 overflow-hidden relative z-0 pb-16">
         <AnimatePresence mode="wait">
           <motion.div
             key={currentView}

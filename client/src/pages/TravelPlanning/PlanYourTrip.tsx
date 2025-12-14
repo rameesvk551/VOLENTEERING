@@ -1,11 +1,8 @@
 
-import React, { useState } from 'react'
-import PlaceToVisit from '../../components/travelPlanning/PlaceToVisitCard'
-import { MapPin } from 'lucide-react'
+import React from 'react'
 import SearchWithFilter from '../../components/travelPlanning/SearchWithFilter'
 import SuggestedPlace from '@/components/travelPlanning/SuggestedPlace';
-import 'leaflet/dist/leaflet.css';
-import TripMap from '@/components/travelPlanning/TripMap';
+import RouteOptimizerExperience from '@/components/travelPlanning/route-experience/RouteOptimizerExperience';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/redux/store';
 
@@ -13,18 +10,17 @@ import { RootState } from '@/redux/store';
 
 const PlanYourTrip = () => {
  
-  const { searchedPlace, selectedPlace } = useSelector((state: RootState) => state.attractions);
+  const { searchedPlace } = useSelector((state: RootState) => state.attractions);
  
   return (
     <div className="bg-gradient-to-b from-blue-50 to-white">
-    <div className="py-10 px-6 sm:px-10">
-      <div className="mx-auto">
-        <div className="md:flex-row gap-8">
+    <div className="w-full">
+      <div className="w-full">
+        <div className="w-full">
        
 
 
- {(!searchedPlace || searchedPlace.length === 0) &&
-         (!selectedPlace || selectedPlace.length === 0) && (
+ {(!searchedPlace || searchedPlace.length === 0) && (
           <SearchWithFilter />
         )}
 
@@ -32,14 +28,13 @@ const PlanYourTrip = () => {
           <SuggestedPlace />
         )}
 
-        {selectedPlace && selectedPlace.length > 0 && (
-          <TripMap />
-        )}
-
           
           
         </div>
       </div>
+    </div>
+    <div className="pt-6 pb-12 px-0 sm:px-4">
+      <RouteOptimizerExperience />
     </div>
   </div>
   

@@ -81,36 +81,6 @@
               
             }
           }
-        ,
-          "react-router-dom": {
-            name: "react-router-dom",
-            version: "6.30.1",
-            scope: ["default"],
-            loaded: false,
-            from: "blog",
-            async get () {
-              if (false) {
-                throw new Error(`Shared module '${"react-router-dom"}' must be provided by host`);
-              }
-              usedShared["react-router-dom"].loaded = true
-              const {"react-router-dom": pkgDynamicImport} = importMap
-              const res = await pkgDynamicImport()
-              const exportModule = {...res}
-              // All npm packages pre-built by vite will be converted to esm
-              Object.defineProperty(exportModule, "__esModule", {
-                value: true,
-                enumerable: false
-              })
-              return function () {
-                return exportModule
-              }
-            },
-            shareConfig: {
-              singleton: true,
-              requiredVersion: "^6.20.0",
-              
-            }
-          }
         
     }
       const usedRemotes = [

@@ -42,20 +42,21 @@ const HomePage: React.FC = () => {
         jsonLd={landingJsonLd}
       />
       <div className="min-h-screen bg-white dark:bg-gray-900">
-      {/* Hero */}
-      <section className="bg-gradient-to-r from-primary-600 to-secondary-600 text-white py-20">
-        <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-12 text-center">
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-4">
-            Travel Stories from Around the World
+      {/* Hero - Minimal 2025 */}
+      <section className="border-b border-gray-100 dark:border-gray-800 py-10 md:py-14">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6">
+          <p className="text-sm font-medium text-primary-600 dark:text-primary-400 mb-2 tracking-wide uppercase">Stories & Guides</p>
+          <h1 className="text-3xl md:text-4xl lg:text-5xl font-semibold text-gray-900 dark:text-white mb-3 tracking-tight">
+            Travel Stories
           </h1>
-          <p className="text-xl md:text-2xl text-white/90 mb-8 max-w-3xl mx-auto">
-            Join nomadic travelers sharing their adventures, tips, and experiences
+          <p className="text-base md:text-lg text-gray-500 dark:text-gray-400 max-w-xl">
+            Adventures, tips, and experiences from travelers worldwide
           </p>
         </div>
       </section>
 
       {/* Main Content */}
-  <main className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-12 py-12">
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
         <PostList limit={12} />
       </main>
 

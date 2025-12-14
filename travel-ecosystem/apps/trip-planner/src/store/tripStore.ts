@@ -12,7 +12,41 @@ export interface TripDestination {
   activities: Activity[];
   notes: string;
   estimatedCost: number;
+  sourceAttractionId?: string;
 }
+
+const slugify = (value?: string) => {
+  if (!value) return '';
+  return value
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '');
+};
+
+const buildSelectionId = (
+  name?: string,
+  coordinates?: { lat: number; lng: number },
+  fallback?: string
+) => {
+  const namePart = slugify(name) || 'attraction';
+  const coordPart = coordinates
+    ? `${coordinates.lat ?? ''}-${coordinates.lng ?? ''}`
+    : '';
+  const id = [namePart, coordPart].filter(Boolean).join('-');
+  return id || fallback || crypto.randomUUID();
+};
+
+export const getSelectionIdForDestination = (
+  destination: Pick<TripDestination, 'name' | 'coordinates' | 'id'> & {
+    sourceAttractionId?: string;
+  }
+) => {
+  return (
+    destination.sourceAttractionId ||
+    buildSelectionId(destination.name, destination.coordinates, destination.id)
+  );
+};
 
 export interface Activity {
   id: string;
@@ -78,11 +112,15 @@ export const useTripStore = create<TripState>()(
 
       addDestination: (destination) => {
         const destinations = get().destinations;
+        const generatedId = crypto.randomUUID();
+        const sourceAttractionId = destination.sourceAttractionId ||
+          buildSelectionId(destination.name, destination.coordinates, generatedId);
         const newDestination: TripDestination = {
           ...destination,
-          id: crypto.randomUUID(),
+          id: generatedId,
           order: destinations.length,
           activities: destination.activities || [],
+          sourceAttractionId,
         };
         set({ destinations: [...destinations, newDestination] });
       },

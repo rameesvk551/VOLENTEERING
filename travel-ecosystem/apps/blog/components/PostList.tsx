@@ -101,35 +101,37 @@ const PostList: React.FC<PostListProps> = ({
   };
 
   return (
-    <div className="space-y-8">
-      <div className="sticky top-20 z-30 flex flex-col gap-4 border-b border-gray-100 bg-white py-4 shadow-sm dark:border-gray-800 dark:bg-gray-900">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between lg:gap-6">
-          {/* Left: tags (aligned left on desktop) */}
-          <div className="order-1 w-full lg:w-1/2 flex items-center justify-start">
-            {renderTags()}
+    <div className="space-y-6">
+      {/* Minimal filter bar */}
+      <div className="sticky top-16 z-30 -mx-4 sm:-mx-6 px-4 sm:px-6 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md py-3 border-b border-gray-100 dark:border-gray-800">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          {/* Tags - horizontal scroll on mobile */}
+          <div className="flex-1 overflow-x-auto scrollbar-hide">
+            <div className="flex items-center gap-2">
+              {renderTags()}
+            </div>
           </div>
 
-          {/* Right: search + sort (aligned right) */}
-          <div className="order-2 flex w-full flex-col gap-3 items-end sm:w-auto sm:flex-row sm:items-center sm:justify-end lg:w-auto">
+          {/* Search + Sort */}
+          <div className="flex items-center gap-2 shrink-0">
             <input
               type="search"
-              placeholder="Search posts"
+              placeholder="Search..."
               value={searchTerm}
               onChange={(event) => {
                 setSearchTerm(event.target.value);
                 setPage(1);
               }}
-              className="input text-sm sm:w-64 mr-2"
+              className="w-40 sm:w-48 px-3 py-1.5 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 focus:outline-none focus:ring-1 focus:ring-primary-500"
             />
-
             <select
               value={sort}
               onChange={(event) => handleSortChange(event.target.value as 'date' | 'title' | 'popular')}
-              className="input text-sm"
+              className="px-3 py-1.5 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 focus:outline-none focus:ring-1 focus:ring-primary-500"
             >
-              <option value="date">Latest First</option>
-              <option value="title">Alphabetical</option>
-              <option value="popular">Most Popular</option>
+              <option value="date">Latest</option>
+              <option value="title">A-Z</option>
+              <option value="popular">Popular</option>
             </select>
           </div>
         </div>

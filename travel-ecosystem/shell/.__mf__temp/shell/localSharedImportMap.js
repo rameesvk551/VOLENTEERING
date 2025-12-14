@@ -4,6 +4,11 @@
     import {loadShare} from "@module-federation/runtime";
     const importMap = {
       
+        "@tanstack/react-query": async () => {
+          let pkg = await import("__mf__virtual/shell__prebuild___mf_0_tanstack_mf_1_react_mf_2_query__prebuild__.js");
+            return pkg;
+        }
+      ,
         "react": async () => {
           let pkg = await import("__mf__virtual/shell__prebuild__react__prebuild__.js");
             return pkg;
@@ -22,6 +27,36 @@
     }
       const usedShared = {
       
+          "@tanstack/react-query": {
+            name: "@tanstack/react-query",
+            version: "5.90.9",
+            scope: ["default"],
+            loaded: false,
+            from: "shell",
+            async get () {
+              if (false) {
+                throw new Error(`Shared module '${"@tanstack/react-query"}' must be provided by host`);
+              }
+              usedShared["@tanstack/react-query"].loaded = true
+              const {"@tanstack/react-query": pkgDynamicImport} = importMap
+              const res = await pkgDynamicImport()
+              const exportModule = {...res}
+              // All npm packages pre-built by vite will be converted to esm
+              Object.defineProperty(exportModule, "__esModule", {
+                value: true,
+                enumerable: false
+              })
+              return function () {
+                return exportModule
+              }
+            },
+            shareConfig: {
+              singleton: true,
+              requiredVersion: "^5.90.9",
+              
+            }
+          }
+        ,
           "react": {
             name: "react",
             version: "18.3.1",

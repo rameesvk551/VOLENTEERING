@@ -9,6 +9,7 @@ import {
   getBaseUrl,
   buildSitemapXml,
 } from '../utils/seo.js';
+import { CACHE_TTL } from '../constants/index.js';
 
 const sitemapCache: { xml: string; expiresAt: number } = { xml: '', expiresAt: 0 };
 const robotsCache: { text: string; expiresAt: number } = { text: '', expiresAt: 0 };
@@ -71,7 +72,7 @@ export const getAllBlogs = async (req: Request, res: Response, next: NextFunctio
 
     const normalizedBlogs = blogs.map(mapBlogForResponse);
 
-    setResponseCacheHeaders(res);
+  setResponseCacheHeaders(res);
 
     res.json({
       success: true,
@@ -113,7 +114,7 @@ export const getBlogBySlug = async (req: Request, res: Response, next: NextFunct
     const mappedBlog = mapBlogForResponse(blog);
     const jsonLd = buildBlogJsonLd(mappedBlog);
 
-    setResponseCacheHeaders(res);
+  setResponseCacheHeaders(res);
 
     res.json({
       success: true,
@@ -145,7 +146,7 @@ export const getBlogById = async (req: Request, res: Response, next: NextFunctio
 
     const mappedBlog = mapBlogForResponse(blog);
 
-    setResponseCacheHeaders(res);
+  setResponseCacheHeaders(res);
 
     res.json({
       success: true,
@@ -180,7 +181,7 @@ export const getBlogsByCategory = async (req: Request, res: Response, next: Next
 
     const normalizedBlogs = blogs.map(mapBlogForResponse);
 
-    setResponseCacheHeaders(res);
+  setResponseCacheHeaders(res);
 
     res.json({
       success: true,
@@ -217,7 +218,7 @@ export const getFeaturedBlogs = async (req: Request, res: Response, next: NextFu
 
     const normalizedBlogs = blogs.map(mapBlogForResponse);
 
-    setResponseCacheHeaders(res, 600);
+  setResponseCacheHeaders(res, CACHE_TTL.TEN_MIN);
 
     res.json({
       success: true,
@@ -243,7 +244,7 @@ export const getPopularBlogs = async (req: Request, res: Response, next: NextFun
 
     const normalizedBlogs = blogs.map(mapBlogForResponse);
 
-    setResponseCacheHeaders(res, 300);
+  setResponseCacheHeaders(res, CACHE_TTL.SHORT);
 
     res.json({
       success: true,
@@ -276,7 +277,7 @@ export const getTrendingBlogs = async (req: Request, res: Response, next: NextFu
 
     const normalizedBlogs = blogs.map(mapBlogForResponse);
 
-    setResponseCacheHeaders(res, 300);
+  setResponseCacheHeaders(res, CACHE_TTL.SHORT);
 
     res.json({
       success: true,
@@ -432,7 +433,7 @@ export const getCategories = async (req: Request, res: Response, next: NextFunct
       { $sort: { count: -1 } }
     ]);
 
-    setResponseCacheHeaders(res, 3600, 604800);
+  setResponseCacheHeaders(res, CACHE_TTL.MEDIUM, CACHE_TTL.LONG);
 
     res.json({
       success: true,
@@ -456,7 +457,7 @@ export const getTags = async (req: Request, res: Response, next: NextFunction) =
       { $limit: 50 }
     ]);
 
-    setResponseCacheHeaders(res, 3600, 604800);
+  setResponseCacheHeaders(res, CACHE_TTL.MEDIUM, CACHE_TTL.LONG);
 
     res.json({
       success: true,
@@ -475,7 +476,7 @@ export const getSitemap = async (req: Request, res: Response, next: NextFunction
     const now = Date.now();
 
     if (sitemapCache.xml && sitemapCache.expiresAt > now) {
-      setResponseCacheHeaders(res, 3600, 604800);
+  setResponseCacheHeaders(res, CACHE_TTL.MEDIUM, CACHE_TTL.LONG);
       return res.type('application/xml').send(sitemapCache.xml);
     }
 
@@ -506,7 +507,7 @@ export const getSitemap = async (req: Request, res: Response, next: NextFunction
     sitemapCache.xml = xml;
     sitemapCache.expiresAt = now + 60 * 60 * 1000; // 1 hour cache
 
-    setResponseCacheHeaders(res, 3600, 604800);
+  setResponseCacheHeaders(res, CACHE_TTL.MEDIUM, CACHE_TTL.LONG);
     return res.type('application/xml').send(xml);
   } catch (error: any) {
     next(error);
@@ -521,7 +522,7 @@ export const getRobotsTxt = async (req: Request, res: Response, next: NextFuncti
     const now = Date.now();
 
     if (robotsCache.text && robotsCache.expiresAt > now) {
-      setResponseCacheHeaders(res, 86400, 604800);
+  setResponseCacheHeaders(res, CACHE_TTL.LONG, CACHE_TTL.LONG);
       return res.type('text/plain').send(robotsCache.text);
     }
 
@@ -561,7 +562,7 @@ export const getRobotsTxt = async (req: Request, res: Response, next: NextFuncti
     robotsCache.text = robotsText;
     robotsCache.expiresAt = now + 12 * 60 * 60 * 1000; // 12 hours cache
 
-    setResponseCacheHeaders(res, 86400, 604800);
+  setResponseCacheHeaders(res, CACHE_TTL.LONG, CACHE_TTL.LONG);
     return res.type('text/plain').send(robotsText);
   } catch (error: any) {
     next(error);

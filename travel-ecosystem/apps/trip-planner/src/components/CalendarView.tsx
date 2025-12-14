@@ -18,7 +18,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { format, differenceInDays } from 'date-fns';
-import { ChevronDown, ChevronUp, MapPin, DollarSign, Clock, GripVertical, CheckCircle2 } from 'lucide-react';
+import { ChevronDown, MapPin, DollarSign, Clock, GripVertical, CheckCircle2 } from 'lucide-react';
 import { useTripStore, Activity } from '../store/tripStore';
 
 interface ActivityItemProps {
