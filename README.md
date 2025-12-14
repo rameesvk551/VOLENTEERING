@@ -8,9 +8,11 @@ This is a **complete, fully functional microservices-based travel ecosystem** fe
 
 - **API Gateway** - Centralized routing and authentication
 - **Auth Service** - Complete user authentication system
+- **Tour Service** - Meta search for tours from multiple providers
 - **Blog Service** - Advanced blog platform with comments & ratings
 - **Admin Service** - Administrative operations
 - **Shell Frontend** - Main application with authentication UI
+- **Tours Discovery UI** - Tour search and booking redirect
 - **Blog Frontend** - Public blog interface
 - **Admin Dashboard** - Complete admin panel
 
@@ -42,6 +44,16 @@ This is a **complete, fully functional microservices-based travel ecosystem** fe
 - Host management
 - Financial tracking
 - Gear rental management
+
+### 🎫 Tour Meta Search System
+- Aggregate tours from multiple providers (GetYourGuide, Viator, Klook)
+- Unified search across all providers
+- Advanced filtering (category, price, rating, duration)
+- Intelligent ranking and deduplication
+- Redirect to provider for booking with affiliate tracking
+- Real-time caching for fast responses
+- Circuit breaker for provider failover
+- Analytics and conversion tracking
 
 ## 🚀 One-Command Quick Start
 
@@ -126,12 +138,14 @@ Once running, access the applications at:
 | Service | URL | Port |
 |---------|-----|------|
 | **Shell (Main App)** | http://localhost:5173 | 5173 |
+| **Tours Discovery UI** | http://localhost:1007 | 1007 |
 | **Blog Frontend** | http://localhost:5174 | 5174 |
 | **Admin Dashboard** | http://localhost:5175 | 5175 |
 | **API Gateway** | http://localhost:4000 | 4000 |
 | **Auth Service** | http://localhost:4001 | 4001 |
 | **Admin Service** | http://localhost:4002 | 4002 |
 | **Blog Service** | http://localhost:4003 | 4003 |
+| **Tour Service** | http://localhost:4004 | 4004 |
 
 ## 🏗️ Architecture
 
@@ -207,6 +221,16 @@ DELETE /api/blog/comments/:id        # Delete comment (auth)
 POST   /api/blog/comments/:id/like   # Like comment (auth)
 ```
 
+### Tour Endpoints
+
+```bash
+GET  /api/tours/search              # Search tours across providers
+GET  /api/tours/:provider/:id       # Get tour details
+POST /api/tours/redirect            # Generate booking redirect URL
+POST /api/tours/conversion          # Track conversion (callback)
+GET  /api/tours/health              # Service health & stats
+```
+
 ## 🧪 Testing the API
 
 ```bash
@@ -238,6 +262,20 @@ curl "http://localhost:4000/api/blog?search=travel&category=Adventure"
 
 # Get featured blogs
 curl http://localhost:4000/api/blog/featured?limit=5
+
+# Search tours
+curl "http://localhost:4000/api/tours/search?location=Paris&category=Cultural&limit=5"
+
+# Get tour details
+curl http://localhost:4000/api/tours/getyourguide/gyg-123456
+
+# Generate booking redirect
+curl -X POST http://localhost:4000/api/tours/redirect \
+  -H "Content-Type: application/json" \
+  -d '{
+    "provider": "getyourguide",
+    "productId": "gyg-123456"
+  }'
 ```
 
 ## 🛠️ Technology Stack
@@ -367,9 +405,11 @@ Key variables to update:
 |-----------|--------|---------|
 | API Gateway | ✅ Complete | Fully functional with auth & routing |
 | Auth Service | ✅ Complete | All auth features implemented |
+| Tour Service | ✅ Complete | Meta search with provider aggregation |
 | Blog Service | ✅ Complete | Full blog, comment, rating system |
 | Admin Service | ✅ Complete | Ready for integration |
 | Shell Frontend | ✅ Complete | Auth UI provided |
+| Tours Discovery UI | ✅ Complete | Search, filters, booking redirect |
 | Blog Frontend | ✅ Complete | API integration ready |
 | Admin Dashboard | ✅ Complete | UI structure in place |
 | Docker Config | ✅ Complete | All services containerized |
@@ -397,6 +437,7 @@ cd travel-ecosystem-backend && npm run dev
 
 # Frontend only
 cd travel-ecosystem/shell && npm run dev
+cd travel-ecosystem/apps/tours-discovery && npm run dev
 cd travel-ecosystem/apps/blog && npm run dev
 cd travel-ecosystem/apps/admin-dashboard && npm run dev
 
@@ -407,6 +448,7 @@ cd travel-ecosystem-backend && docker-compose up -d
 ## 📚 Documentation
 
 - **[Quick Start Guide](QUICK_START.md)** - Get started in minutes
+- **[Tour Architecture](TOUR_ARCHITECTURE.md)** - Complete tour system design
 - **[Implementation Summary](IMPLEMENTATION_SUMMARY.md)** - Complete implementation details
 - **[Backend README](travel-ecosystem-backend/README.md)** - Backend service documentation
 - **[Frontend Guide](travel-ecosystem/FRONTEND_GUIDE.md)** - Frontend implementation guide
