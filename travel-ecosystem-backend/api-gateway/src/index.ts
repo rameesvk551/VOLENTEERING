@@ -20,6 +20,7 @@ const BLOG_SERVICE_URL = process.env.BLOG_SERVICE_URL || 'http://localhost:4003'
 const ADMIN_SERVICE_URL = process.env.ADMIN_SERVICE_URL || 'http://localhost:4002';
 const ROUTE_OPTIMIZER_SERVICE_URL = process.env.ROUTE_OPTIMIZER_SERVICE_URL || 'http://localhost:3007';
 const DISCOVERY_ENGINE_URL = process.env.DISCOVERY_ENGINE_URL || 'http://localhost:3000';
+const HOTEL_SERVICE_URL = process.env.HOTEL_SERVICE_URL || 'http://localhost:4005';
 
 // Middleware
 app.use(helmet());
@@ -82,7 +83,8 @@ app.get('/', (req: Request, res: Response) => {
     services: {
       auth: '/api/auth',
       blog: '/api/blog',
-      admin: '/api/admin'
+      admin: '/api/admin',
+      hotels: '/api/hotels'
     },
     health: '/health'
   });
@@ -185,6 +187,7 @@ adminServicePaths.forEach((path) => {
   app.use(path, authMiddleware, adminServiceProxy);
 });
 
+<<<<<<< HEAD
 // Route Optimizer Service - Public route with optional auth
 app.use('/api/v1/optimize-route', optionalAuthMiddleware, createProxyMiddleware({
   target: ROUTE_OPTIMIZER_SERVICE_URL,
@@ -281,6 +284,16 @@ app.use('/api/v1/discover', optionalAuthMiddleware, createProxyMiddleware({
   proxyTimeout: 30000,
   onProxyReq: (proxyReq, req: any) => {
     console.log('Proxying to Discovery Engine:', req.method, req.url);
+=======
+// Hotel Service - Public search with optional auth, protected reservations
+app.use('/api/hotels', optionalAuthMiddleware, createProxyMiddleware({
+  target: HOTEL_SERVICE_URL,
+  changeOrigin: true,
+  pathRewrite: {
+    '^/api/hotels': '/api/hotels'
+  },
+  onProxyReq: (proxyReq, req: any) => {
+>>>>>>> copilot/create-hotel-discovery-service
     // Forward user info if authenticated
     if (req.user) {
       proxyReq.setHeader('X-User-Id', req.user.id);
@@ -288,6 +301,7 @@ app.use('/api/v1/discover', optionalAuthMiddleware, createProxyMiddleware({
       proxyReq.setHeader('X-User-Role', req.user.role);
     }
   },
+<<<<<<< HEAD
   onProxyRes: (proxyRes, req, res) => {
     console.log('Discovery Engine Response:', proxyRes.statusCode);
   },
@@ -300,6 +314,15 @@ app.use('/api/v1/discover', optionalAuthMiddleware, createProxyMiddleware({
         error: err.message 
       });
     }
+=======
+  onError: (err, req, res) => {
+    console.error('Hotel Service Proxy Error:', err);
+    res.status(503).json({ 
+      success: false, 
+      message: 'Hotel service unavailable',
+      error: err.message 
+    });
+>>>>>>> copilot/create-hotel-discovery-service
   }
 }));
 
@@ -321,7 +344,11 @@ const server = app.listen(PORT, () => {
   console.log(`🔗 Auth Service: ${AUTH_SERVICE_URL}`);
   console.log(`🔗 Blog Service: ${BLOG_SERVICE_URL}`);
   console.log(`🔗 Admin Service: ${ADMIN_SERVICE_URL}`);
+<<<<<<< HEAD
   console.log(`🔗 Route Optimizer: ${ROUTE_OPTIMIZER_SERVICE_URL}`);
+=======
+  console.log(`🔗 Hotel Service: ${HOTEL_SERVICE_URL}`);
+>>>>>>> copilot/create-hotel-discovery-service
 });
 
 // Graceful error handling for server startup
