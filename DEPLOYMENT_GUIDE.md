@@ -9,13 +9,31 @@ This guide will help you deploy the following services:
 
 ## ✅ Pre-Deployment Checklist
 
-### 1. Run Health Check
+### 1. Ensure Clean Git State
+Before deployment, make sure all changes are committed:
+```bash
+git status
+```
+
+If you have uncommitted changes, commit them:
+```bash
+git add .
+git commit -m "Your commit message"
+```
+
+### 2. Run Health Check
+The pre-deployment script will check for uncommitted changes and other issues:
 ```bash
 chmod +x pre-deployment-check.sh
 ./pre-deployment-check.sh
 ```
 
-### 2. Environment Variables
+If you need to deploy despite uncommitted changes (not recommended):
+```bash
+./pre-deployment-check.sh --force
+```
+
+### 3. Environment Variables
 
 #### Shell (.env)
 ```bash

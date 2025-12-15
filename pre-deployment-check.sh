@@ -19,6 +19,14 @@ NC='\033[0m' # No Color
 # Track overall status
 ALL_PASSED=true
 
+# Parse command line arguments
+FORCE_DEPLOY=false
+if [ "$1" = "--force" ] || [ "$1" = "-f" ]; then
+    FORCE_DEPLOY=true
+    echo -e "${YELLOW}⚠ Running in FORCE mode - uncommitted changes will be ignored${NC}"
+    echo ""
+fi
+
 # Function to check command status
 check_status() {
     if [ $? -eq 0 ]; then
@@ -30,6 +38,34 @@ check_status() {
         return 1
     fi
 }
+
+echo "0. CHECKING GIT STATUS"
+echo "=================================="
+echo ""
+
+# Check for uncommitted changes (both tracked and untracked files)
+echo -n "→ Git Working Tree Status... "
+if git diff-index --quiet HEAD -- 2>/dev/null && [ -z "$(git status --porcelain)" ]; then
+    echo -e "${GREEN}✓ No uncommitted changes${NC}"
+else
+    if [ "$FORCE_DEPLOY" = true ]; then
+        echo -e "${YELLOW}⚠ WARNING: Uncommitted changes detected (proceeding anyway)${NC}"
+    else
+        echo -e "${RED}✗ FAILED - Uncommitted changes detected${NC}"
+        echo ""
+        echo -e "${YELLOW}You have uncommitted changes in your working directory.${NC}"
+        echo -e "${YELLOW}Please commit or stash your changes before deployment.${NC}"
+        echo ""
+        echo "Changed files:"
+        git status --porcelain
+        echo ""
+        echo -e "${YELLOW}To proceed anyway, use: $0 --force${NC}"
+        echo ""
+        exit 1
+    fi
+fi
+
+echo ""
 
 echo "1. CHECKING FRONTEND APPLICATIONS"
 echo "=================================="
